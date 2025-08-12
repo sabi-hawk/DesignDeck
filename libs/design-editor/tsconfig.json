@@ -1,0 +1,26 @@
+{
+  "compilerOptions": {
+    "paths": {
+      "@lidojs/text-editor": [
+        "libs/text-editor/src"
+      ],
+      "@lidojs/design-layers": [
+        "libs/design-layers/src"
+      ],
+      "@lidojs/design-screen": [
+        "libs/design-screen/src"
+      ],
+    }
+  },
+  "files": [],
+  "include": [],
+  "references": [
+    {
+      "path": "./tsconfig.lib.json"
+    },
+    {
+      "path": "./tsconfig.spec.json"
+    }
+  ],
+  "extends": "../../tsconfig.base.json"
+}

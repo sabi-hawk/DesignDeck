@@ -1,0 +1,29 @@
+{
+  "compilerOptions": {
+    "module": "es2022",
+    "moduleResolution": "Node",
+    "types": ["vite/client", "vitest/globals"],
+    "paths": {
+      "@lidojs/design-layers": [
+        "libs/design-layers/src/index.ts"
+      ],
+      "@lidojs/design-editor": [
+        "libs/design-editor/src/index.ts"
+      ],
+      "@lidojs/design-screen": [
+        "libs/design-screen/src/index.ts"
+      ],
+    }
+  },
+  "files": [],
+  "include": [],
+  "references": [
+    {
+      "path": "./tsconfig.app.json"
+    },
+    {
+      "path": "./tsconfig.spec.json"
+    }
+  ],
+  "extends": "../../tsconfig.base.json"
+}
