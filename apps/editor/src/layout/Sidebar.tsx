@@ -19,38 +19,38 @@ import TextContent from './sidebar/TextContent';
 import UploadContent from './sidebar/UploadContent';
 
 const tabs = [
-  {
-    name: 'Template',
-    icon: <LayoutIcon />,
-  },
+  // {
+  //   name: 'Template',
+  //   icon: <LayoutIcon />,
+  // },
   {
     name: 'Text',
     icon: <TextTIcon />,
   },
-  {
-    name: 'Shape',
-    icon: <SquareIcon />,
-  },
-  {
-    name: 'Frame',
-    icon: <FrameCornersIcon />,
-  },
-  {
-    name: 'Image',
-    icon: <ImageIcon />,
-  },
-  {
-    name: 'Graphic',
-    icon: <PiggyBankIcon />,
-  },
-  {
-    name: 'Widgets',
-    icon: <BrowserIcon />,
-  },
-  {
-    name: 'Upload',
-    icon: <UploadIcon />,
-  },
+  // {
+  //   name: 'Shape',
+  //   icon: <SquareIcon />,
+  // },
+  // {
+  //   name: 'Frame',
+  //   icon: <FrameCornersIcon />,
+  // },
+  // {
+  //   name: 'Image',
+  //   icon: <ImageIcon />,
+  // },
+  // {
+  //   name: 'Graphic',
+  //   icon: <PiggyBankIcon />,
+  // },
+  // {
+  //   name: 'Widgets',
+  //   icon: <BrowserIcon />,
+  // },
+  // {
+  //   name: 'Upload',
+  //   icon: <UploadIcon />,
+  // },
 ];
 const Sidebar = () => {
   const { actions } = useEditor();

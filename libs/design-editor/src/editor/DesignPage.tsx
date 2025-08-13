@@ -51,11 +51,7 @@ import LayerBorderBox from '../layers/core/LayerBorderBox';
 import PageElement from '../layers/core/PageElement';
 import { useDisabledFeatures } from '../layers/hooks/useDisabledFeatures';
 import { LayerDataRef } from '../types';
-import {
-  getRandomId,
-  isImageLayer,
-  isTextLayer,
-} from '../ultils/layer/layers';
+import { getRandomId, isImageLayer, isTextLayer } from '../ultils/layer/layers';
 import { EditorContext } from './EditorContext';
 
 export interface PageProps {
@@ -265,7 +261,7 @@ const DesignPage: ForwardRefRenderFunction<HTMLDivElement, PageProps> = (
         !isImageLayer(selectedLayers[0]);
 
       const whenImageLayerLocked =
-        (isImageLayer(selectedLayers[0])) &&
+        isImageLayer(selectedLayers[0]) &&
         !['top', 'left', 'right', 'bottom'].includes(direction) &&
         !useShift;
 
@@ -357,9 +353,9 @@ const DesignPage: ForwardRefRenderFunction<HTMLDivElement, PageProps> = (
         selectedLayers.length === 1 && isImageLayer(selectedLayers[0]);
 
       return (
-        !(data.shiftKey && (isSelectedImage)) ||
+        !(data.shiftKey && isSelectedImage) ||
         selectedLayerIds.length > 1 ||
-        ((isSelectedImage) &&
+        (isSelectedImage &&
           !data.shiftKey &&
           !['top', 'left', 'right', 'bottom'].includes(data.direction))
       );

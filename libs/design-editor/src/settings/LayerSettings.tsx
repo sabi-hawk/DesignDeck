@@ -162,7 +162,11 @@ const LayerSettings = () => {
         justifyContent: 'space-between',
         fontSize: 14,
         fontWeight: 600,
-        padding: '0 8px',
+        padding: '8px 16px',
+        background: 'linear-gradient(135deg, #f8f9ff 0%, #f0f4ff 100%)',
+        borderBottom: '1px solid rgba(0, 0, 0, 0.04)',
+        boxShadow: '0 1px 3px rgba(0, 0, 0, 0.04)',
+        backdropFilter: 'blur(4px)',
       }}
     >
       <div

@@ -102,7 +102,8 @@ const TextContent: FC<{ onClose: () => void }> = ({ onClose }) => {
           <XIcon />
         </div>
       </div>
-      <div
+      {/* TODO: Uncomment this */}
+      {/* <div
         css={{ flexDirection: 'column', overflowY: 'auto', display: 'flex' }}
       >
         <div
@@ -201,7 +202,7 @@ const TextContent: FC<{ onClose: () => void }> = ({ onClose }) => {
             </div>
           ))}
         </div>
-      </div>
+      </div> */}
     </div>
   );
 };

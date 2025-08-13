@@ -124,7 +124,7 @@ const CommonSettings = () => {
           display: 'grid',
           alignItems: 'center',
           gridAutoFlow: 'column',
-          gridGap: 8,
+          gridGap: 12,
         }}
       >
         <SettingButton onClick={() => actions.setSidebar('LAYER_MANAGEMENT')}>
@@ -140,9 +140,11 @@ const CommonSettings = () => {
             <Fragment>
               <div
                 css={{
-                  height: 24,
-                  width: `1px`,
-                  background: 'rgba(57,76,96,.15)',
+                  height: 28,
+                  width: `2px`,
+                  background:
+                    'linear-gradient(180deg, transparent 0%, rgba(102, 126, 234, 0.3) 20%, rgba(118, 75, 162, 0.3) 80%, transparent 100%)',
+                  borderRadius: '1px',
                 }}
               />
               <SettingButton
@@ -175,17 +177,20 @@ const CommonSettings = () => {
           <Fragment>
             <div
               css={{
-                height: 24,
-                width: `1px`,
-                background: 'rgba(57,76,96,.15)',
+                height: 28,
+                width: `2px`,
+                background:
+                  'linear-gradient(180deg, transparent 0%, rgba(102, 126, 234, 0.3) 20%, rgba(118, 75, 162, 0.3) 80%, transparent 100%)',
+                borderRadius: '1px',
               }}
             />
-            <SettingButton
+            {/* Uncomment this */}
+            {/* <SettingButton
               ref={resizeButtonRef}
               onClick={() => setOpenResizeSetting(true)}
             >
               <span css={{ padding: '0 4px' }}>Resize</span>
-            </SettingButton>
+            </SettingButton> */}
           </Fragment>
         )}
         <Popover
