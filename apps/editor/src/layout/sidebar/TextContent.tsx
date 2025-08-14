@@ -1,35 +1,16 @@
 import XIcon from '@duyank/icons/regular/X';
 import { LayerId, SerializedLayers } from '@lidojs/design-core';
 import { useEditor } from '@lidojs/design-editor';
-import axios from 'axios';
-import React, { FC, useState } from 'react';
+import React, { FC } from 'react';
 import { isMobile } from 'react-device-detect';
-import { useAsync } from 'react-use';
 import {
   addABodyText,
   addAHeading,
   addASubheading,
 } from '../../constant/text-effects';
-import { getThumbnail } from '../../utils/thumbnail';
-
-interface Text {
-  img: string;
-  elements: {
-    rootId: LayerId;
-    layers: SerializedLayers;
-  };
-}
 
 const TextContent: FC<{ onClose: () => void }> = ({ onClose }) => {
   const { actions } = useEditor();
-  const [texts, setTexts] = useState<Text[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useAsync(async () => {
-    const response = await axios.get<Text[]>('/texts');
-    setTexts(response.data);
-    setIsLoading(false);
-  }, []);
 
   const handleAddText = (data: {
     rootId: LayerId;
@@ -102,8 +83,7 @@ const TextContent: FC<{ onClose: () => void }> = ({ onClose }) => {
           <XIcon />
         </div>
       </div>
-      {/* TODO: Uncomment this */}
-      {/* <div
+      <div
         css={{ flexDirection: 'column', overflowY: 'auto', display: 'flex' }}
       >
         <div
@@ -173,36 +153,8 @@ const TextContent: FC<{ onClose: () => void }> = ({ onClose }) => {
             gridGap: 8,
             padding: '16px',
           }}
-        >
-          {isLoading && <div>Loading...</div>}
-          {texts.map(({ img, elements }, idx) => (
-            <div
-              key={idx}
-              css={{
-                cursor: 'pointer',
-                position: 'relative',
-                paddingBottom: '100%',
-                width: '100%',
-                '-webkit-user-drag': 'element',
-              }}
-              onClick={() => handleAddText(elements)}
-              onDragStart={(e) => handleDrag(e, elements)}
-            >
-              <img
-                css={{
-                  position: 'absolute',
-                  top: 0,
-                  left: 0,
-                  height: '100%',
-                  width: '100%',
-                  objectFit: 'cover',
-                }}
-                src={getThumbnail(img)}
-              />
-            </div>
-          ))}
-        </div>
-      </div> */}
+        ></div>
+      </div>
     </div>
   );
 };

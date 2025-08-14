@@ -92,7 +92,7 @@ interface TextSettingsProps {
 
 const fontSizeList = [
   6, 8, 10, 12, 14, 16, 18, 21, 24, 28, 32, 36, 42, 48, 56, 64, 72, 80, 88, 96,
-  104, 120, 144,
+  104, 120,
 ];
 const TextSettings: FC<TextSettingsProps> = ({ layers }) => {
   const fontSizeRef = useRef<HTMLDivElement>(null);
@@ -1363,6 +1363,7 @@ const TextSettings: FC<TextSettingsProps> = ({ layers }) => {
           display: 'flex',
           justifyContent: 'center',
           fontSize: 24,
+          cursor: 'pointer',
         }}
         onClick={() => actions.setSidebar('CHOOSING_COLOR')}
       >
@@ -1404,14 +1405,14 @@ const TextSettings: FC<TextSettingsProps> = ({ layers }) => {
       >
         <TextBBoldIcon />
       </SettingButton>
-      <SettingButton
+      {/* <SettingButton
         css={{ fontSize: 24 }}
         disabled={!fontStyles(fontFamily).includes('Italic')}
         isActive={isItalic}
         onClick={() => toggleStyle('ITALIC')}
       >
         <TextItalicIcon />
-      </SettingButton>
+      </SettingButton> */}
       <SettingButton
         css={{ fontSize: 24 }}
         isActive={isUnderline}
@@ -1454,8 +1455,8 @@ const TextSettings: FC<TextSettingsProps> = ({ layers }) => {
       >
         <TextAlignJustifyIcon />
       </SettingButton>
-
-      <div
+      {/* TODO: Uncomment this */}
+      {/* <div
         css={{ height: 24, width: `1px`, background: 'rgba(57,76,96,.15)' }}
       />
       <SettingButton
@@ -1523,7 +1524,7 @@ const TextSettings: FC<TextSettingsProps> = ({ layers }) => {
           selected={fontFamily}
           onChangeFontFamily={applyFont}
         />
-      )}
+      )} */}
 
       {sidebar === 'CHOOSING_COLOR' && (
         <ColorSidebar

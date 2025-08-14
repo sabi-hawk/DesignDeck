@@ -1,11 +1,11 @@
-import BrowserIcon from '@duyank/icons/regular/Browser';
-import FrameCornersIcon from '@duyank/icons/regular/FrameCorners';
-import ImageIcon from '@duyank/icons/regular/Image';
-import LayoutIcon from '@duyank/icons/regular/Layout';
-import PiggyBankIcon from '@duyank/icons/regular/PiggyBank';
-import SquareIcon from '@duyank/icons/regular/Square';
+// import BrowserIcon from '@duyank/icons/regular/Browser';
+// import FrameCornersIcon from '@duyank/icons/regular/FrameCorners';
+// import ImageIcon from '@duyank/icons/regular/Image';
+// import LayoutIcon from '@duyank/icons/regular/Layout';
+// import PiggyBankIcon from '@duyank/icons/regular/PiggyBank';
+// import SquareIcon from '@duyank/icons/regular/Square';
 import TextTIcon from '@duyank/icons/regular/TextT';
-import UploadIcon from '@duyank/icons/regular/Upload';
+// import UploadIcon from '@duyank/icons/regular/Upload';
 import { useEditor } from '@lidojs/design-editor';
 import React, { useState } from 'react';
 import SidebarTab from '../tabs/TabList';
@@ -61,8 +61,12 @@ const Sidebar = () => {
         display: 'flex',
         zIndex: 2,
         position: 'relative',
-        backgroundColor: '#ffffff',
-        borderRight: '1px solid rgba(217, 219, 228, 0.6)',
+        background:
+          'linear-gradient(180deg, #f8f9ff 0%, #f0f4ff 50%, #e8efff 100%)',
+        borderRight: '1px solid rgba(102, 126, 234, 0.15)',
+        boxShadow:
+          '2px 0 12px rgba(102, 126, 234, 0.08), inset -1px 0 0 rgba(255, 255, 255, 0.5)',
+        backdropFilter: 'blur(8px)',
       }}
     >
       <div

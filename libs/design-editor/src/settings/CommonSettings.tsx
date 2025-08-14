@@ -138,7 +138,8 @@ const CommonSettings = () => {
             (isRootLayer(selectedLayers[0]) &&
               selectedLayers[0].data.props.image)) && (
             <Fragment>
-              <div
+              {/* TODO: Uncomment this */}
+              {/* <div
                 css={{
                   height: 28,
                   width: `2px`,
@@ -170,7 +171,7 @@ const CommonSettings = () => {
                     onChange={updateTransparency}
                   />
                 </div>
-              </Popover>
+              </Popover> */}
             </Fragment>
           )}
         {!isPageLocked && (
@@ -185,12 +186,12 @@ const CommonSettings = () => {
               }}
             />
             {/* Uncomment this */}
-            {/* <SettingButton
+            <SettingButton
               ref={resizeButtonRef}
               onClick={() => setOpenResizeSetting(true)}
             >
               <span css={{ padding: '0 4px' }}>Resize</span>
-            </SettingButton> */}
+            </SettingButton>
           </Fragment>
         )}
         <Popover

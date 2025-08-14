@@ -15,16 +15,19 @@ const SidebarTab: FC<SidebarTabProps> = ({ tabs, active, onChange }) => {
   return (
     <div
       css={{
-        color: '#5E6278',
-        borderRight: '1px solid rgba(217, 219, 228, 0.6)',
+        color: '#4a5568',
+        borderRight: '1px solid rgba(102, 126, 234, 0.12)',
+        background: 'transparent',
         '@media (max-width: 900px)': {
           position: 'fixed',
           bottom: 0,
           left: 0,
           right: 0,
-          background: '#fff',
+          background: 'linear-gradient(180deg, #f8f9ff 0%, #f0f4ff 100%)',
           display: 'flex',
           justifyContent: 'center',
+          borderTop: '1px solid rgba(102, 126, 234, 0.15)',
+          boxShadow: '0 -4px 12px rgba(102, 126, 234, 0.08)',
         },
       }}
     >
@@ -40,63 +43,49 @@ const SidebarTab: FC<SidebarTabProps> = ({ tabs, active, onChange }) => {
         {activeIdx >= 0 && (
           <div
             css={{
-              background: '#fff',
-              width: 72,
-              height: 72,
+              background:
+                'linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%)',
+              width: 68,
+              height: 68,
               position: 'absolute',
-              left: 0,
-              top: 0,
+              left: 2,
+              top: 2,
               transform: `translateY(${activeIdx * 100}%)`,
+              borderRadius: '12px',
+              border: '1px solid rgba(102, 126, 234, 0.2)',
+              boxShadow:
+                '0 2px 8px rgba(102, 126, 234, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.3)',
+              transition: 'all 0.3s ease',
               '@media (max-width: 900px)': {
                 display: 'none',
               },
             }}
-          >
-            <div
-              css={{
-                position: 'absolute',
-                height: 8,
-                width: 8,
-                right: 0,
-                top: -8,
-                background:
-                  'radial-gradient(circle closest-side,transparent 0,transparent 50%,#fff 0) 200% 200% /400% 400%',
-              }}
-            />
-            <div
-              css={{
-                position: 'absolute',
-                height: 8,
-                width: 8,
-                right: 0,
-                bottom: -8,
-                transform: 'scaleY(-1)',
-                background:
-                  'radial-gradient(circle closest-side,transparent 0,transparent 50%,#fff 0) 200% 200% /400% 400%',
-              }}
-            />
-          </div>
+          />
         )}
         {tabs.map((tab, idx) => (
           <div
             key={idx}
             css={{
-              color: idx === activeIdx ? '#009ef7' : undefined,
-              borderBottomRightRadius: idx === activeIdx - 1 ? 8 : 0,
-              borderTopRightRadius: idx === activeIdx + 1 ? 8 : 0,
+              color: idx === activeIdx ? '#667eea' : '#6b7280',
               position: 'relative',
               display: 'flex',
               flexDirection: 'column',
               justifyContent: 'center',
               alignItems: 'center',
-              padding: '0 2px',
+              padding: '8px',
               height: 72,
               width: 72,
               minWidth: 72,
               minHeight: 72,
               cursor: 'pointer',
+              borderRadius: '12px',
+              transition: 'all 0.2s ease',
+              zIndex: 1,
+              fontWeight: idx === activeIdx ? 600 : 500,
               ':hover': {
-                color: '#009ef7',
+                color: '#667eea',
+                background: 'rgba(102, 126, 234, 0.05)',
+                transform: 'translateY(-1px)',
               },
             }}
             onClick={(e) => onChange(e, tab.name)}
@@ -109,11 +98,17 @@ const SidebarTab: FC<SidebarTabProps> = ({ tabs, active, onChange }) => {
               <div
                 css={{
                   position: 'absolute',
-                  background: '#fdebcf',
-                  borderRadius: 9999,
-                  fontSize: 9,
-                  padding: '2px 4px',
-                  top: 0,
+                  background:
+                    'linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%)',
+                  color: '#ffffff',
+                  borderRadius: 12,
+                  fontSize: 8,
+                  padding: '2px 6px',
+                  top: 6,
+                  right: 6,
+                  fontWeight: 700,
+                  boxShadow: '0 2px 4px rgba(255, 107, 107, 0.3)',
+                  letterSpacing: '0.5px',
                 }}
               >
                 BETA
