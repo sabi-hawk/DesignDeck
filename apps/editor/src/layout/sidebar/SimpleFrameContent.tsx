@@ -45,7 +45,7 @@ const SimpleFrameContent: FC<{ onClose: () => void }> = ({ onClose }) => {
             textAlign: 'center',
           }}
         >
-          SimpleFrame
+          Advanced Frame
         </p>
         
         {/* Close button */}
@@ -117,7 +117,7 @@ const SimpleFrameContent: FC<{ onClose: () => void }> = ({ onClose }) => {
               marginBottom: 8,
             }}
           >
-            Simple Frame
+            Advanced Frame
           </div>
           <div
             css={{
@@ -126,7 +126,7 @@ const SimpleFrameContent: FC<{ onClose: () => void }> = ({ onClose }) => {
               lineHeight: 1.5,
             }}
           >
-            A transparent frame with red border for organizing content. Features include:
+            A sophisticated content organization system with intelligent grouping capabilities. Features include:
           </div>
           <div
             css={{
@@ -162,7 +162,7 @@ const SimpleFrameContent: FC<{ onClose: () => void }> = ({ onClose }) => {
               marginBottom: 8,
             }}
           >
-            🔒 Lock Functionality
+            🔒 Intelligent Grouping System
           </div>
           <div
             css={{
@@ -172,7 +172,7 @@ const SimpleFrameContent: FC<{ onClose: () => void }> = ({ onClose }) => {
               marginBottom: 12,
             }}
           >
-            Click the lock icon to group the frame with all content inside. When locked, the entire frame and its contents move together as one unit. Click again to unlock and allow individual movement.
+            Advanced content management with smart grouping technology. Lock the frame to create unified content groups that move as cohesive units, or unlock for granular control over individual elements.
           </div>
         </div>
 
@@ -193,7 +193,7 @@ const SimpleFrameContent: FC<{ onClose: () => void }> = ({ onClose }) => {
               marginBottom: 8,
             }}
           >
-            📷 Camera Icon
+            📷 Advanced Capture System
           </div>
           <div
             css={{
@@ -203,7 +203,7 @@ const SimpleFrameContent: FC<{ onClose: () => void }> = ({ onClose }) => {
               marginBottom: 12,
             }}
           >
-            Located at the top-left of the frame. This icon is reserved for future recording functionality and screen capture features.
+            Integrated capture technology positioned at the top-left for future advanced recording, screen capture, and content preservation features.
           </div>
         </div>
 
@@ -223,7 +223,7 @@ const SimpleFrameContent: FC<{ onClose: () => void }> = ({ onClose }) => {
               marginBottom: 8,
             }}
           >
-            📏 Dimensions Display
+            📏 Real-Time Metrics Display
           </div>
           <div
             css={{
@@ -232,7 +232,7 @@ const SimpleFrameContent: FC<{ onClose: () => void }> = ({ onClose }) => {
               lineHeight: 1.5,
             }}
           >
-            Shows current frame dimensions in pixels at the bottom-right corner. Updates in real-time as you resize the frame.
+            Dynamic dimension monitoring system providing real-time pixel-perfect measurements at the bottom-right corner. Updates instantaneously during frame manipulation operations.
           </div>
         </div>
       </div>
