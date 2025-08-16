@@ -28,10 +28,10 @@ const tabs = [
     name: 'Text',
     icon: <TextTIcon />,
   },
-  {
-    name: 'Frame',
-    icon: <FrameCornersIcon />,
-  },
+  // {
+  //   name: 'Frame',
+  //   icon: <FrameCornersIcon />,
+  // },
   {
     name: 'Simple Frame',
     icon: <FrameCornersIcon />,
