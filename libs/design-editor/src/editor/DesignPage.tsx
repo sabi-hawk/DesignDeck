@@ -1,11 +1,12 @@
-import DuplicateIcon from '@duyank/icons/external/Duplicate';
-import CaretDownIcon from '@duyank/icons/regular/CaretDown';
-import CaretUpIcon from '@duyank/icons/regular/CaretUp';
-import DownloadIcon from '@duyank/icons/regular/Download';
-import FilePlusIcon from '@duyank/icons/regular/FilePlus';
-import LockKeyIcon from '@duyank/icons/regular/LockKey';
-import LockKeyOpenIcon from '@duyank/icons/regular/LockKeyOpen';
-import TrashIcon from '@duyank/icons/regular/Trash';
+// Commented out unused icon imports since controls are disabled
+// import DuplicateIcon from '@duyank/icons/external/Duplicate';
+// import CaretDownIcon from '@duyank/icons/regular/CaretDown';
+// import CaretUpIcon from '@duyank/icons/regular/CaretUp';
+// import DownloadIcon from '@duyank/icons/regular/Download';
+// import FilePlusIcon from '@duyank/icons/regular/FilePlus';
+// import LockKeyIcon from '@duyank/icons/regular/LockKey';
+// import LockKeyOpenIcon from '@duyank/icons/regular/LockKeyOpen';
+// import TrashIcon from '@duyank/icons/regular/Trash';
 import {
   autoCorrectDegree,
   boundingRect,
@@ -91,8 +92,7 @@ const DesignPage: ForwardRefRenderFunction<HTMLDivElement, PageProps> = (
     controlBox,
     imageEditor,
     textEditor,
-    totalPages,
-    isLocked,
+    // totalPages and isLocked removed since controls are commented out
   } = useEditor((state, query) => {
     const hoverLayerId = state.hoveredLayer[pageIndex];
     return {
@@ -100,16 +100,13 @@ const DesignPage: ForwardRefRenderFunction<HTMLDivElement, PageProps> = (
       controlBox: state.controlBox,
       pageSize: query.getPageSize(),
       scale: state.scale,
-      isLocked:
-        state.pages[pageIndex] &&
-        state.pages[pageIndex].layers.ROOT.data.locked,
+      // isLocked and totalPages removed since controls are commented out
       hoveredLayer: hoverLayerId
         ? state.pages[pageIndex].layers[hoverLayerId]
         : null,
       selectStatus: state.selectData.status,
       imageEditor: state.imageEditor,
       textEditor: state.textEditor,
-      totalPages: state.pages.length,
     };
   });
   const openContextMenu = (e: React.MouseEvent) => {
@@ -606,7 +603,8 @@ const DesignPage: ForwardRefRenderFunction<HTMLDivElement, PageProps> = (
           },
         }}
       >
-        <div css={{ flexGrow: 1 }}>Page {pageIndex + 1}</div>
+        <div css={{ flexGrow: 1 }}>Canvas (10,000 x 10,000)</div>
+        {/* Commented out right-side controls
         <div
           css={{
             display: 'flex',
@@ -763,6 +761,7 @@ const DesignPage: ForwardRefRenderFunction<HTMLDivElement, PageProps> = (
             <FilePlusIcon />
           </div>
         </div>
+        */}
       </div>
       <div
         ref={ref}

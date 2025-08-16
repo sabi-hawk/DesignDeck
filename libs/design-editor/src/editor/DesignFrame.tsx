@@ -1,5 +1,5 @@
-import SquaresFourBoldIcon from '@duyank/icons/bold/SquaresFourBold';
-import PlusIcon from '@duyank/icons/regular/Plus';
+// SquaresFourBoldIcon import removed since PageSettings functionality is commented out
+// PlusIcon import removed since Add Page functionality is commented out
 import {
   getTransformStyle,
   isElementInViewport,
@@ -18,7 +18,7 @@ import React, {
   useContext,
   useEffect,
   useRef,
-  useState,
+  // useState removed since PageSettings state is no longer needed
 } from 'react';
 import { isMobile } from 'react-device-detect';
 import { useEditor, useSelectedLayers } from '../hooks';
@@ -31,7 +31,8 @@ import { useZoomPage } from '../hooks/useZoomPage';
 import LayerContextMenu from '../layers/core/context-menu/LayerContextMenu';
 import SelectionBox from '../layers/core/SelectionBox';
 import { useUsedFont } from '../layers/hooks/useUsedFont';
-import PageSettings from '../settings/PageSettings';
+// PageSettings import removed since it's no longer needed for single canvas approach
+// import PageSettings from '../settings/PageSettings';
 import DesignPage from './DesignPage';
 import { DraggingLayer } from './dragging/DraggingLayer';
 import { EditorContext } from './EditorContext';
@@ -51,7 +52,8 @@ const DesignFrame: FC<DesignFrameProps> = ({ data }) => {
   const {
     config: { assetPath },
   } = useContext(EditorContext);
-  const [showPageSettings, setShowPageSettings] = useState(false);
+  // PageSettings state removed since it's no longer needed for single canvas approach
+  // const [showPageSettings, setShowPageSettings] = useState(false);
   useShortcut(frameRef);
   const {
     actions,
@@ -395,6 +397,7 @@ const DesignFrame: FC<DesignFrameProps> = ({ data }) => {
                     />
                   </div>
                 ))}
+                {/* Commented out Add Page functionality for single canvas approach
                 <div
                   css={{
                     marginTop: 20,
@@ -416,6 +419,7 @@ const DesignFrame: FC<DesignFrameProps> = ({ data }) => {
                 >
                   Add Page
                 </div>
+                */}
               </div>
               <div
                 css={{
@@ -436,6 +440,7 @@ const DesignFrame: FC<DesignFrameProps> = ({ data }) => {
             )}
           </div>
         </div>
+        {/* Commented out mobile Add Page button for single canvas approach
         <div
           css={{
             display: 'none',
@@ -461,6 +466,8 @@ const DesignFrame: FC<DesignFrameProps> = ({ data }) => {
         >
           <PlusIcon />
         </div>
+        */}
+        {/* PageSettings button removed since it's no longer needed for single canvas approach
         <div
           css={{
             display: 'none',
@@ -482,15 +489,16 @@ const DesignFrame: FC<DesignFrameProps> = ({ data }) => {
             },
           }}
           onClick={() => {
-            setShowPageSettings(true);
+            // setShowPageSettings(true);
           }}
         >
           <SquaresFourBoldIcon />
         </div>
+        */}
       </div>
-      {showPageSettings && (
+      {/* {showPageSettings && (
         <PageSettings onClose={() => setShowPageSettings(false)} />
-      )}
+      )} */}
       {dragNDrop.status && (
         <div
           ref={draggingItemRef}

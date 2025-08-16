@@ -27,7 +27,7 @@ const PageControl = () => {
       }}
     >
       <div css={{ flexGrow: 1 }}>
-        Page {activePage + 1} / {totalPages}
+        Canvas (10,000 x 10,000)
       </div>
       <div
         css={{

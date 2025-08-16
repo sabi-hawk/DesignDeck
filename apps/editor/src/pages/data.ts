@@ -5,7 +5,7 @@ export const data = [
       ROOT: {
         type: { resolvedName: 'RootLayer' },
         props: {
-          boxSize: { width: 1640, height: 924 },
+          boxSize: { width: 10000, height: 10000 },
           position: { x: 0, y: 0 },
           rotate: 0,
           color: 'rgb(255, 255, 255)',
