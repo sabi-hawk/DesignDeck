@@ -32,7 +32,7 @@ import {
 } from '@lidojs/design-utils';
 import { toPng } from 'html-to-image';
 import { cloneDeep, throttle } from 'lodash';
-import React, {
+import React,
   forwardRef,
   ForwardRefRenderFunction,
   Fragment,
@@ -52,7 +52,7 @@ import LayerBorderBox from '../layers/core/LayerBorderBox';
 import PageElement from '../layers/core/PageElement';
 import { useDisabledFeatures } from '../layers/hooks/useDisabledFeatures';
 import { LayerDataRef } from '../types';
-import { getRandomId, isImageLayer, isTextLayer } from '../ultils/layer/layers';
+import { getRandomId, isImageLayer, isSimpleFrameLayer, isTextLayer } from '../ultils/layer/layers';
 import { EditorContext } from './EditorContext';
 
 export interface PageProps {
@@ -348,6 +348,14 @@ const DesignPage: ForwardRefRenderFunction<HTMLDivElement, PageProps> = (
     lockAspect: (data) => {
       const isSelectedImage =
         selectedLayers.length === 1 && isImageLayer(selectedLayers[0]);
+      
+      const isSelectedSimpleFrame =
+        selectedLayers.length === 1 && isSimpleFrameLayer(selectedLayers[0]);
+
+      // Always lock aspect ratio for SimpleFrame layers
+      if (isSelectedSimpleFrame) {
+        return true;
+      }
 
       return (
         !(data.shiftKey && isSelectedImage) ||
@@ -852,7 +860,8 @@ const DesignPage: ForwardRefRenderFunction<HTMLDivElement, PageProps> = (
             ))}
           {!imageEditor &&
             hoveredLayer &&
-            !selectedLayerIds.includes(hoveredLayer.id) && (
+            !selectedLayerIds.includes(hoveredLayer.id) &&
+            (hoveredLayer.data.type as any) !== 'SimpleFrame' && (
               <LayerBorderBox
                 ref={(el) =>
                   el && (layerBorderRef.current[hoveredLayer.id] = el)

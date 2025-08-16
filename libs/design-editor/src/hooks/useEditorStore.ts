@@ -72,6 +72,7 @@ const autoHistoryForActions: string[] = [
   'addLayer',
   'addImageLayer',
   'addFrameLayer',
+  'addSimpleFrameLayer',
   'addLayerTree',
   'deleteLayer',
 ];

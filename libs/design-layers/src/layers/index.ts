@@ -1,6 +1,7 @@
 export * from './shape';
 export * from './common';
 export * from './FrameContent';
+export * from './SimpleFrameContent';
 export * from './TextContent';
 export * from './ImageContent';
 export * from './ShapeContent';

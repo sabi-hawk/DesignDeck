@@ -84,6 +84,10 @@ export const isFrameLayer = <P extends LayerComponentProps>(
   layer: Layer<FrameLayerProps> | Layer<P>
 ): layer is Layer<FrameLayerProps> => layer.data.type === 'Frame';
 
+export const isSimpleFrameLayer = <P extends LayerComponentProps>(
+  layer: Layer<P>
+): layer is Layer<P> => layer.data.type === 'SimpleFrame';
+
 export const isSvgLayer = <P extends LayerComponentProps>(
   layer: Layer<SvgLayerProps> | Layer<P>
 ): layer is Layer<SvgLayerProps> => layer.data.type === 'Svg';

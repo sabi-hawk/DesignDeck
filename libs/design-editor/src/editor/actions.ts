@@ -1190,6 +1190,56 @@ export const ActionMethods = (state: EditorState, query: CoreEditorQuery) => {
       state.pages[state.activePage].layers[parentId].data.child.push(layerId);
       this.selectLayers(state.activePage, layerId);
     },
+    addSimpleFrameLayer(
+      parentId: LayerId = 'ROOT'
+    ) {
+      const layerId = getRandomId();
+      const pageSize = query.getPageSize();
+      
+      // Create a simple frame with 16:9 aspect ratio (1920x1080)
+      const frameWidth = 1920;
+      const frameHeight = 1080;
+      
+      // Scale the frame to fit nicely on the page
+      const scale = Math.min(
+        (pageSize.width * 0.4) / frameWidth,
+        (pageSize.height * 0.4) / frameHeight
+      );
+      
+      const dl = deserializeLayer({
+        type: {
+          resolvedName: 'SimpleFrameLayer',
+        },
+        props: {
+          position: {
+            x: 0,
+            y: 0,
+          },
+          boxSize: {
+            width: frameWidth * scale,
+            height: frameHeight * scale,
+          },
+          rotate: 0,
+          scale: 1,
+        },
+        locked: false,
+        parent: parentId,
+        child: [],
+      });
+      
+      state.pages[state.activePage].layers[layerId] = {
+        id: layerId,
+        data: mergeWithoutArray(dl, {
+          props: {
+            position: getAddedPosition(
+              getPositionWhenLayerCenter(query.getPageSize(), dl.props.boxSize)
+            ),
+          },
+        }),
+      };
+      state.pages[state.activePage].layers[parentId].data.child.push(layerId);
+      this.selectLayers(state.activePage, layerId);
+    },
     addVideoLayer(
       { url }: { url: string },
       boxSize: BoxSize,

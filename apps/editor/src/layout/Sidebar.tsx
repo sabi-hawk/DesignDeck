@@ -1,9 +1,9 @@
 // import BrowserIcon from '@duyank/icons/regular/Browser';
-// import FrameCornersIcon from '@duyank/icons/regular/FrameCorners';
 // import ImageIcon from '@duyank/icons/regular/Image';
 // import LayoutIcon from '@duyank/icons/regular/Layout';
 // import PiggyBankIcon from '@duyank/icons/regular/PiggyBank';
 // import SquareIcon from '@duyank/icons/regular/Square';
+import FrameCornersIcon from '@duyank/icons/regular/FrameCorners';
 import TextTIcon from '@duyank/icons/regular/TextT';
 // import UploadIcon from '@duyank/icons/regular/Upload';
 import { useEditor } from '@lidojs/design-editor';
@@ -14,6 +14,7 @@ import GraphicContent from './sidebar/GraphicContent';
 import IframeContent from './sidebar/IframeContent';
 import ImageContent from './sidebar/ImageContent';
 import ShapeContent from './sidebar/ShapeContent';
+import SimpleFrameContent from './sidebar/SimpleFrameContent';
 import TemplateContent from './sidebar/TemplateContent';
 import TextContent from './sidebar/TextContent';
 import UploadContent from './sidebar/UploadContent';
@@ -27,14 +28,14 @@ const tabs = [
     name: 'Text',
     icon: <TextTIcon />,
   },
-  // {
-  //   name: 'Shape',
-  //   icon: <SquareIcon />,
-  // },
-  // {
-  //   name: 'Frame',
-  //   icon: <FrameCornersIcon />,
-  // },
+  {
+    name: 'Frame',
+    icon: <FrameCornersIcon />,
+  },
+  {
+    name: 'Simple Frame',
+    icon: <FrameCornersIcon />,
+  },
   // {
   //   name: 'Image',
   //   icon: <ImageIcon />,
@@ -114,6 +115,14 @@ const Sidebar = () => {
             )}
             {tab === 'Frame' && (
               <FrameContent
+                onClose={() => {
+                  setTab(null);
+                  actions.setSidebar();
+                }}
+              />
+            )}
+            {tab === 'Simple Frame' && (
+              <SimpleFrameContent
                 onClose={() => {
                   setTab(null);
                   actions.setSidebar();
