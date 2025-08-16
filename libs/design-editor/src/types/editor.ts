@@ -62,6 +62,8 @@ export interface EditorState {
   sidebar: SidebarType | null;
   sidebarParams: Record<string, unknown>;
   fontList: FontData[];
+  // Animation tracking
+  animatedLayers: Record<number, LayerId[]>;
   resizeData: {
     status: boolean;
     layerIds?: LayerId[];

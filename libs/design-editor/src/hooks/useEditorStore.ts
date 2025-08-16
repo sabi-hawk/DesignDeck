@@ -247,6 +247,7 @@ export const useEditorStore = () => {
       horizontal: [],
     },
     sidebar: null,
+    animatedLayers: {},
     resizeData: {
       status: false,
     },

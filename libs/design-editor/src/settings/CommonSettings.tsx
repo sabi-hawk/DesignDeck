@@ -17,7 +17,7 @@ const CommonSettings = () => {
   const [openResizeSetting, setOpenResizeSetting] = useState(false);
   const [lockSiteAspect, setLockSizeAspect] = useState(false);
   const { selectedLayers, selectedLayerIds } = useSelectedLayers();
-  const { actions, activePage, sidebar, pageSize, isPageLocked } = useEditor(
+  const { actions, activePage, sidebar, pageSize, isPageLocked, animatedLayers } = useEditor(
     (state, query) => ({
       activePage: state.activePage,
       sidebar: state.sidebar,
@@ -25,6 +25,7 @@ const CommonSettings = () => {
       isPageLocked:
         state.pages[state.activePage] &&
         state.pages[state.activePage].layers.ROOT.data.locked,
+      animatedLayers: state.animatedLayers[state.activePage] || [],
     })
   );
   const [size, setSize] = useState(pageSize);
@@ -214,24 +215,47 @@ const CommonSettings = () => {
       >
         <SettingButton
           css={{
-            background: selectedLayerIds.length > 0 ? '#667eea' : '#e2e8f0',
+            background: selectedLayerIds.length > 0 
+              ? (selectedLayerIds.some(id => animatedLayers.includes(id)) 
+                  ? '#10b981' // Green for animated
+                  : '#667eea'  // Blue for not animated
+                )
+              : '#e2e8f0',
             color: selectedLayerIds.length > 0 ? 'white' : '#94a3b8',
             cursor: selectedLayerIds.length > 0 ? 'pointer' : 'not-allowed',
             ':hover': {
-              background: selectedLayerIds.length > 0 ? '#5a67d8' : '#e2e8f0',
+              background: selectedLayerIds.length > 0 
+                ? (selectedLayerIds.some(id => animatedLayers.includes(id))
+                    ? '#059669' // Darker green for animated
+                    : '#5a67d8'  // Darker blue for not animated
+                  )
+                : '#e2e8f0',
             },
           }}
           onClick={() => {
             if (selectedLayerIds.length > 0) {
-              // Show timeline
-              if ((window as any).showTimeline) {
-                (window as any).showTimeline();
+              // Check if any selected elements are already animated
+              const hasAnimatedElements = selectedLayerIds.some(id => 
+                animatedLayers.includes(id)
+              );
+              
+              if (hasAnimatedElements) {
+                // If elements are animated, unmark them
+                actions.unmarkLayerAsAnimated(activePage, selectedLayerIds);
+              } else {
+                // If elements are not animated, mark them and show timeline
+                actions.markLayerAsAnimated(activePage, selectedLayerIds);
+                if ((window as any).showTimeline) {
+                  (window as any).showTimeline();
+                }
               }
             }
           }}
         >
           <span css={{ padding: '0 8px', fontWeight: 600 }}>
-            Animate Element
+            {selectedLayerIds.length > 0 && selectedLayerIds.some(id => 
+              animatedLayers.includes(id)
+            ) ? 'Animated' : 'Animate Element'}
           </span>
         </SettingButton>
       </div>

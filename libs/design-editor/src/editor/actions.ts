@@ -128,6 +128,26 @@ export const ActionMethods = (state: EditorState, query: CoreEditorQuery) => {
     return { x: position.x, y: position.y };
   };
 
+  const markLayerAsAnimated = (pageIndex: number, layerIds: LayerId[]) => {
+    if (!state.animatedLayers[pageIndex]) {
+      state.animatedLayers[pageIndex] = [];
+    }
+    
+    layerIds.forEach(layerId => {
+      if (!state.animatedLayers[pageIndex].includes(layerId)) {
+        state.animatedLayers[pageIndex].push(layerId);
+      }
+    });
+  };
+
+  const unmarkLayerAsAnimated = (pageIndex: number, layerIds: LayerId[]) => {
+    if (state.animatedLayers[pageIndex]) {
+      state.animatedLayers[pageIndex] = state.animatedLayers[pageIndex].filter(
+        id => !layerIds.includes(id)
+      );
+    }
+  };
+
   return {
     setProp<T extends LayerComponentProps>(
       pageIndex: number,
@@ -1503,5 +1523,7 @@ export const ActionMethods = (state: EditorState, query: CoreEditorQuery) => {
 
       state.imageEditor = undefined;
     },
+    markLayerAsAnimated,
+    unmarkLayerAsAnimated,
   };
 };
