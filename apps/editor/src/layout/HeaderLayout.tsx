@@ -207,7 +207,7 @@ const HeaderLayout: ForwardRefRenderFunction<
         }}
       >
         {/* Export All Pages Button */}
-        <button
+        {/* <button
           css={{
             display: 'flex',
             alignItems: 'center',
@@ -246,10 +246,10 @@ const HeaderLayout: ForwardRefRenderFunction<
           >
             Export
           </span>
-        </button>
+        </button> */}
 
         {/* Preview Button */}
-        <button
+        {/* <button
           css={{
             display: 'flex',
             alignItems: 'center',
@@ -287,7 +287,7 @@ const HeaderLayout: ForwardRefRenderFunction<
           >
             Preview
           </span>
-        </button>
+        </button> */}
       </div>
     </div>
   );
