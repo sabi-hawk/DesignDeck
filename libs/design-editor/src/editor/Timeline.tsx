@@ -45,8 +45,8 @@ const Timeline: FC<TimelineProps> = ({ isVisible, onToggle }) => {
           css={{
             position: 'fixed',
             bottom: 0,
-            left: '73px', // Start after the left sidebar
-            width: 'calc(100vw - 146px)', // Match the canvas width exactly
+            left: '433px', // Start from the very left edge
+            right: '0', // End exactly at the right sidebar boundary
             background: '#1a202c',
             borderTop: '2px solid #667eea',
             boxShadow: '0 -4px 20px rgba(0, 0, 0, 0.3)',
