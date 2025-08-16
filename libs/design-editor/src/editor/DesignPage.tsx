@@ -32,7 +32,7 @@ import {
 } from '@lidojs/design-utils';
 import { toPng } from 'html-to-image';
 import { cloneDeep, throttle } from 'lodash';
-import React,
+import React, {
   forwardRef,
   ForwardRefRenderFunction,
   Fragment,

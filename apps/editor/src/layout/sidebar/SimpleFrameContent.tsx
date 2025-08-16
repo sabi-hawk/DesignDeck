@@ -42,10 +42,13 @@ const SimpleFrameContent: FC<{ onClose: () => void }> = ({ onClose }) => {
             fontWeight: 600,
             color: '#181C32',
             flexGrow: 1,
+            textAlign: 'center',
           }}
         >
           SimpleFrame
         </p>
+        
+        {/* Close button */}
         <div
           css={{
             fontSize: 20,
@@ -56,6 +59,7 @@ const SimpleFrameContent: FC<{ onClose: () => void }> = ({ onClose }) => {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
+            marginLeft: '8px',
           }}
           onClick={onClose}
         >
@@ -99,7 +103,7 @@ const SimpleFrameContent: FC<{ onClose: () => void }> = ({ onClose }) => {
               Simple Frame
             </div>
             <div css={{ fontSize: '12px', opacity: 0.7 }}>
-              1920 × 1080 (16:9)
+              4000 × 2250 (16:9)
             </div>
           </div>
         </div>
