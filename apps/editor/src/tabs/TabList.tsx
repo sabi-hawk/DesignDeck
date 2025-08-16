@@ -98,9 +98,17 @@ const SidebarTab: FC<SidebarTabProps> = ({ tabs, active, onChange }) => {
               textAlign: 'center',
               maxWidth: '100%',
               wordBreak: 'break-word',
-              padding: '0 2px'
+              padding: '0 2px',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center'
             }}>
-              {tab.name}
+              {tab.name.split(' ').map((word, index) => (
+                <span key={index} css={{ textAlign: 'center' }}>
+                  {word}
+                </span>
+              ))}
             </span>
             {tab.isBeta && (
               <div

@@ -33,7 +33,7 @@ const tabs = [
     icon: <FrameCornersIcon />,
   },
   {
-    name: 'SimpleFrame',
+    name: 'Simple Frame',
     icon: <FrameCornersIcon />,
   },
   // {
@@ -121,7 +121,7 @@ const Sidebar = () => {
                 }}
               />
             )}
-            {tab === 'SimpleFrame' && (
+            {tab === 'Simple Frame' && (
               <SimpleFrameContent
                 onClose={() => {
                   setTab(null);

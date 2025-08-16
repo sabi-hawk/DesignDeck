@@ -21,13 +21,9 @@ export const SimpleFrameContent: FC<SimpleFrameContentProps> = ({
 
   // Check if nothing is selected and unlock if needed
   useEffect(() => {
-    console.log('Selection changed:', selectedLayerIds, 'Current lock state:', isLocked);
-    
-    // Also check the editor state directly
-    const currentSelectedLayers = editorState.selectedLayers[0] || [];
-    console.log('Direct editor state selection:', currentSelectedLayers);
-    
     // Check if selection is effectively empty (nothing or just ROOT)
+    const currentSelectedLayers = editorState.selectedLayers[0] || [];
+    
     const hasRealSelection = (selectedLayerIds.length === 0 || 
                              (selectedLayerIds.length === 1 && selectedLayerIds[0] === 'ROOT')) &&
                             (currentSelectedLayers.length === 0 || 
@@ -35,17 +31,14 @@ export const SimpleFrameContent: FC<SimpleFrameContentProps> = ({
     
     if (hasRealSelection) {
       // Nothing is selected (or just ROOT), so unlock the frame
-      console.log('Nothing selected (or just ROOT), unlocking frame');
       setIsLocked(false);
     } else if ((selectedLayerIds.length === 1 && selectedLayerIds[0] === layerId) || 
                (currentSelectedLayers.length === 1 && currentSelectedLayers[0] === layerId)) {
       // Only the frame itself is selected, so unlock
-      console.log('Only frame selected, unlocking frame');
       setIsLocked(false);
     } else if ((selectedLayerIds.length > 1 && selectedLayerIds.includes(layerId)) ||
                (currentSelectedLayers.length > 1 && currentSelectedLayers.includes(layerId))) {
       // Multiple layers selected including frame, keep it locked
-      console.log('Multiple layers selected including frame, keeping locked');
       // Don't change lock state
     }
     // If multiple layers are selected (including frame + contents), keep it locked
@@ -55,7 +48,6 @@ export const SimpleFrameContent: FC<SimpleFrameContentProps> = ({
   useEffect(() => {
     const checkLockState = () => {
       if (selectedLayerIds.length === 0 && isLocked) {
-        console.log('Periodic check: Nothing selected but locked, unlocking');
         setIsLocked(false);
       }
     };
@@ -118,15 +110,9 @@ export const SimpleFrameContent: FC<SimpleFrameContentProps> = ({
           layerBottom > frameTop
         ) {
           frameLayers.push(id);
-          console.log(`Layer ${id} is inside frame:`, {
-            layer: { left: layerLeft, top: layerTop, right: layerRight, bottom: layerBottom },
-            frame: { left: frameLeft, top: frameTop, right: frameRight, bottom: frameBottom }
-          });
         }
       });
 
-      console.log(`Found ${frameLayers.length} layers inside frame:`, frameLayers);
-      
       // Select the frame and all contents
       const layersToSelect = [layerId, ...frameLayers];
       actions.selectLayers(0, layersToSelect);
@@ -168,7 +154,9 @@ export const SimpleFrameContent: FC<SimpleFrameContentProps> = ({
         css={{
           position: 'absolute',
           top: '-60px',
-          left: '-60px',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          marginLeft: '-120px',
           width: `${iconSize}px`,
           height: `${iconSize}px`,
           background: 'rgba(255, 255, 255, 0.95)',
@@ -183,7 +171,7 @@ export const SimpleFrameContent: FC<SimpleFrameContentProps> = ({
           fontSize: `${fontSize * 1.5}px`,
           ':hover': {
             background: 'rgba(255, 255, 255, 1)',
-            transform: 'scale(1.1)',
+            transform: 'translateX(-50%) scale(1.1)',
             boxShadow: '0 6px 12px rgba(0, 0, 0, 0.2)',
           },
         }}
@@ -196,7 +184,9 @@ export const SimpleFrameContent: FC<SimpleFrameContentProps> = ({
         css={{
           position: 'absolute',
           top: '-60px',
-          right: '-60px',
+          right: '50%',
+          transform: 'translateX(50%)',
+          marginRight: '-120px',
           width: `${iconSize}px`,
           height: `${iconSize}px`,
           background: 'rgba(255, 255, 255, 0.95)',
@@ -211,7 +201,7 @@ export const SimpleFrameContent: FC<SimpleFrameContentProps> = ({
           fontSize: `${fontSize * 1.5}px`,
           ':hover': {
             background: 'rgba(255, 255, 255, 1)',
-            transform: 'scale(1.1)',
+            transform: 'translateX(50%) scale(1.1)',
             boxShadow: '0 6px 12px rgba(0, 0, 0, 0.2)',
           },
         }}

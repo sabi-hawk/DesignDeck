@@ -68,66 +68,172 @@ const SimpleFrameContent: FC<{ onClose: () => void }> = ({ onClose }) => {
       </div>
       <div
         css={{
-          flexDirection: 'column',
-          overflowY: 'auto',
-          display: 'flex',
-          padding: '16px',
+          padding: '20px',
+          flexGrow: 1,
         }}
       >
         <div
           css={{
+            background: 'rgba(64,87,109,.07)',
+            border: '1px solid rgba(64,87,109,.15)',
+            borderRadius: 8,
+            padding: 16,
+            marginBottom: 16,
             cursor: 'pointer',
-            border: '2px dotted #ff0000',
-            background: 'transparent',
-            width: '100%',
-            height: 120,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            borderRadius: '8px',
-            marginBottom: '16px',
             ':hover': {
-              background: 'rgba(255, 0, 0, 0.05)',
+              background: 'rgba(64,87,109,.1)',
             },
           }}
           onClick={addSimpleFrame}
         >
           <div
             css={{
-              textAlign: 'center',
-              color: '#ff0000',
-              fontWeight: 600,
+              width: '100%',
+              height: 120,
+              background: 'rgba(255, 0, 0, 0.1)',
+              border: '2px solid #ff0000',
+              borderRadius: 8,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              marginBottom: 12,
             }}
           >
-            <div css={{ fontSize: '16px', marginBottom: '8px' }}>
-              Simple Frame
+            <div
+              css={{
+                fontSize: 24,
+                color: '#ff0000',
+                fontWeight: 600,
+              }}
+            >
+              📷
             </div>
-            <div css={{ fontSize: '12px', opacity: 0.7 }}>
-              4000 × 2250 (16:9)
-            </div>
+          </div>
+          <div
+            css={{
+              fontSize: 14,
+              fontWeight: 600,
+              color: '#0d1216',
+              marginBottom: 8,
+            }}
+          >
+            Simple Frame
+          </div>
+          <div
+            css={{
+              fontSize: 12,
+              color: '#4a5568',
+              lineHeight: 1.5,
+            }}
+          >
+            A transparent frame with red border for organizing content. Features include:
+          </div>
+          <div
+            css={{
+              fontSize: 11,
+              color: '#667eea',
+              fontWeight: 600,
+              marginTop: 8,
+              textAlign: 'center',
+              background: 'rgba(102, 126, 234, 0.1)',
+              padding: '4px 8px',
+              borderRadius: 4,
+              border: '1px solid rgba(102, 126, 234, 0.2)',
+            }}
+          >
+            Default: 4000 × 2250 (16:9)
           </div>
         </div>
-        
+
         <div
           css={{
-            padding: '16px',
-            background: 'rgba(64,87,109,.07)',
-            borderRadius: '8px',
-            fontSize: '14px',
-            lineHeight: '1.5',
-            color: '#0d1216',
+            background: 'rgba(64,87,109,.05)',
+            border: '1px solid rgba(64,87,109,.1)',
+            borderRadius: 8,
+            padding: 16,
+            marginBottom: 16,
           }}
         >
-          <div css={{ fontWeight: 600, marginBottom: '8px' }}>
-            About SimpleFrame:
+          <div
+            css={{
+              fontSize: 13,
+              fontWeight: 600,
+              color: '#0d1216',
+              marginBottom: 8,
+            }}
+          >
+            🔒 Lock Functionality
           </div>
-          <ul css={{ margin: 0, paddingLeft: '16px' }}>
-            <li>Transparent rectangle with red dotted border</li>
-            <li>16:9 aspect ratio (1920×1080)</li>
-            <li>Can be dragged and resized</li>
-            <li>Maintains aspect ratio when resizing</li>
-            <li>Perfect for content organization</li>
-          </ul>
+          <div
+            css={{
+              fontSize: 12,
+              color: '#4a5568',
+              lineHeight: 1.5,
+              marginBottom: 12,
+            }}
+          >
+            Click the lock icon to group the frame with all content inside. When locked, the entire frame and its contents move together as one unit. Click again to unlock and allow individual movement.
+          </div>
+        </div>
+
+        <div
+          css={{
+            background: 'rgba(64,87,109,.05)',
+            border: '1px solid rgba(64,87,109,.1)',
+            borderRadius: 8,
+            padding: 16,
+            marginBottom: 16,
+          }}
+        >
+          <div
+            css={{
+              fontSize: 13,
+              fontWeight: 600,
+              color: '#0d1216',
+              marginBottom: 8,
+            }}
+          >
+            📷 Camera Icon
+          </div>
+          <div
+            css={{
+              fontSize: 12,
+              color: '#4a5568',
+              lineHeight: 1.5,
+              marginBottom: 12,
+            }}
+          >
+            Located at the top-left of the frame. This icon is reserved for future recording functionality and screen capture features.
+          </div>
+        </div>
+
+        <div
+          css={{
+            background: 'rgba(64,87,109,.05)',
+            border: '1px solid rgba(64,87,109,.1)',
+            borderRadius: 8,
+            padding: 16,
+          }}
+        >
+          <div
+            css={{
+              fontSize: 13,
+              fontWeight: 600,
+              color: '#0d1216',
+              marginBottom: 8,
+            }}
+          >
+            📏 Dimensions Display
+          </div>
+          <div
+            css={{
+              fontSize: 12,
+              color: '#4a5568',
+              lineHeight: 1.5,
+            }}
+          >
+            Shows current frame dimensions in pixels at the bottom-right corner. Updates in real-time as you resize the frame.
+          </div>
         </div>
       </div>
     </div>
