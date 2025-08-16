@@ -18,6 +18,7 @@ import React, {
   useContext,
   useEffect,
   useRef,
+  useState,
   // useState removed since PageSettings state is no longer needed
 } from 'react';
 import { isMobile } from 'react-device-detect';
@@ -36,6 +37,7 @@ import { useUsedFont } from '../layers/hooks/useUsedFont';
 import DesignPage from './DesignPage';
 import { DraggingLayer } from './dragging/DraggingLayer';
 import { EditorContext } from './EditorContext';
+import Timeline from './Timeline';
 
 interface DesignFrameProps {
   data: SerializedPage[];
@@ -49,6 +51,7 @@ const DesignFrame: FC<DesignFrameProps> = ({ data }) => {
   const contextMenuRef = useRef<HTMLDivElement>(null);
   const draggingItemRef = useRef<HTMLDivElement>(null);
   const { usedFonts } = useUsedFont();
+  const [showTimeline, setShowTimeline] = useState(false);
   const {
     config: { assetPath },
   } = useContext(EditorContext);
@@ -298,6 +301,17 @@ const DesignFrame: FC<DesignFrameProps> = ({ data }) => {
     return {};
   };
 
+  useEffect(() => {
+    // Make timeline control globally accessible
+    (window as any).showTimeline = () => setShowTimeline(true);
+    (window as any).hideTimeline = () => setShowTimeline(false);
+    
+    return () => {
+      delete (window as any).showTimeline;
+      delete (window as any).hideTimeline;
+    };
+  }, []);
+
   return (
     <Fragment>
       <div
@@ -321,9 +335,16 @@ const DesignFrame: FC<DesignFrameProps> = ({ data }) => {
         onTouchMove={onZoomMove}
         onTouchStart={onZoomStart}
       >
+        {/* Timeline Component */}
+        <Timeline 
+          isVisible={showTimeline} 
+          onToggle={() => setShowTimeline(false)} 
+        />
+        
+        {/* Rest of the component */}
         <div
           css={{
-            position: 'absolute',
+            position: 'relative',
             display: 'flex',
             minWidth: '100%',
             minHeight: '100%',

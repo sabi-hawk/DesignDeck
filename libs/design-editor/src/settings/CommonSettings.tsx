@@ -1,9 +1,7 @@
-import TransparencyIcon from '@duyank/icons/external/Transparency';
 import LockKeyIcon from '@duyank/icons/regular/LockKey';
 import LockKeyOpenIcon from '@duyank/icons/regular/LockKeyOpen';
 import React, { Fragment, useEffect, useMemo, useRef, useState } from 'react';
 import Popover from '../common/popover/Popover';
-import Slider from '../common/slider/Slider';
 import { useEditor, useSelectedLayers } from '../hooks';
 import { RootLayerProps } from '../layers';
 import { isRootLayer } from '../ultils/layer/layers';
@@ -194,87 +192,6 @@ const CommonSettings = () => {
             </SettingButton>
           </Fragment>
         )}
-        <Popover
-          anchorEl={resizeButtonRef.current}
-          offsets={{
-            'bottom-end': { x: 0, y: 8 },
-          }}
-          open={openResizeSetting}
-          placement={'bottom-end'}
-          onClose={() => setOpenResizeSetting(false)}
-        >
-          <div css={{ padding: 16, width: 240 }}>
-            <div css={{ display: 'flex', gap: 8, alignItems: 'flex-end' }}>
-              <div>
-                <div css={{ fontSize: 12, fontWeight: 600 }}>Width</div>
-                <div
-                  css={{
-                    border: '1px solid rgba(43,59,74,.3)',
-                    height: 40,
-                    padding: '0 12px',
-                    width: 80,
-                    borderRadius: 4,
-                  }}
-                >
-                  <input
-                    ref={widthRef}
-                    css={{ width: '100%', minWidth: 8, height: '100%' }}
-                    defaultValue={size.width}
-                    onChange={(e) => handleChangeSize(e.target.value, 'width')}
-                  />
-                </div>
-              </div>
-              <div>
-                <div css={{ fontSize: 12, fontWeight: 600 }}>Height</div>
-                <div
-                  css={{
-                    border: '1px solid rgba(43,59,74,.3)',
-                    height: 40,
-                    padding: '0 12px',
-                    width: 80,
-                    borderRadius: 4,
-                  }}
-                >
-                  <input
-                    ref={heightRef}
-                    css={{ width: '100%', minWidth: 8, height: '100%' }}
-                    defaultValue={size.height}
-                    onChange={(e) => handleChangeSize(e.target.value, 'height')}
-                  />
-                </div>
-              </div>
-              <div
-                css={{ fontSize: 20, cursor: 'pointer', margin: '10px 0' }}
-                onClick={() => setLockSizeAspect(!lockSiteAspect)}
-              >
-                {lockSiteAspect ? <LockKeyIcon /> : <LockKeyOpenIcon />}
-              </div>
-            </div>
-            {isDisabledResize && (
-              <div css={{ color: '#db1436' }}>
-                Dimensions must be at least 100px and no more than 8000px.
-              </div>
-            )}
-            <div css={{ marginTop: 12 }}>
-              <div
-                css={{
-                  background: !isDisabledResize ? '#3a3a4c' : '#8383A2',
-                  padding: '8px 14px',
-                  lineHeight: 1,
-                  color: '#FFF',
-                  borderRadius: 4,
-                  cursor: !isDisabledResize ? 'pointer' : 'not-allowed',
-                  fontSize: 16,
-                  textAlign: 'center',
-                  fontWeight: 700,
-                }}
-                onClick={handleResize}
-              >
-                Resize
-              </div>
-            </div>
-          </div>
-        </Popover>
         {selectedLayerIds.length > 0 && (
           <SettingButton
             css={{ fontSize: 20 }}
@@ -286,6 +203,122 @@ const CommonSettings = () => {
           </SettingButton>
         )}
       </div>
+      
+      {/* Animate Element Button - Right Side */}
+      <div
+        css={{
+          display: 'flex',
+          alignItems: 'center',
+          marginLeft: 'auto',
+        }}
+      >
+        <SettingButton
+          css={{
+            background: selectedLayerIds.length > 0 ? '#667eea' : '#e2e8f0',
+            color: selectedLayerIds.length > 0 ? 'white' : '#94a3b8',
+            cursor: selectedLayerIds.length > 0 ? 'pointer' : 'not-allowed',
+            ':hover': {
+              background: selectedLayerIds.length > 0 ? '#5a67d8' : '#e2e8f0',
+            },
+          }}
+          onClick={() => {
+            if (selectedLayerIds.length > 0) {
+              // Show timeline
+              if ((window as any).showTimeline) {
+                (window as any).showTimeline();
+              }
+            }
+          }}
+        >
+          <span css={{ padding: '0 8px', fontWeight: 600 }}>
+            Animate Element
+          </span>
+        </SettingButton>
+      </div>
+      
+      {/* Resize Popover */}
+      <Popover
+        anchorEl={resizeButtonRef.current}
+        offsets={{
+          'bottom-end': { x: 0, y: 8 },
+        }}
+        open={openResizeSetting}
+        placement={'bottom-end'}
+        onClose={() => setOpenResizeSetting(false)}
+      >
+        <div css={{ padding: 16, width: 240 }}>
+          <div css={{ display: 'flex', gap: 8, alignItems: 'flex-end' }}>
+            <div>
+              <div css={{ fontSize: 12, fontWeight: 600 }}>Width</div>
+              <div
+                css={{
+                  border: '1px solid rgba(43,59,74,.3)',
+                  height: 40,
+                  padding: '0 12px',
+                  width: 80,
+                  borderRadius: 4,
+                }}
+              >
+                <input
+                  ref={widthRef}
+                  css={{ width: '100%', minWidth: 8, height: '100%' }}
+                  defaultValue={size.width}
+                  onChange={(e) => handleChangeSize(e.target.value, 'width')}
+                />
+              </div>
+            </div>
+            <div>
+              <div css={{ fontSize: 12, fontWeight: 600 }}>Height</div>
+              <div
+                css={{
+                  border: '1px solid rgba(43,59,74,.3)',
+                  height: 40,
+                  padding: '0 12px',
+                  width: 80,
+                  borderRadius: 4,
+                }}
+              >
+                <input
+                  ref={heightRef}
+                  css={{ width: '100%', minWidth: 8, height: '100%' }}
+                  defaultValue={size.height}
+                  onChange={(e) => handleChangeSize(e.target.value, 'height')}
+                />
+              </div>
+            </div>
+            <div
+              css={{ fontSize: 20, cursor: 'pointer', margin: '10px 0' }}
+              onClick={() => setLockSizeAspect(!lockSiteAspect)}
+            >
+              {lockSiteAspect ? <LockKeyIcon /> : <LockKeyOpenIcon />}
+            </div>
+          </div>
+          {isDisabledResize && (
+            <div css={{ color: '#db1436' }}>
+              Dimensions must be at least 100px and no more than 8000px.
+            </div>
+          )}
+          <div css={{ marginTop: 12 }}>
+            <div
+              css={{
+                background: !isDisabledResize ? '#3a3a4c' : '#8383A2',
+                padding: '8px 14px',
+                lineHeight: 1,
+                color: '#FFF',
+                borderRadius: 4,
+                cursor: !isDisabledResize ? 'pointer' : 'not-allowed',
+                fontSize: 16,
+                textAlign: 'center',
+                fontWeight: 700,
+              }}
+              onClick={handleResize}
+            >
+              Resize
+            </div>
+          </div>
+        </div>
+      </Popover>
+      
       {sidebar === 'LAYER_MANAGEMENT' && <LayerSidebar open={true} />}
     </Fragment>
   );
