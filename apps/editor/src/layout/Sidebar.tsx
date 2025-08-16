@@ -1,11 +1,11 @@
 // import BrowserIcon from '@duyank/icons/regular/Browser';
-// import ImageIcon from '@duyank/icons/regular/Image';
 // import LayoutIcon from '@duyank/icons/regular/Layout';
 // import PiggyBankIcon from '@duyank/icons/regular/PiggyBank';
 // import SquareIcon from '@duyank/icons/regular/Square';
 import FrameCornersIcon from '@duyank/icons/regular/FrameCorners';
+import ImageIcon from '@duyank/icons/regular/Image';
 import TextTIcon from '@duyank/icons/regular/TextT';
-// import UploadIcon from '@duyank/icons/regular/Upload';
+import UploadIcon from '@duyank/icons/regular/Upload';
 import { useEditor } from '@lidojs/design-editor';
 import React, { useState } from 'react';
 import SidebarTab from '../tabs/TabList';
@@ -36,10 +36,10 @@ const tabs = [
     name: 'Advanced Frame',
     icon: <FrameCornersIcon />,
   },
-  // {
-  //   name: 'Image',
-  //   icon: <ImageIcon />,
-  // },
+  {
+    name: 'Image',
+    icon: <ImageIcon />,
+  },
   // {
   //   name: 'Graphic',
   //   icon: <PiggyBankIcon />,
@@ -48,10 +48,10 @@ const tabs = [
   //   name: 'Widgets',
   //   icon: <BrowserIcon />,
   // },
-  // {
-  //   name: 'Upload',
-  //   icon: <UploadIcon />,
-  // },
+  {
+    name: 'Upload',
+    icon: <UploadIcon />,
+  },
 ];
 const Sidebar = () => {
   const { actions } = useEditor();
