@@ -77,6 +77,16 @@ export class AnimationService {
     return this.frameHistory.get(elementId) || [];
   }
 
+  // Get all frames from all elements (for timeline display)
+  getAllFrames(): AnimationFrame[] {
+    const allFrames: AnimationFrame[] = [];
+    for (const frames of this.frameHistory.values()) {
+      allFrames.push(...frames);
+    }
+    // Sort by timestamp to maintain chronological order
+    return allFrames.sort((a, b) => a.timestamp - b.timestamp);
+  }
+
   // Set callback for when a frame is captured
   setOnFrameCaptured(callback: (frame: AnimationFrame) => void): void {
     this.onFrameCaptured = callback;

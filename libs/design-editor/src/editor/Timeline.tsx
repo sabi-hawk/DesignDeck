@@ -12,6 +12,16 @@ const Timeline: FC<TimelineProps> = ({ isVisible, onToggle }) => {
   const [currentTime, setCurrentTime] = useState(0);
 
   useEffect(() => {
+    // Load any existing frames from the service
+    const existingFrames = animationService.getAllFrames();
+    if (existingFrames.length > 0) {
+      setCurrentFrames(existingFrames);
+      console.log('Loaded existing frames:', existingFrames.length);
+      console.log('First frame data:', existingFrames[0]);
+      console.log('First frame imageDataUrl length:', existingFrames[0]?.imageDataUrl?.length);
+      console.log('First frame imageDataUrl preview:', existingFrames[0]?.imageDataUrl?.substring(0, 100));
+    }
+
     // Set up callback for when frames are captured
     animationService.setOnFrameCaptured((frame) => {
       setCurrentFrames(prev => [...prev, frame]);
@@ -338,6 +348,30 @@ const Timeline: FC<TimelineProps> = ({ isVisible, onToggle }) => {
                               }
                             </div>
                             
+                            {/* Debug: Show raw image data preview */}
+                            <div
+                              css={{
+                                position: 'absolute',
+                                bottom: '2px',
+                                right: '2px',
+                                fontSize: '6px',
+                                color: 'white',
+                                background: 'rgba(0, 0, 0, 0.7)',
+                                padding: '1px 2px',
+                                borderRadius: '2px',
+                                zIndex: 10,
+                                maxWidth: '90px',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                whiteSpace: 'nowrap',
+                              }}
+                            >
+                              {frames[0].imageDataUrl ? 
+                                frames[0].imageDataUrl.substring(0, 20) + '...' : 
+                                'No Data'
+                              }
+                            </div>
+                            
                             {/* Try to display the image */}
                             {frames[0].imageDataUrl && frames[0].imageDataUrl.startsWith('data:image/') ? (
                               <img
@@ -356,10 +390,12 @@ const Timeline: FC<TimelineProps> = ({ isVisible, onToggle }) => {
                                   console.log('Image data length:', frames[0].imageDataUrl?.length);
                                   console.log('Image data preview:', frames[0].imageDataUrl?.substring(0, 100));
                                   console.log('Image element:', e.target);
+                                  console.log('Full frame data:', frames[0]);
                                 }}
                                 onLoad={() => {
                                   console.log(`Successfully loaded image for segment ${startTime}s`);
                                   console.log('Image data length:', frames[0].imageDataUrl?.length);
+                                  console.log('Image data preview:', frames[0].imageDataUrl?.substring(0, 50));
                                 }}
                               />
                             ) : (
