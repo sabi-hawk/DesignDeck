@@ -4,3 +4,4 @@ export * from './settings';
 export * from './layers';
 export * from './types';
 export { default as Timeline } from './editor/Timeline';
+export { default as AnimationService } from './editor/AnimationService';

@@ -2,6 +2,7 @@ import LockKeyIcon from '@duyank/icons/regular/LockKey';
 import LockKeyOpenIcon from '@duyank/icons/regular/LockKeyOpen';
 import React, { Fragment, useEffect, useMemo, useRef, useState } from 'react';
 import Popover from '../common/popover/Popover';
+import AnimationService from '../editor/AnimationService';
 import { useEditor, useSelectedLayers } from '../hooks';
 import { RootLayerProps } from '../layers';
 import { isRootLayer } from '../ultils/layer/layers';
@@ -29,9 +30,18 @@ const CommonSettings = () => {
     })
   );
   const [size, setSize] = useState(pageSize);
+  const [animationService] = useState(() => AnimationService.getInstance());
+  const [currentAnimatedElement, setCurrentAnimatedElement] = useState<string | null>(null);
+
   useEffect(() => {
     setSize(pageSize);
   }, [pageSize]);
+
+  useEffect(() => {
+    // Get the currently animated element
+    setCurrentAnimatedElement(animationService.getCurrentAnimatedElement());
+  }, [animationService]);
+
   const { transparency } = useMemo(() => {
     return Object.entries(selectedLayers).reduce(
       (acc, [, layer]) => {
@@ -55,6 +65,7 @@ const CommonSettings = () => {
       { transparency: 0 }
     );
   }, [selectedLayers]);
+
   const isLocked = !!selectedLayers.find((l) => l.data.locked);
   const toggleLock = () => {
     if (isLocked) {
@@ -63,6 +74,107 @@ const CommonSettings = () => {
       actions.lock(activePage, selectedLayerIds);
     }
   };
+
+  // Check if any of the selected layers are animated
+  const hasAnimatedElements = selectedLayerIds.some(id => 
+    animatedLayers.includes(id)
+  );
+
+  // Check if we can animate the selected elements
+  const canAnimate = selectedLayerIds.length > 0 && 
+    (!currentAnimatedElement || selectedLayerIds.includes(currentAnimatedElement));
+
+  // Check if we're trying to animate a different element when one is already animated
+  const isTryingToAnimateDifferent = selectedLayerIds.length > 0 && 
+    currentAnimatedElement && 
+    !selectedLayerIds.includes(currentAnimatedElement);
+
+  const handleAnimateClick = () => {
+    if (selectedLayerIds.length > 0) {
+      if (hasAnimatedElements) {
+        // Unmark as animated
+        actions.unmarkLayerAsAnimated(activePage, selectedLayerIds);
+        selectedLayerIds.forEach(id => animationService.stopAnimation(id));
+        setCurrentAnimatedElement(null);
+      } else {
+        // Check if we can animate (only one element at a time)
+        if (currentAnimatedElement && !selectedLayerIds.includes(currentAnimatedElement)) {
+          // Show message that only one element can be animated at a time
+          alert('Only one element can be animated at a time. Please stop the current animation first.');
+          return;
+        }
+
+        // Mark as animated
+        actions.markLayerAsAnimated(activePage, selectedLayerIds);
+        
+        // Start animation for the first selected element
+        const elementToAnimate = selectedLayerIds[0];
+        if (animationService.startAnimation(elementToAnimate)) {
+          setCurrentAnimatedElement(elementToAnimate);
+          if ((window as any).showTimeline) {
+            (window as any).showTimeline();
+          }
+        } else {
+          // If animation couldn't start, unmark it
+          actions.unmarkLayerAsAnimated(activePage, selectedLayerIds);
+          alert('Only one element can be animated at a time.');
+        }
+      }
+    }
+  };
+
+  const getAnimateButtonText = () => {
+    if (selectedLayerIds.length === 0) {
+      return 'Animate Element';
+    }
+    
+    if (isTryingToAnimateDifferent) {
+      return 'Only One Element Allowed';
+    }
+    
+    if (hasAnimatedElements) {
+      return 'Animated';
+    }
+    
+    return 'Animate Element';
+  };
+
+  const getAnimateButtonStyle = () => {
+    if (selectedLayerIds.length === 0) {
+      return {
+        background: '#e2e8f0',
+        color: '#94a3b8',
+        cursor: 'not-allowed',
+        ':hover': { background: '#e2e8f0' },
+      };
+    }
+    
+    if (isTryingToAnimateDifferent) {
+      return {
+        background: '#ef4444',
+        color: 'white',
+        cursor: 'not-allowed',
+        ':hover': { background: '#dc2626' },
+      };
+    }
+    
+    if (hasAnimatedElements) {
+      return {
+        background: '#10b981',
+        color: 'white',
+        cursor: 'pointer',
+        ':hover': { background: '#059669' },
+      };
+    }
+    
+    return {
+      background: '#667eea',
+      color: 'white',
+      cursor: 'pointer',
+      ':hover': { background: '#5a67d8' },
+    };
+  };
+
   const updateTransparency = (transparency: number) => {
     selectedLayerIds.forEach((layerId) => {
       if (layerId === 'ROOT') {
@@ -80,6 +192,7 @@ const CommonSettings = () => {
       }
     });
   };
+
   useEffect(() => {
     setOpenTransparencySetting(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -116,6 +229,7 @@ const CommonSettings = () => {
     actions.changePageSize(size);
     setOpenResizeSetting(false);
   };
+
   return (
     <Fragment>
       <div
@@ -215,47 +329,14 @@ const CommonSettings = () => {
       >
         <SettingButton
           css={{
-            background: selectedLayerIds.length > 0 
-              ? (selectedLayerIds.some(id => animatedLayers.includes(id)) 
-                  ? '#10b981' // Green for animated
-                  : '#667eea'  // Blue for not animated
-                )
-              : '#e2e8f0',
-            color: selectedLayerIds.length > 0 ? 'white' : '#94a3b8',
-            cursor: selectedLayerIds.length > 0 ? 'pointer' : 'not-allowed',
-            ':hover': {
-              background: selectedLayerIds.length > 0 
-                ? (selectedLayerIds.some(id => animatedLayers.includes(id))
-                    ? '#059669' // Darker green for animated
-                    : '#5a67d8'  // Darker blue for not animated
-                  )
-                : '#e2e8f0',
-            },
+            ...getAnimateButtonStyle(),
+            fontWeight: 600,
           }}
-          onClick={() => {
-            if (selectedLayerIds.length > 0) {
-              // Check if any selected elements are already animated
-              const hasAnimatedElements = selectedLayerIds.some(id => 
-                animatedLayers.includes(id)
-              );
-              
-              if (hasAnimatedElements) {
-                // If elements are animated, unmark them
-                actions.unmarkLayerAsAnimated(activePage, selectedLayerIds);
-              } else {
-                // If elements are not animated, mark them and show timeline
-                actions.markLayerAsAnimated(activePage, selectedLayerIds);
-                if ((window as any).showTimeline) {
-                  (window as any).showTimeline();
-                }
-              }
-            }
-          }}
+          disabled={!canAnimate}
+          onClick={handleAnimateClick}
         >
-          <span css={{ padding: '0 8px', fontWeight: 600 }}>
-            {selectedLayerIds.length > 0 && selectedLayerIds.some(id => 
-              animatedLayers.includes(id)
-            ) ? 'Animated' : 'Animate Element'}
+          <span css={{ padding: '0 8px' }}>
+            {getAnimateButtonText()}
           </span>
         </SettingButton>
       </div>
