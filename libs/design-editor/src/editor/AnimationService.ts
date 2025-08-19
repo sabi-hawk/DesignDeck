@@ -95,7 +95,7 @@ export class AnimationService {
   // Capture a single frame of an element
   private async captureFrame(elementId: string): Promise<void> {
     try {
-      // Find the element with class css-19b3lhe that matches our elementId
+      // Find the specific layer element to capture
       const element = this.findElementByLayerId(elementId);
       
       if (!element) {
@@ -103,10 +103,11 @@ export class AnimationService {
         return;
       }
 
-      // Capture the screenshot
+      // Capture the screenshot directly from the element
       const imageDataUrl = await toPng(element as HTMLElement, {
-        quality: 0.8,
-        backgroundColor: 'transparent',
+        style: {
+          transform: 'none', // Ensure no transforms are applied during capture
+        }
       });
 
       // Create frame data
