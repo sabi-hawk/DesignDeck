@@ -1,7 +1,11 @@
 import { LayerSettings, useSelectedLayers } from '@lidojs/design-editor';
 import React from 'react';
 
-const AppLayerSettings = () => {
+interface AppLayerSettingsProps {
+  onShowAnimationPopup?: (elementId: string, elementType: string, elementName: string) => void;
+}
+
+const AppLayerSettings: React.FC<AppLayerSettingsProps> = ({ onShowAnimationPopup }) => {
   const { selectedLayerIds } = useSelectedLayers();
   return (
     <div
@@ -24,7 +28,7 @@ const AppLayerSettings = () => {
         },
       }}
     >
-      <LayerSettings />
+      <LayerSettings onShowAnimationPopup={onShowAnimationPopup} />
     </div>
   );
 };

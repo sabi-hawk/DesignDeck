@@ -31,7 +31,11 @@ import ShapeSettings from './ShapeSettings';
 import SvgSettings from './SvgSetting';
 import TextSettings from './TextSettings';
 
-const LayerSettings = () => {
+interface LayerSettingsProps {
+  onShowAnimationPopup?: (elementId: string, elementType: string, elementName: string) => void;
+}
+
+const LayerSettings: React.FC<LayerSettingsProps> = ({ onShowAnimationPopup }) => {
   const { selectedLayers, selectedLayerIds, layerIdList } = useSelectedLayers();
   const { actions, query, activePage, sidebar, isPageLocked } = useEditor(
     (state) => ({
@@ -200,7 +204,7 @@ const LayerSettings = () => {
         {iframeLayers.length === 1 && !isPageLocked && (
           <IframeSettings layer={iframeLayers[0]} />
         )}
-        <CommonSettings />
+        <CommonSettings onShowAnimationPopup={onShowAnimationPopup} />
       </div>
     </div>
   );

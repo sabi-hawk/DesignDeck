@@ -9,7 +9,11 @@ import { isRootLayer } from '../ultils/layer/layers';
 import SettingButton from './SettingButton';
 import LayerSidebar from './sidebar/LayerSidebar';
 
-const CommonSettings = () => {
+interface CommonSettingsProps {
+  onShowAnimationPopup?: (elementId: string, elementType: string, elementName: string) => void;
+}
+
+const CommonSettings: React.FC<CommonSettingsProps> = ({ onShowAnimationPopup }) => {
   const transparencyButtonRef = useRef<HTMLDivElement>(null);
   const resizeButtonRef = useRef<HTMLDivElement>(null);
   const widthRef = useRef<HTMLInputElement>(null);
@@ -39,7 +43,12 @@ const CommonSettings = () => {
 
   useEffect(() => {
     // Get the currently animated element
-    setCurrentAnimatedElement(animationService.getCurrentAnimatedElement());
+    try {
+      setCurrentAnimatedElement(animationService.getCurrentAnimatedElement());
+    } catch (error) {
+      console.error('Error getting current animated element:', error);
+      setCurrentAnimatedElement(null);
+    }
   }, [animationService]);
 
   const { transparency } = useMemo(() => {
@@ -81,59 +90,53 @@ const CommonSettings = () => {
   );
 
   // Check if we can animate the selected elements
-  const canAnimate = selectedLayerIds.length > 0 && 
-    (!currentAnimatedElement || selectedLayerIds.includes(currentAnimatedElement));
+  // With the new multi-element system, we can animate multiple elements
+  const canAnimate = selectedLayerIds.length > 0;
 
-  // Check if we're trying to animate a different element when one is already animated
-  const isTryingToAnimateDifferent = selectedLayerIds.length > 0 && 
-    currentAnimatedElement && 
-    !selectedLayerIds.includes(currentAnimatedElement);
+  // Check if any of the selected elements are already animated
+  const selectedAnimatedElements = selectedLayerIds.filter(id => 
+    animationService.isAnimated(id)
+  );
 
   const handleAnimateClick = () => {
     if (selectedLayerIds.length > 0) {
       if (hasAnimatedElements) {
-        // Unmark as animated
-        actions.unmarkLayerAsAnimated(activePage, selectedLayerIds);
-        selectedLayerIds.forEach(id => animationService.stopAnimation(id));
-        setCurrentAnimatedElement(null);
-      } else {
-        // Check if we can animate (only one element at a time)
-        if (currentAnimatedElement && !selectedLayerIds.includes(currentAnimatedElement)) {
-          // Show message that only one element can be animated at a time
-          alert('Only one element can be animated at a time. Please stop the current animation first.');
-          return;
-        }
-
-        // Mark as animated
-        actions.markLayerAsAnimated(activePage, selectedLayerIds);
-        
-        // Start animation for the first selected element
-        const elementToAnimate = selectedLayerIds[0];
-        if (animationService.startAnimation(elementToAnimate)) {
-          setCurrentAnimatedElement(elementToAnimate);
-          if ((window as any).showTimeline) {
-            (window as any).showTimeline();
-          }
-        } else {
-          // If animation couldn't start, unmark it
+        // Stop animation for all selected elements
+        try {
+          selectedLayerIds.forEach(id => {
+            try {
+              if (animationService.isAnimated(id)) {
+                animationService.stopAnimation(id);
+              }
+            } catch (error) {
+              console.error(`Error stopping animation for element ${id}:`, error);
+            }
+          });
           actions.unmarkLayerAsAnimated(activePage, selectedLayerIds);
-          alert('Only one element can be animated at a time.');
+          setCurrentAnimatedElement(animationService.getCurrentAnimatedElement());
+        } catch (error) {
+          console.error('Error stopping animations:', error);
+          alert('An error occurred while stopping animations.');
+        }
+      } else {
+        // Show animation popup for configuration
+        const elementToAnimate = selectedLayerIds[0];
+        if (onShowAnimationPopup) {
+          onShowAnimationPopup(elementToAnimate, 'Element', `Element ${elementToAnimate}`);
         }
       }
     }
   };
+
+
 
   const getAnimateButtonText = () => {
     if (selectedLayerIds.length === 0) {
       return 'Animate Element';
     }
     
-    if (isTryingToAnimateDifferent) {
-      return 'Only One Element Allowed';
-    }
-    
     if (hasAnimatedElements) {
-      return 'Animated';
+      return 'Stop Animation';
     }
     
     return 'Animate Element';
@@ -149,21 +152,12 @@ const CommonSettings = () => {
       };
     }
     
-    if (isTryingToAnimateDifferent) {
+    if (hasAnimatedElements) {
       return {
         background: '#ef4444',
         color: 'white',
-        cursor: 'not-allowed',
-        ':hover': { background: '#dc2626' },
-      };
-    }
-    
-    if (hasAnimatedElements) {
-      return {
-        background: '#10b981',
-        color: 'white',
         cursor: 'pointer',
-        ':hover': { background: '#059669' },
+        ':hover': { background: '#dc2626' },
       };
     }
     
@@ -424,9 +418,9 @@ const CommonSettings = () => {
         </div>
       </Popover>
       
-      {sidebar === 'LAYER_MANAGEMENT' && <LayerSidebar open={true} />}
-    </Fragment>
-  );
-};
+             {sidebar === 'LAYER_MANAGEMENT' && <LayerSidebar open={true} />}
+     </Fragment>
+   );
+ };
 
 export default CommonSettings;

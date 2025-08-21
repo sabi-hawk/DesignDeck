@@ -1,5 +1,5 @@
 import { FontData } from '@lidojs/design-core';
-import { Editor, GetFontQuery, PageControl } from '@lidojs/design-editor';
+import { Editor, GetFontQuery, PageControl, AnimationPopup, AnimationSettings, AnimationService } from '@lidojs/design-editor';
 import React, {
   useCallback,
   useEffect,
@@ -16,6 +16,11 @@ import PreviewModal from './PreviewModal';
 const Test = ({ googleFontList }: { googleFontList: FontData[] }) => {
   const leftSidebarRef = useRef<HTMLDivElement>(null);
   const [openPreview, setOpenPreview] = useState(false);
+  const [showAnimationPopup, setShowAnimationPopup] = useState(false);
+  const [selectedElementId, setSelectedElementId] = useState<string | null>(null);
+  const [selectedElementType, setSelectedElementType] = useState<string>('Element');
+  const [selectedElementName, setSelectedElementName] = useState<string>('Selected Element');
+  const [animationService] = useState(() => AnimationService.getInstance());
 
   const getFonts = useCallback(
     async (query: GetFontQuery) => {
@@ -68,6 +73,36 @@ const Test = ({ googleFontList }: { googleFontList: FontData[] }) => {
     });
   };
 
+  const handleShowAnimationPopup = (elementId: string, elementType: string, elementName: string) => {
+    setSelectedElementId(elementId);
+    setSelectedElementType(elementType);
+    setSelectedElementName(elementName);
+    setShowAnimationPopup(true);
+  };
+
+  const handleAnimateWithSettings = (settings: AnimationSettings) => {
+    if (selectedElementId) {
+      try {
+        console.log(`🎬 Starting animation for element ${selectedElementId} with settings:`, settings);
+        
+        // Start animation with settings
+        const success = animationService.startAnimation(selectedElementId, settings);
+        
+        if (success) {
+          if ((window as any).showTimeline) {
+            (window as any).showTimeline();
+          }
+          console.log(`✅ Animation started successfully for element ${selectedElementId}`);
+        } else {
+          alert('Failed to start animation for selected element.');
+        }
+      } catch (error) {
+        console.error('Error starting animation with settings:', error);
+        alert('An error occurred while starting animation.');
+      }
+    }
+  };
+
   return (
     <Editor config={config} getFonts={getFonts} uploadImage={uploadImage}>
       <div
@@ -111,7 +146,7 @@ const Test = ({ googleFontList }: { googleFontList: FontData[] }) => {
               overflow: 'auto',
             }}
           >
-            <AppLayerSettings />
+            <AppLayerSettings onShowAnimationPopup={handleShowAnimationPopup} />
             <div
               css={{
                 flexGrow: 1,
@@ -140,6 +175,15 @@ const Test = ({ googleFontList }: { googleFontList: FontData[] }) => {
           </div>
         </div>
       </div>
+      
+      {/* Animation Popup */}
+      <AnimationPopup
+        elementName={selectedElementName}
+        elementType={selectedElementType}
+        isVisible={showAnimationPopup}
+        onAnimate={handleAnimateWithSettings}
+        onClose={() => setShowAnimationPopup(false)}
+      />
     </Editor>
   );
 };
