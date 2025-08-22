@@ -322,7 +322,7 @@ const Timeline: FC<TimelineProps> = ({ isVisible, onToggle }) => {
                         >
                           {startTime}s
                         </span>
-                        
+
                         {/* Element Info */}
                         {hasFrames && frame && (
                           <div
@@ -344,7 +344,7 @@ const Timeline: FC<TimelineProps> = ({ isVisible, onToggle }) => {
                             {frame.elementId}
                           </div>
                         )}
-                        
+
                         {/* Stop Button for Individual Elements */}
                         {hasFrames && frame && (
                           <button
@@ -374,7 +374,7 @@ const Timeline: FC<TimelineProps> = ({ isVisible, onToggle }) => {
                             ×
                           </button>
                         )}
-                        
+
                         {/* Thumbnail if frames exist */}
                         {hasFrames && (
                           <div
@@ -406,103 +406,62 @@ const Timeline: FC<TimelineProps> = ({ isVisible, onToggle }) => {
                                 zIndex: 10,
                               }}
                             >
-                              {frame?.imageDataUrl ? 'Has Image' : 'No Image'}
+                              {frame?.imageDataUrl
+                                ? `${Math.round(
+                                    frame.imageDataUrl.length / 1024
+                                  )}KB`
+                                : '0KB'}
                             </div>
-                            
-                            {/* Debug image data length */}
-                            <div
-                              css={{
-                                position: 'absolute',
-                                top: '2px',
-                                right: '2px',
-                                fontSize: '8px',
-                                color: 'white',
-                                background: 'rgba(0, 0, 0, 0.7)',
-                                padding: '1px 2px',
-                                borderRadius: '2px',
-                                zIndex: 10,
-                              }}
-                            >
-                              {frame?.imageDataUrl ? `${Math.round(frame.imageDataUrl.length / 1024)}KB` : '0KB'}
-                            </div>
-                            
-                            {/* Debug data format */}
-                            <div
-                              css={{
-                                position: 'absolute',
-                                bottom: '2px',
-                                left: '2px',
-                                fontSize: '8px',
-                                color: 'white',
-                                background: 'rgba(0, 0, 0, 0.7)',
-                                padding: '1px 2px',
-                                borderRadius: '2px',
-                                zIndex: 10,
-                                maxWidth: '90px',
-                                overflow: 'hidden',
-                                textOverflow: 'ellipsis',
-                                whiteSpace: 'nowrap',
-                              }}
-                            >
-                              {frame?.imageDataUrl ? 
-                                (frame.imageDataUrl.startsWith('data:image/') ? 'Valid Data URL' : 'Not Data URL') : 
-                                'No Data'
-                              }
-                            </div>
-                            
-                            {/* Debug: Show raw image data preview */}
-                            <div
-                              css={{
-                                position: 'absolute',
-                                bottom: '2px',
-                                right: '2px',
-                                fontSize: '6px',
-                                color: 'white',
-                                background: 'rgba(0, 0, 0, 0.7)',
-                                padding: '1px 2px',
-                                borderRadius: '2px',
-                                zIndex: 10,
-                                maxWidth: '90px',
-                                overflow: 'hidden',
-                                textOverflow: 'ellipsis',
-                                whiteSpace: 'nowrap',
-                              }}
-                            >
-                              {frame?.imageDataUrl ? 
-                                frame.imageDataUrl.substring(0, 20) + '...' : 
-                                'No Data'
-                              }
-                            </div>
-                            
-                                                         {/* Try to display the image */}
-                             {frame?.imageDataUrl && frame.imageDataUrl.startsWith('data:image/') ? (
-                                                               <img
-                                  alt={`Frame at ${startTime}s`}
-                                  css={{
-                                    height: '100%',
-                                    objectFit: 'contain',
-                                    width: '100%',
-                                    maxHeight: '100%',
-                                    maxWidth: '100%',
-                                    display: 'block',
-                                  }}
-                                  src={frame.imageDataUrl}
-                                  onAbort={() => {
-                                    console.warn(`Image loading aborted for segment ${startTime}s`);
-                                  }}
-                                  onError={(e) => {
-                                    console.error(`Failed to load image for segment ${startTime}s:`, e);
-                                    console.log('Image data length:', frame.imageDataUrl?.length);
-                                    console.log('Image data preview:', frame.imageDataUrl?.substring(0, 100));
-                                    console.log('Image element:', e.target);
-                                    console.log('Full frame data:', frame);
-                                  }}
-                                  onLoad={() => {
-                                    console.log(`Successfully loaded image for segment ${startTime}s`);
-                                    console.log('Image data length:', frame.imageDataUrl?.length);
-                                    console.log('Image data preview:', frame.imageDataUrl?.substring(0, 50));
-                                  }}
-                                />
+
+                            {/* Try to display the image */}
+                            {frame?.imageDataUrl &&
+                            frame.imageDataUrl.startsWith('data:image/') ? (
+                              <img
+                                alt={`Frame at ${startTime}s`}
+                                css={{
+                                  height: '100%',
+                                  objectFit: 'contain',
+                                  width: '100%',
+                                  maxHeight: '100%',
+                                  maxWidth: '100%',
+                                  display: 'block',
+                                }}
+                                src={frame.imageDataUrl}
+                                onAbort={() => {
+                                  console.warn(
+                                    `Image loading aborted for segment ${startTime}s`
+                                  );
+                                }}
+                                onError={(e) => {
+                                  console.error(
+                                    `Failed to load image for segment ${startTime}s:`,
+                                    e
+                                  );
+                                  console.log(
+                                    'Image data length:',
+                                    frame.imageDataUrl?.length
+                                  );
+                                  console.log(
+                                    'Image data preview:',
+                                    frame.imageDataUrl?.substring(0, 100)
+                                  );
+                                  console.log('Image element:', e.target);
+                                  console.log('Full frame data:', frame);
+                                }}
+                                onLoad={() => {
+                                  console.log(
+                                    `Successfully loaded image for segment ${startTime}s`
+                                  );
+                                  console.log(
+                                    'Image data length:',
+                                    frame.imageDataUrl?.length
+                                  );
+                                  console.log(
+                                    'Image data preview:',
+                                    frame.imageDataUrl?.substring(0, 50)
+                                  );
+                                }}
+                              />
                             ) : (
                               <div
                                 css={{
@@ -517,7 +476,7 @@ const Timeline: FC<TimelineProps> = ({ isVisible, onToggle }) => {
                             )}
                           </div>
                         )}
-                        
+
                         {/* Empty state indicator if no frames */}
                         {!hasFrames && (
                           <div
