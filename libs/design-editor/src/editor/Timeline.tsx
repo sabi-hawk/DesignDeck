@@ -136,12 +136,13 @@ const Timeline: FC<TimelineProps> = ({ isVisible, onToggle }) => {
           maxWidth: 'calc(100vw - 146px)',
         }}
       >
-        {/* Arrow Button - Positioned at top left of timeline */}
+        {/* Arrow Button - Positioned at top center of timeline */}
         <div
           css={{
             position: 'absolute',
             top: '-24px', // Position above the timeline
-            left: '20px', // Position at the left side
+            left: '50%', // Center horizontally
+            transform: 'translateX(-50%)', // Center the button itself
             width: '48px',
             height: '24px',
             background: '#667eea',
@@ -156,7 +157,7 @@ const Timeline: FC<TimelineProps> = ({ isVisible, onToggle }) => {
             fontWeight: 'bold',
             ':hover': {
               background: '#5a67d8',
-              transform: 'translateY(-2px)',
+              transform: 'translateX(-50%) translateY(-2px)',
             },
             transition: 'all 0.2s ease',
           }}
