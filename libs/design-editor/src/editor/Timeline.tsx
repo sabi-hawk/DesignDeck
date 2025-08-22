@@ -136,12 +136,12 @@ const Timeline: FC<TimelineProps> = ({ isVisible, onToggle }) => {
           maxWidth: 'calc(100vw - 146px)',
         }}
       >
-        {/* Arrow Button - Positioned at top right of timeline */}
+        {/* Arrow Button - Positioned at top left of timeline */}
         <div
           css={{
             position: 'absolute',
             top: '-24px', // Position above the timeline
-            right: '20px', // Position at the right side
+            left: '20px', // Position at the left side
             width: '48px',
             height: '24px',
             background: '#667eea',

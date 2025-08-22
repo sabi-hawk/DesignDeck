@@ -338,7 +338,7 @@ const DesignFrame: FC<DesignFrameProps> = ({ data }) => {
         {/* Timeline Component */}
         <Timeline 
           isVisible={showTimeline} 
-          onToggle={() => setShowTimeline(false)} 
+          onToggle={() => setShowTimeline(!showTimeline)} 
         />
         
         {/* Rest of the component */}
