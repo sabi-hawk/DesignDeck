@@ -1,6 +1,12 @@
 import React, { FC, useEffect, useState } from 'react';
-import AnimationPopup, { AnimationSettings } from './AnimationPopup';
+import AnimationPopup from './AnimationPopup';
 import AnimationService, { AnimationFrame } from './AnimationService';
+
+export interface AnimationSettings {
+  sketchingDuration: number;
+  colorFillDuration: number;
+  handStyle: string;
+}
 
 interface TimelineProps {
   isVisible: boolean;
