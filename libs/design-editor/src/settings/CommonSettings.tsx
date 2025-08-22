@@ -86,7 +86,7 @@ const CommonSettings: React.FC<CommonSettingsProps> = ({ onShowAnimationPopup })
 
   // Check if any of the selected layers are animated
   const hasAnimatedElements = selectedLayerIds.some(id => 
-    animatedLayers.includes(id)
+    animationService.isAnimated(id)
   );
 
   // Check if we can animate the selected elements
