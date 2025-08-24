@@ -260,7 +260,8 @@ export class AnimationService {
   // Find the actual DOM element by layer ID
   private findElementByLayerId(layerId: string): Element | null {
     // First, try to find by the new class-based approach (element ID as class)
-    const elementByClass = document.querySelector(`.${layerId}`);
+    const elementByClass = document.querySelector(`.${CSS.escape(layerId)}`)
+    // const elementByClass = document.querySelector(`.${layerId}`);
     if (elementByClass) {
       console.log(`✅ Found element ${layerId} by class name`);
       return elementByClass;
