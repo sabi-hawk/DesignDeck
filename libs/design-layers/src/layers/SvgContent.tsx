@@ -19,6 +19,7 @@ export const SvgContent: FC<SvgContentProps> = ({
   flipHorizontal,
   boxSize,
   colors,
+  layerId,
 }) => {
   const [url, setUrl] = useState<string>();
   useAsync(async () => {
@@ -46,7 +47,7 @@ export const SvgContent: FC<SvgContentProps> = ({
   );
 
   return (
-    <div css={{ width: '100%', height: '100%' }}>
+    <div className={layerId} css={{ width: '100%', height: '100%' }}>
       {image && (
         <div
           css={{

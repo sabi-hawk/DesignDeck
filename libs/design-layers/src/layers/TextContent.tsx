@@ -23,11 +23,12 @@ export const TextContent: FC<TextContentProps> = ({
   colors,
   fontSizes,
   effect,
+  layerId,
 }) => {
   return (
     <div
       dangerouslySetInnerHTML={{ __html: text }}
-      className={`lidojs-text`}
+      className={`lidojs-text ${layerId}`}
       css={{
         p: {
           '&:before': {

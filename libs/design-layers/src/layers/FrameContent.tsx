@@ -42,6 +42,7 @@ export const FrameContent: FC<FrameContentProps> = ({
   gradientBackground,
   boxSize,
   viewOnly,
+  layerId,
 }) => {
   const { flipVertical, flipHorizontal } = useMemo(
     () => ({
@@ -64,6 +65,7 @@ export const FrameContent: FC<FrameContentProps> = ({
 
   return (
     <div
+      className={layerId}
       css={{
         overflow: 'hidden',
         pointerEvents: viewOnly ? 'none' : 'auto',

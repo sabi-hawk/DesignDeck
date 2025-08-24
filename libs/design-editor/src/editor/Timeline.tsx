@@ -1,4 +1,5 @@
 import React, { FC, useEffect, useState } from 'react';
+import { useEditor } from '../hooks';
 import AnimationPopup from './AnimationPopup';
 import AnimationService, { AnimationFrame } from './AnimationService';
 
@@ -18,37 +19,39 @@ const Timeline: FC<TimelineProps> = ({ isVisible, onToggle }) => {
   const [currentFrames, setCurrentFrames] = useState<AnimationFrame[]>([]);
   const [currentTime, setCurrentTime] = useState(0);
   const [showAnimationPopup, setShowAnimationPopup] = useState(false);
-  const [selectedElementId, setSelectedElementId] = useState<string | null>(null);
-  const [selectedElementType, setSelectedElementType] = useState<string>('Element');
-  const [selectedElementName, setSelectedElementName] = useState<string>('Selected Element');
-
+  const [selectedElementId, setSelectedElementId] = useState<string | null>(
+    null
+  );
+  const [selectedElementType, setSelectedElementType] =
+    useState<string>('Element');
+  const [selectedElementName, setSelectedElementName] =
+    useState<string>('Selected Element');
+  const {
+    state: { pages },
+  } = useEditor();
   useEffect(() => {
     // Load any existing frames from the service
     const existingFrames = animationService.getAllFrames();
     if (existingFrames.length > 0) {
       setCurrentFrames(existingFrames);
-      console.log('Loaded existing frames:', existingFrames.length);
-      console.log('First frame data:', existingFrames[0]);
-      console.log('First frame imageDataUrl length:', existingFrames[0]?.imageDataUrl?.length);
-      console.log('First frame imageDataUrl preview:', existingFrames[0]?.imageDataUrl?.substring(0, 100));
     }
 
     // Set up callbacks for animation events
     animationService.setOnFrameCaptured((frame) => {
-      setCurrentFrames(prev => [...prev, frame]);
+      setCurrentFrames((prev) => [...prev, frame]);
     });
 
     animationService.setOnElementAnimationStarted((elementId, frameIndex) => {
-      console.log(`🎬 Animation started for element ${elementId} at frame ${frameIndex}`);
+      // Animation started
     });
 
     animationService.setOnElementAnimationStopped((elementId) => {
-      console.log(`⏹️ Animation stopped for element ${elementId}`);
+      // Animation stopped
     });
 
     // Update current time every second for timeline display
     const timeInterval = setInterval(() => {
-      setCurrentTime(prev => prev + 1);
+      setCurrentTime((prev) => prev + 1);
     }, 1000);
 
     return () => {
@@ -74,7 +77,11 @@ const Timeline: FC<TimelineProps> = ({ isVisible, onToggle }) => {
   };
 
   // Handle animation start
-  const handleStartAnimation = (elementId: string, elementType: string, elementName: string) => {
+  const handleStartAnimation = (
+    elementId: string,
+    elementType: string,
+    elementName: string
+  ) => {
     setSelectedElementId(elementId);
     setSelectedElementType(elementType);
     setSelectedElementName(elementName);
@@ -84,12 +91,14 @@ const Timeline: FC<TimelineProps> = ({ isVisible, onToggle }) => {
   // Handle animation with settings
   const handleAnimateWithSettings = (settings: AnimationSettings) => {
     if (selectedElementId) {
-      console.log(`🎬 Starting animation for ${selectedElementType} "${selectedElementName}" with settings:`, settings);
-      const success = animationService.startAnimation(selectedElementId, settings);
-      if (success) {
-        console.log(`✅ Animation started successfully for element ${selectedElementId}`);
-      } else {
-        console.log(`❌ Failed to start animation for element ${selectedElementId}`);
+      const success = animationService.startAnimation(
+        selectedElementId,
+        settings
+      );
+      if (!success) {
+        console.warn(
+          `Failed to start animation for element ${selectedElementId}`
+        );
       }
     }
   };
@@ -101,11 +110,17 @@ const Timeline: FC<TimelineProps> = ({ isVisible, onToggle }) => {
 
   // Calculate timeline scale and duration based on captured frames
   const timelineScale = 10; // Fixed 10-second intervals
-  const totalTimelineDuration = Math.max(currentFrames.length * timelineScale, 100); // Show at least 100 seconds
-  
+  const totalTimelineDuration = Math.max(
+    currentFrames.length * timelineScale,
+    100
+  ); // Show at least 100 seconds
+
   // Calculate the width needed for each 10-second segment
   const segmentWidth = 120; // 120px per 10-second segment
-  const totalTimelineWidth = Math.max(segmentWidth * Math.ceil(totalTimelineDuration / timelineScale), 800); // Minimum 800px width
+  const totalTimelineWidth = Math.max(
+    segmentWidth * Math.ceil(totalTimelineDuration / timelineScale),
+    800
+  ); // Minimum 800px width
 
   return (
     <>
@@ -185,7 +200,8 @@ const Timeline: FC<TimelineProps> = ({ isVisible, onToggle }) => {
               color: 'white',
             }}
           >
-            Timeline ({animationService.getAnimatedElementIds().length} animated)
+            Timeline ({animationService.getAnimatedElementIds().length}{' '}
+            animated)
           </div>
         </div>
 
@@ -227,10 +243,12 @@ const Timeline: FC<TimelineProps> = ({ isVisible, onToggle }) => {
                   zIndex: 1,
                 }}
               >
-                Timeline: {Math.ceil(totalTimelineDuration / timelineScale)} segments • {animationService.getAnimatedElementIds().length} animated elements • Scroll horizontally to view all
+                Timeline: {Math.ceil(totalTimelineDuration / timelineScale)}{' '}
+                segments • {animationService.getAnimatedElementIds().length}{' '}
+                animated elements • Scroll horizontally to view all
               </div>
             )}
-            
+
             {/* Alternative: Native Scrollbar with Better Styling */}
             <div
               css={{
@@ -267,220 +285,200 @@ const Timeline: FC<TimelineProps> = ({ isVisible, onToggle }) => {
                 }}
               >
                 {/* Timeline Segments with Thumbnails */}
-                {Array.from({ length: Math.ceil(totalTimelineDuration / timelineScale) }, (_, i) => {
-                  const startTime = i * timelineScale;
-                  const endTime = startTime + timelineScale;
-                  const frame = getFrameForSegment(i);
-                  const hasFrames = frame !== null;
-                  
-                  return (
-                    <div
-                      key={i}
-                      css={{
-                        width: `${segmentWidth}px`,
-                        height: '100%',
-                        borderRight: '1px solid rgba(255, 255, 255, 0.1)',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        position: 'relative',
-                        flexShrink: 0,
-                      }}
-                    >
-                      {/* Time Label */}
-                      <span
+                {Array.from(
+                  { length: Math.ceil(totalTimelineDuration / timelineScale) },
+                  (_, i) => {
+                    const startTime = i * timelineScale;
+                    const endTime = startTime + timelineScale;
+                    const frame = getFrameForSegment(i);
+                    const hasFrames = frame !== null;
+
+                    return (
+                      <div
+                        key={i}
                         css={{
-                          fontSize: '10px',
-                          color: '#a0aec0',
-                          fontWeight: '500',
-                          position: 'absolute',
-                          bottom: '4px',
+                          width: `${segmentWidth}px`,
+                          height: '100%',
+                          borderRight: '1px solid rgba(255, 255, 255, 0.1)',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          position: 'relative',
+                          flexShrink: 0,
                         }}
                       >
-                        {startTime}s
-                      </span>
-
-                      {/* Element Info */}
-                      {hasFrames && frame && (
-                        <div
+                        {/* Time Label */}
+                        <span
                           css={{
+                            fontSize: '10px',
+                            color: '#a0aec0',
+                            fontWeight: '500',
                             position: 'absolute',
-                            top: '4px',
-                            left: '4px',
-                            fontSize: '8px',
-                            color: 'white',
-                            background: 'rgba(0, 0, 0, 0.8)',
-                            padding: '2px 4px',
-                            borderRadius: '2px',
-                            maxWidth: '90px',
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            whiteSpace: 'nowrap',
+                            bottom: '4px',
                           }}
                         >
-                          {frame.elementId}
-                        </div>
-                      )}
+                          {startTime}s
+                        </span>
 
-                      {/* Stop Button for Individual Elements */}
-                      {hasFrames && frame && (
-                        <button
-                          css={{
-                            position: 'absolute',
-                            top: '4px',
-                            right: '4px',
-                            width: '16px',
-                            height: '16px',
-                            background: 'rgba(239, 68, 68, 0.9)',
-                            border: 'none',
-                            borderRadius: '50%',
-                            color: 'white',
-                            fontSize: '8px',
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            ':hover': {
-                              background: 'rgba(239, 68, 68, 1)',
-                              transform: 'scale(1.1)',
-                            },
-                          }}
-                          title={`Stop animation for ${frame.elementId}`}
-                          onClick={() => handleStopAnimation(frame.elementId)}
-                        >
-                          ×
-                        </button>
-                      )}
-
-                      {/* Thumbnail if frames exist */}
-                      {hasFrames && (
-                        <div
-                          css={{
-                            height: '70px',
-                            width: '100px',
-                            background: 'rgba(0, 0, 0, 0.3)',
-                            border: '1px solid rgba(255, 255, 255, 0.2)',
-                            borderRadius: '4px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            overflow: 'hidden',
-                            position: 'absolute',
-                            top: '25px',
-                          }}
-                        >
-                          {/* Debug info */}
+                        {/* Element Info */}
+                        {hasFrames && frame && (
                           <div
                             css={{
                               position: 'absolute',
-                              top: '2px',
-                              left: '2px',
+                              top: '4px',
+                              left: '4px',
                               fontSize: '8px',
                               color: 'white',
-                              background: 'rgba(0, 0, 0, 0.7)',
-                              padding: '1px 2px',
+                              background: 'rgba(0, 0, 0, 0.8)',
+                              padding: '2px 4px',
                               borderRadius: '2px',
-                              zIndex: 10,
+                              maxWidth: '90px',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap',
                             }}
                           >
-                            {frame?.imageDataUrl
-                              ? `${Math.round(
-                                  frame.imageDataUrl.length / 1024
-                                )}KB`
-                              : '0KB'}
+                            {frame.elementId}
                           </div>
+                        )}
 
-                          {/* Try to display the image */}
-                          {frame?.imageDataUrl &&
-                          frame.imageDataUrl.startsWith('data:image/') ? (
-                            <img
-                              alt={`Frame at ${startTime}s`}
-                              css={{
-                                height: '100%',
-                                objectFit: 'contain',
-                                width: '100%',
-                                maxHeight: '100%',
-                                maxWidth: '100%',
-                                display: 'block',
-                              }}
-                              src={frame.imageDataUrl}
-                              onAbort={() => {
-                                console.warn(
-                                  `Image loading aborted for segment ${startTime}s`
-                                );
-                              }}
-                              onError={(e) => {
-                                console.error(
-                                  `Failed to load image for segment ${startTime}s:`,
-                                  e
-                                );
-                                console.log(
-                                  'Image data length:',
-                                  frame.imageDataUrl?.length
-                                );
-                                console.log(
-                                  'Image data preview:',
-                                  frame.imageDataUrl?.substring(0, 100)
-                                );
-                                console.log('Image element:', e.target);
-                                console.log('Full frame data:', frame);
-                              }}
-                              onLoad={() => {
-                                console.log(
-                                  `Successfully loaded image for segment ${startTime}s`
-                                );
-                                console.log(
-                                  'Image data length:',
-                                  frame.imageDataUrl?.length
-                                );
-                                console.log(
-                                  'Image data preview:',
-                                  frame.imageDataUrl?.substring(0, 50)
-                                );
-                              }}
-                            />
-                          ) : (
+                        {/* Stop Button for Individual Elements */}
+                        {hasFrames && frame && (
+                          <button
+                            css={{
+                              position: 'absolute',
+                              top: '4px',
+                              right: '4px',
+                              width: '16px',
+                              height: '16px',
+                              background: 'rgba(239, 68, 68, 0.9)',
+                              border: 'none',
+                              borderRadius: '50%',
+                              color: 'white',
+                              fontSize: '8px',
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              ':hover': {
+                                background: 'rgba(239, 68, 68, 1)',
+                                transform: 'scale(1.1)',
+                              },
+                            }}
+                            title={`Stop animation for ${frame.elementId}`}
+                            onClick={() => handleStopAnimation(frame.elementId)}
+                          >
+                            ×
+                          </button>
+                        )}
+
+                        {/* Thumbnail if frames exist */}
+                        {hasFrames && (
+                          <div
+                            css={{
+                              height: '70px',
+                              width: '100px',
+                              background: 'rgba(0, 0, 0, 0.3)',
+                              border: '1px solid rgba(255, 255, 255, 0.2)',
+                              borderRadius: '4px',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              overflow: 'hidden',
+                              position: 'absolute',
+                              top: '25px',
+                            }}
+                          >
+                            {/* Debug info */}
                             <div
                               css={{
+                                position: 'absolute',
+                                top: '2px',
+                                left: '2px',
+                                fontSize: '8px',
                                 color: 'white',
-                                fontSize: '10px',
-                                textAlign: 'center',
-                                padding: '4px',
+                                background: 'rgba(0, 0, 0, 0.7)',
+                                padding: '1px 2px',
+                                borderRadius: '2px',
+                                zIndex: 10,
                               }}
                             >
-                              Invalid Image Data
+                              {frame?.imageDataUrl
+                                ? `${Math.round(
+                                    frame.imageDataUrl.length / 1024
+                                  )}KB`
+                                : '0KB'}
                             </div>
-                          )}
-                        </div>
-                      )}
 
-                      {/* Empty state indicator if no frames */}
-                      {!hasFrames && (
-                        <div
-                          css={{
-                            height: '70px',
-                            width: '100px',
-                            background: 'rgba(255, 255, 255, 0.05)',
-                            border: '1px dashed rgba(255, 255, 255, 0.1)',
-                            borderRadius: '4px',
-                            color: 'rgba(255, 255, 255, 0.3)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            fontSize: '10px',
-                            justifyContent: 'center',
-                            padding: '4px',
-                            position: 'absolute',
-                            textAlign: 'center',
-                            top: '25px',
-                          }}
-                        >
-                          No frame
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
+                            {/* Try to display the image */}
+                            {frame?.imageDataUrl &&
+                            frame.imageDataUrl.startsWith('data:image/') ? (
+                              <img
+                                alt={`Frame at ${startTime}s`}
+                                css={{
+                                  height: '100%',
+                                  objectFit: 'contain',
+                                  width: '100%',
+                                  maxHeight: '100%',
+                                  maxWidth: '100%',
+                                  display: 'block',
+                                }}
+                                src={frame.imageDataUrl}
+                                onAbort={() => {
+                                  // Image loading aborted
+                                }}
+                                onError={(e) => {
+                                  console.warn(
+                                    `Failed to load image for segment ${startTime}s`
+                                  );
+                                }}
+                                onLoad={() => {
+                                  // Image loaded successfully
+                                }}
+                              />
+                            ) : (
+                              <div
+                                css={{
+                                  color: 'white',
+                                  fontSize: '10px',
+                                  textAlign: 'center',
+                                  padding: '4px',
+                                }}
+                              >
+                                Invalid Image Data
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        {/* Empty state indicator if no frames */}
+                        {!hasFrames && (
+                          <div
+                            css={{
+                              height: '70px',
+                              width: '100px',
+                              background: 'rgba(255, 255, 255, 0.05)',
+                              border: '1px dashed rgba(255, 255, 255, 0.1)',
+                              borderRadius: '4px',
+                              color: 'rgba(255, 255, 255, 0.3)',
+                              display: 'flex',
+                              alignItems: 'center',
+                              fontSize: '10px',
+                              justifyContent: 'center',
+                              padding: '4px',
+                              position: 'absolute',
+                              textAlign: 'center',
+                              top: '25px',
+                            }}
+                          >
+                            No frame
+                          </div>
+                        )}
+                      </div>
+                    );
+                  }
+                )}
               </div>
             </div>
           </div>
@@ -507,7 +505,9 @@ const Timeline: FC<TimelineProps> = ({ isVisible, onToggle }) => {
                   background: '#5a67d8',
                 },
               }}
-              onClick={() => handleStartAnimation('demo-text', 'Text', 'Sample Text Element')}
+              onClick={() =>
+                handleStartAnimation('demo-text', 'Text', 'Sample Text Element')
+              }
             >
               Animate Text
             </button>
@@ -525,7 +525,13 @@ const Timeline: FC<TimelineProps> = ({ isVisible, onToggle }) => {
                   background: '#059669',
                 },
               }}
-              onClick={() => handleStartAnimation('demo-image', 'Image', 'Sample Image Element')}
+              onClick={() =>
+                handleStartAnimation(
+                  'demo-image',
+                  'Image',
+                  'Sample Image Element'
+                )
+              }
             >
               Animate Image
             </button>
@@ -544,16 +550,16 @@ const Timeline: FC<TimelineProps> = ({ isVisible, onToggle }) => {
                 },
               }}
               onClick={() => {
-                const animatedElements = animationService.getAnimatedElementIds();
-                animatedElements.forEach(elementId => {
+                const animatedElements =
+                  animationService.getAnimatedElementIds();
+                animatedElements.forEach((elementId) => {
                   animationService.stopAnimation(elementId);
                 });
-                console.log(`🛑 Stopped all animations (${animatedElements.length} elements)`);
               }}
             >
               Stop All
             </button>
-            
+
             {/* Timeline Progress Bar */}
             <div
               css={{
@@ -569,14 +575,19 @@ const Timeline: FC<TimelineProps> = ({ isVisible, onToggle }) => {
                   position: 'absolute',
                   top: '0',
                   left: '0',
-                  width: `${Math.min((currentTime % totalTimelineDuration) / totalTimelineDuration * 100, 100)}%`,
+                  width: `${Math.min(
+                    ((currentTime % totalTimelineDuration) /
+                      totalTimelineDuration) *
+                      100,
+                    100
+                  )}%`,
                   height: '100%',
                   background: '#667eea',
                   borderRadius: '2px',
                 }}
               />
             </div>
-            
+
             {/* Current Time Display */}
             <span
               css={{
@@ -588,7 +599,7 @@ const Timeline: FC<TimelineProps> = ({ isVisible, onToggle }) => {
             >
               {Math.floor(currentTime % totalTimelineDuration)}s
             </span>
-            
+
             {/* Scroll Indicator */}
             {totalTimelineWidth > 800 && (
               <div
@@ -611,4 +622,4 @@ const Timeline: FC<TimelineProps> = ({ isVisible, onToggle }) => {
   );
 };
 
-export default Timeline; 
+export default Timeline;

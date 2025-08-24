@@ -30,6 +30,7 @@ export const RootContent: FC<PropsWithChildren<RootContentProps>> = ({
 }) => {
   return (
     <div
+      className={layerId}
       css={{
         position: 'absolute',
         overflow: 'hidden',

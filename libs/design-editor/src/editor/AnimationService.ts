@@ -164,11 +164,8 @@ export class AnimationService {
         const latestFrame = frames[frames.length - 1];
         framesByIndex.set(animatedElement.frameIndex, [latestFrame]);
         
-        console.log(`📊 Frame index ${animatedElement.frameIndex}: Element ${elementId} has ${frames.length} frames`);
       }
     }
-    
-    console.log(`📊 Total frames by index: ${framesByIndex.size} entries`);
     return framesByIndex;
   }
 
@@ -196,7 +193,7 @@ export class AnimationService {
         return;
       }
 
-      console.log(`📸 Capturing frame for element ${elementId} at frame index ${animatedElement.frameIndex}`);
+
 
       // Find the specific layer element to capture
       const element = this.findElementByLayerId(elementId);
@@ -247,11 +244,7 @@ export class AnimationService {
       // Update last capture time
       animatedElement.lastCaptureTime = Date.now();
 
-      console.log(`✅ Captured animation frame for element ${elementId}:`);
-      console.log(`   - Frame ID: ${frame.id}`);
-      console.log(`   - Frame Index: ${frame.frameIndex}`);
-      console.log(`   - Image Data Size: ${Math.round(imageDataUrl.length / 1024)}KB`);
-      console.log(`   - Timestamp: ${new Date(frame.timestamp).toLocaleTimeString()}`);
+
 
       // Call callback if set
       if (this.onFrameCaptured) {
@@ -266,14 +259,23 @@ export class AnimationService {
 
   // Find the actual DOM element by layer ID
   private findElementByLayerId(layerId: string): Element | null {
-    // Look for elements with class css-19b3lhe that might contain our layer
+    // First, try to find by the new class-based approach (element ID as class)
+    const elementByClass = document.querySelector(`.${layerId}`);
+    if (elementByClass) {
+      console.log(`✅ Found element ${layerId} by class name`);
+      return elementByClass;
+    }
+    
+    // Fallback: Look for elements with class css-19b3lhe that might contain our layer
     const elements = document.querySelectorAll('.css-19b3lhe');
+    console.log(`🔍 Fallback: Found ${elements.length} elements with css-19b3lhe class`);
     
     // First, try to find by data attributes or IDs
     for (const element of elements) {
       if (element.getAttribute('data-layer-id') === layerId || 
           element.id === layerId ||
           element.textContent?.includes(layerId)) {
+        console.log(`✅ Found element ${layerId} by fallback method`);
         return element;
       }
     }
@@ -298,7 +300,11 @@ export class AnimationService {
     }
 
     // Last resort: return the first css-19b3lhe element
-    return document.querySelector('.css-19b3lhe');
+    const fallbackElement = document.querySelector('.css-19b3lhe');
+    if (fallbackElement) {
+      console.log(`⚠️ Using fallback element for ${layerId}`);
+    }
+    return fallbackElement;
   }
 
   // Clean up all animations
@@ -312,6 +318,58 @@ export class AnimationService {
     this.nextFrameIndex = 0;
     
     console.log('✅ All animations cleaned up');
+  }
+
+  // Debug method to show current state
+  debugState(): void {
+    console.log('🔍 AnimationService State:');
+    console.log(`📊 ${this.animatedElements.size} animated elements, next index: ${this.nextFrameIndex}`);
+    
+    for (const [elementId, animatedElement] of this.animatedElements.entries()) {
+      const frames = this.frameHistory.get(elementId) || [];
+      console.log(`  ${elementId}: frame ${animatedElement.frameIndex}, ${frames.length} captures`);
+      
+      // Show detailed frame info
+      if (frames.length > 0) {
+        const latestFrame = frames[frames.length - 1];
+        console.log(`    Latest frame: ID=${latestFrame.id}, Size=${Math.round(latestFrame.imageDataUrl.length / 1024)}KB`);
+        console.log(`    Frame timestamp: ${new Date(latestFrame.timestamp).toLocaleTimeString()}`);
+      }
+    }
+    
+    // Show frames by index
+    const framesByIndex = this.getFramesByIndex();
+    console.log('🎯 Timeline frames:', Array.from(framesByIndex.entries()).map(([index, frames]) => 
+      `${index}:${frames[0]?.elementId}`
+    ).join(', '));
+    
+    // Debug element finding with new class-based approach
+    console.log('🔍 Element finding debug (new class-based approach):');
+    for (const [elementId, animatedElement] of this.animatedElements.entries()) {
+      // Try to find by new class-based approach
+      const elementByClass = document.querySelector(`.${elementId}`);
+      if (elementByClass) {
+        const rect = elementByClass.getBoundingClientRect();
+        const textContent = elementByClass.textContent || '';
+        console.log(`  Element ${elementId}:`);
+        console.log(`    Found by class: ${elementByClass.tagName} (${elementByClass.className})`);
+        console.log(`    Dimensions: ${rect.width}x${rect.height}`);
+        console.log(`    Text content: "${textContent.substring(0, 50)}${textContent.length > 50 ? '...' : ''}"`);
+        console.log(`    Element ID: ${elementByClass.id}`);
+        console.log(`    Data attributes:`, elementByClass.getAttributeNames().map(name => `${name}="${elementByClass.getAttribute(name)}"`).join(', '));
+      } else {
+        console.log(`  Element ${elementId}: NOT FOUND by class`);
+      }
+    }
+    
+    // Also show all elements with css-19b3lhe class for comparison
+    const cssElements = document.querySelectorAll('.css-19b3lhe');
+    console.log(`🔍 Found ${cssElements.length} elements with css-19b3lhe class:`);
+    cssElements.forEach((element, index) => {
+      const rect = element.getBoundingClientRect();
+      const textContent = element.textContent || '';
+      console.log(`  ${index}: ${element.tagName} (${element.className}) - ${rect.width}x${rect.height} - "${textContent.substring(0, 30)}${textContent.length > 30 ? '...' : ''}"`);
+    });
   }
 }
 

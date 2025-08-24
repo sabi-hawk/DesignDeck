@@ -137,6 +137,7 @@ export const SimpleFrameContent: FC<SimpleFrameContentProps> = ({
 
   return (
     <div
+      className={layerId}
       css={{
         position: 'relative',
         width: '100%',

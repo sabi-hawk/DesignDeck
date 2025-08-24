@@ -29,6 +29,7 @@ export const ImageContent: FC<ImageContentProps> = ({
   image,
   boxSize,
   viewOnly,
+  layerId,
 }) => {
   const { flipVertical, flipHorizontal } = useMemo(() => image, [image]);
   const wrapperStyle = useMemo(
@@ -45,6 +46,7 @@ export const ImageContent: FC<ImageContentProps> = ({
 
   return (
     <div
+      className={layerId}
       css={{
         overflow: 'hidden',
         pointerEvents: viewOnly ? 'none' : 'auto',

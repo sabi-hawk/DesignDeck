@@ -48,6 +48,7 @@ export const ShapeContent: FC<ShapeContentProps> = ({
   };
   return (
     <div
+      className={layerId}
       css={{
         position: 'relative',
         width: boxSize.width / scale,

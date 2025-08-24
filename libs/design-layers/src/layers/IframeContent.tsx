@@ -7,8 +7,14 @@ export interface IframeContentProps extends LayerComponentProps {
 
 export const IframeContent: FC<PropsWithChildren<IframeContentProps>> = ({
   url,
+  layerId,
 }) => {
   return (
-    <iframe css={{ width: '100%', height: '100%' }} src={url} title={url} />
+    <iframe 
+      className={layerId}
+      css={{ width: '100%', height: '100%' }} 
+      src={url} 
+      title={url} 
+    />
   );
 };
