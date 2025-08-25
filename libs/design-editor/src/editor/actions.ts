@@ -1218,26 +1218,26 @@ export const ActionMethods = (state: EditorState, query: CoreEditorQuery) => {
       const frameWidth = 1920;
       const frameHeight = 1080;
       
-      const dl = deserializeLayer({
-        type: {
-          resolvedName: 'SimpleFrameLayer',
-        },
-        props: {
-          position: {
-            x: 0,
-            y: 0,
-          },
-          boxSize: {
-            width: frameWidth,
-            height: frameHeight,
-          },
-          rotate: 0,
-          scale: 1,
-        },
-        locked: false,
-        parent: parentId,
-        child: [],
-      });
+             const dl = deserializeLayer({
+         type: {
+           resolvedName: 'SimpleFrameLayer',
+         },
+         props: {
+           position: {
+             x: 0,
+             y: 0,
+           },
+           boxSize: {
+             width: frameWidth,
+             height: frameHeight,
+           },
+           rotate: 0,
+           scale: 1,
+         },
+                   locked: false, // Keep unlocked for moving, but we'll prevent resizing through other means
+         parent: parentId,
+         child: [],
+       });
       
       state.pages[state.activePage].layers[layerId] = {
         id: layerId,

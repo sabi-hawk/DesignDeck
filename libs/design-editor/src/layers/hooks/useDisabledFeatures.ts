@@ -8,6 +8,7 @@ import {
   isShapeLayer,
   isSvgLayer,
   isTextLayer,
+  isSimpleFrameLayer,
 } from '../../ultils/layer/layers';
 
 export const useDisabledFeatures = () => {
@@ -49,6 +50,12 @@ export const useDisabledFeatures = () => {
       if (isFrameLayer(layer) || isSvgLayer(layer) || isScaleOnlyLayer(layer)) {
         disable.horizontal = true;
         disable.vertical = true;
+        disable.scalable = false;
+      }
+      if (isSimpleFrameLayer(layer)) {
+        disable.horizontal = true;
+        disable.vertical = true;
+        disable.corners = true;
         disable.scalable = false;
       }
       if (isGroupLayer(layer)) {
