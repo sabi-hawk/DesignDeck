@@ -13,6 +13,8 @@ export interface AnimationFrame {
   elementId: string;
   frameIndex: number; // Which timeline frame this belongs to
   settings: AnimationSettings; // Animation configuration settings
+  isInsideFrame?: boolean; // Whether this element was animated as part of a SimpleFrame
+  parentFrameId?: string; // The ID of the SimpleFrame that contains this element
 }
 
 export interface AnimatedElement {
@@ -21,6 +23,7 @@ export interface AnimatedElement {
   startTime: number;
   lastCaptureTime: number;
   settings: AnimationSettings; // Animation configuration settings
+  parentFrameId?: string; // The ID of the SimpleFrame that contains this element (if any)
 }
 
 export class AnimationService {
@@ -78,7 +81,7 @@ export class AnimationService {
     
     let successCount = 0;
     for (const childId of childElementIds) {
-      const success = this.startAnimationForElement(childId, settings);
+      const success = this.startAnimationForElement(childId, settings, frameId);
       if (success) {
         successCount++;
       }
@@ -89,7 +92,7 @@ export class AnimationService {
   }
 
   // Start animation for a single element (original logic)
-  private startAnimationForElement(elementId: string, settings: AnimationSettings): boolean {
+  private startAnimationForElement(elementId: string, settings: AnimationSettings, parentFrameId?: string): boolean {
     // Check if element is already animated
     if (this.animatedElements.has(elementId)) {
       console.log(`Element ${elementId} is already being animated`);
@@ -106,6 +109,7 @@ export class AnimationService {
       startTime: Date.now(),
       lastCaptureTime: Date.now(),
       settings,
+      parentFrameId,
     };
 
     this.animatedElements.set(elementId, animatedElement);
@@ -324,6 +328,8 @@ export class AnimationService {
          elementId,
          frameIndex: animatedElement.frameIndex,
          settings: animatedElement.settings,
+         isInsideFrame: !!animatedElement.parentFrameId,
+         parentFrameId: animatedElement.parentFrameId,
        };
 
       // Store in history (replace previous frame for this element)
