@@ -23,7 +23,7 @@ import {
   LayerDataRef,
   VerticalGuideline,
 } from '../types';
-import { isFrameLayer, isImageLayer } from '../ultils/layer/layers';
+import { isFrameLayer, isImageLayer, isSimpleFrameLayer } from '../ultils/layer/layers';
 import { useEditor } from './useEditor';
 import { useSelectedLayers } from './useSelectedLayers';
 import { useTrackingShiftKey } from './useTrackingShiftKey';
@@ -531,6 +531,46 @@ export const useDragLayer = ({
         scale,
         type: hoveredLayer.data.type,
       });
+      
+      // Check if this is a SimpleFrame and include its child elements
+      if (isSimpleFrameLayer(hoveredLayer)) {
+        // Get all layers to find child elements
+        const allLayers = state.pages[hoveredPage].layers;
+        const frameLeft = position.x;
+        const frameTop = position.y;
+        const frameRight = frameLeft + boxSize.width;
+        const frameBottom = frameTop + boxSize.height;
+        
+        // Find all elements inside the frame boundaries
+        Object.entries(allLayers).forEach(([id, layer]) => {
+          if (id === hoveredLayer.id || id === 'ROOT') return; // Skip frame itself and root
+          
+          const layerPos = layer.data.props.position;
+          const layerSize = layer.data.props.boxSize;
+          
+          const layerLeft = layerPos.x;
+          const layerTop = layerPos.y;
+          const layerRight = layerLeft + layerSize.width;
+          const layerBottom = layerTop + layerSize.height;
+          
+          // Check if layer is inside the frame boundaries
+          if (
+            layerLeft < frameRight &&
+            layerRight > frameLeft &&
+            layerTop < frameBottom &&
+            layerBottom > frameTop
+          ) {
+            data[id] = cloneDeep({
+              position: layerPos,
+              boxSize: layerSize,
+              rotate: layer.data.props.rotate,
+              scale: layer.data.props.scale,
+              type: layer.data.type,
+            });
+          }
+        });
+      }
+      
       if (!isContainLockedLayer) {
         isContainLockedLayer = hoveredLayer.data.locked;
       }

@@ -19,42 +19,8 @@ export const SimpleFrameContent: FC<SimpleFrameContentProps> = ({
   // Get direct access to editor state for more reliable selection checking
   const editorState = useEditor((state) => state);
 
-  // Check if nothing is selected and unlock if needed
-  useEffect(() => {
-    // Check if selection is effectively empty (nothing or just ROOT)
-    const currentSelectedLayers = editorState.selectedLayers[0] || [];
-    
-    const hasRealSelection = (selectedLayerIds.length === 0 || 
-                             (selectedLayerIds.length === 1 && selectedLayerIds[0] === 'ROOT')) &&
-                            (currentSelectedLayers.length === 0 || 
-                             (currentSelectedLayers.length === 1 && currentSelectedLayers[0] === 'ROOT'));
-    
-    if (hasRealSelection) {
-      // Nothing is selected (or just ROOT), so unlock the frame
-      setIsLocked(false);
-    } else if ((selectedLayerIds.length === 1 && selectedLayerIds[0] === layerId) || 
-               (currentSelectedLayers.length === 1 && currentSelectedLayers[0] === layerId)) {
-      // Only the frame itself is selected, so unlock
-      setIsLocked(false);
-    } else if ((selectedLayerIds.length > 1 && selectedLayerIds.includes(layerId)) ||
-               (currentSelectedLayers.length > 1 && currentSelectedLayers.includes(layerId))) {
-      // Multiple layers selected including frame, keep it locked
-      // Don't change lock state
-    }
-    // If multiple layers are selected (including frame + contents), keep it locked
-  }, [selectedLayerIds, layerId, isLocked, editorState.selectedLayers]);
-
-  // Also add a periodic check to ensure lock state is correct
-  useEffect(() => {
-    const checkLockState = () => {
-      if (selectedLayerIds.length === 0 && isLocked) {
-        setIsLocked(false);
-      }
-    };
-
-    const interval = setInterval(checkLockState, 200);
-    return () => clearInterval(interval);
-  }, [selectedLayerIds, isLocked]);
+  // Only unlock when user manually clicks the lock button
+  // Remove automatic unlocking logic to maintain persistent lock state
 
   const toggleLock = () => {
     if (!viewOnly) {
@@ -68,6 +34,32 @@ export const SimpleFrameContent: FC<SimpleFrameContentProps> = ({
         // When unlocking: Select only the frame
         unlockFrameAndContents();
       }
+    }
+  };
+
+  // Add effect to maintain lock behavior when frame is selected
+  useEffect(() => {
+    if (isLocked && selectedLayerIds.includes(layerId) && selectedLayerIds.length === 1) {
+      // If frame is locked and only the frame is selected, automatically select contents too
+      lockFrameAndContents();
+    }
+  }, [selectedLayerIds, layerId, isLocked]);
+
+  // Handle click on frame to ensure contents are selected when locked
+  const handleFrameClick = (e: React.MouseEvent) => {
+    if (isLocked) {
+      // If frame is locked, ensure contents are selected when clicked
+      // Don't stop propagation - let the selection system work
+      lockFrameAndContents();
+    }
+  };
+
+  // Handle mouse down to ensure contents are selected before drag starts
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (isLocked) {
+      // If frame is locked, ensure contents are selected before any drag operation
+      // Make selection happen immediately in the same event cycle
+      lockFrameAndContents();
     }
   };
 
@@ -115,7 +107,14 @@ export const SimpleFrameContent: FC<SimpleFrameContentProps> = ({
 
       // Select the frame and all contents
       const layersToSelect = [layerId, ...frameLayers];
-      actions.selectLayers(0, layersToSelect);
+      
+      // Check if we're already selecting the right combination
+      const currentSelected = selectedLayerIds.sort();
+      const targetSelected = layersToSelect.sort();
+      
+      if (JSON.stringify(currentSelected) !== JSON.stringify(targetSelected)) {
+        actions.selectLayers(0, layersToSelect);
+      }
       
     } catch (error) {
       console.log('Error selecting frame contents:', error);
@@ -135,21 +134,23 @@ export const SimpleFrameContent: FC<SimpleFrameContentProps> = ({
   const iconSize = Math.max(48, Math.min(boxSize.width, boxSize.height) * 0.08);
   const fontSize = Math.max(16, Math.min(boxSize.width, boxSize.height) * 0.035);
 
-  return (
-    <div
-      className={layerId}
-      css={{
-        position: 'relative',
-        width: '100%',
-        height: '100%',
-        pointerEvents: viewOnly ? 'none' : 'auto',
-      }}
-      style={{
-        width: boxSize.width / scale,
-        height: boxSize.height / scale,
-        transform: `scale(${scale})`,
-      }}
-    >
+     return (
+     <div
+       className={layerId}
+       css={{
+         position: 'relative',
+         width: '100%',
+         height: '100%',
+         pointerEvents: viewOnly ? 'none' : 'auto',
+       }}
+       style={{
+         width: boxSize.width / scale,
+         height: boxSize.height / scale,
+         transform: `scale(${scale})`,
+               }}
+        onClick={handleFrameClick}
+        onMouseDown={handleMouseDown}
+      >
       {/* Camera Icon - Top Left (Outside Frame) */}
       <div
         css={{
@@ -233,41 +234,44 @@ export const SimpleFrameContent: FC<SimpleFrameContentProps> = ({
         {Math.round(boxSize.width)} × {Math.round(boxSize.height)}
       </div>
 
-      {/* Main Frame - Clean Red Border */}
-      <div
-        css={{
-          width: '100%',
-          height: '100%',
-          border: '4px solid #ff0000',
-          background: 'rgba(255, 0, 0, 0.02)',
-          position: 'relative',
-          boxShadow: '0 0 0 2px #ff0000, inset 0 0 0 2px #ff0000',
-          '&::before': {
-            content: '""',
-            position: 'absolute',
-            top: '-3px',
-            left: '-3px',
-            right: '-3px',
-            bottom: '-3px',
-            border: '2px solid #ff0000',
-            background: 'transparent',
-            pointerEvents: 'none',
-            opacity: 0.8,
-          },
-          '&::after': {
-            content: '""',
-            position: 'absolute',
-            top: '4px',
-            left: '4px',
-            right: '4px',
-            bottom: '4px',
-            border: '1px dashed #ff0000',
-            background: 'transparent',
-            pointerEvents: 'none',
-            opacity: 0.9,
-          }
-        }}
-      />
+             {/* Main Frame - Clean Red Border */}
+       <div
+         css={{
+           width: '100%',
+           height: '100%',
+           border: '4px solid #ff0000',
+           background: 'rgba(255, 0, 0, 0.02)',
+           position: 'relative',
+           boxShadow: '0 0 0 2px #ff0000, inset 0 0 0 2px #ff0000',
+           cursor: isLocked ? 'move' : 'default',
+           '&::before': {
+             content: '""',
+             position: 'absolute',
+             top: '-3px',
+             left: '-3px',
+             right: '-3px',
+             bottom: '-3px',
+             border: '2px solid #ff0000',
+             background: 'transparent',
+             pointerEvents: 'none',
+             opacity: 0.8,
+           },
+           '&::after': {
+             content: '""',
+             position: 'absolute',
+             top: '4px',
+             left: '4px',
+             right: '4px',
+             bottom: '4px',
+             border: '1px dashed #ff0000',
+             background: 'transparent',
+             pointerEvents: 'none',
+             opacity: 0.9,
+           }
+                   }}
+          onClick={handleFrameClick}
+          onMouseDown={handleMouseDown}
+        />
     </div>
   );
 }; 
