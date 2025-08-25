@@ -31,7 +31,6 @@ import {
   HorizontalGuideline,
   Layer,
   Layers,
-  LinePosition,
   Page,
   SidebarType,
   VerticalGuideline,
@@ -1214,17 +1213,10 @@ export const ActionMethods = (state: EditorState, query: CoreEditorQuery) => {
       parentId: LayerId = 'ROOT'
     ) {
       const layerId = getRandomId();
-      const pageSize = query.getPageSize();
       
-      // Create a simple frame with 16:9 aspect ratio (1920x1080)
+      // Create a simple frame with exact 16:9 aspect ratio (1920x1080)
       const frameWidth = 1920;
       const frameHeight = 1080;
-      
-      // Scale the frame to fit nicely on the page
-      const scale = Math.min(
-        (pageSize.width * 0.4) / frameWidth,
-        (pageSize.height * 0.4) / frameHeight
-      );
       
       const dl = deserializeLayer({
         type: {
@@ -1236,8 +1228,8 @@ export const ActionMethods = (state: EditorState, query: CoreEditorQuery) => {
             y: 0,
           },
           boxSize: {
-            width: frameWidth * scale,
-            height: frameHeight * scale,
+            width: frameWidth,
+            height: frameHeight,
           },
           rotate: 0,
           scale: 1,

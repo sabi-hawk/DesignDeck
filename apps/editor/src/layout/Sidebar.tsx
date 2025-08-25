@@ -1,9 +1,9 @@
 // import BrowserIcon from '@duyank/icons/regular/Browser';
-// import LayoutIcon from '@duyank/icons/regular/Layout';
 // import PiggyBankIcon from '@duyank/icons/regular/PiggyBank';
 // import SquareIcon from '@duyank/icons/regular/Square';
 import FrameCornersIcon from '@duyank/icons/regular/FrameCorners';
 import ImageIcon from '@duyank/icons/regular/Image';
+import LayoutIcon from '@duyank/icons/regular/Layout';
 import TextTIcon from '@duyank/icons/regular/TextT';
 import UploadIcon from '@duyank/icons/regular/Upload';
 import { useEditor } from '@lidojs/design-editor';
@@ -20,10 +20,10 @@ import TextContent from './sidebar/TextContent';
 import UploadContent from './sidebar/UploadContent';
 
 const tabs = [
-  // {
-  //   name: 'Template',
-  //   icon: <LayoutIcon />,
-  // },
+  {
+    name: 'Template',
+    icon: <LayoutIcon />,
+  },
   {
     name: 'Text',
     icon: <TextTIcon />,

@@ -141,7 +141,7 @@ const SimpleFrameContent: FC<{ onClose: () => void }> = ({ onClose }) => {
               border: '1px solid rgba(102, 126, 234, 0.2)',
             }}
           >
-            Default: 4000 × 2250 (16:9)
+            Default: 1920 × 1080 (16:9)
           </div>
         </div>
 
