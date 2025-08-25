@@ -30,6 +30,9 @@ const Timeline: FC<TimelineProps> = ({ isVisible, onToggle }) => {
     state: { pages },
   } = useEditor();
   useEffect(() => {
+    // Update AnimationService with current pages data
+    animationService.updatePagesData(pages);
+
     // Load any existing frames from the service
     const existingFrames = animationService.getAllFrames();
     if (existingFrames.length > 0) {
@@ -57,7 +60,7 @@ const Timeline: FC<TimelineProps> = ({ isVisible, onToggle }) => {
     return () => {
       clearInterval(timeInterval);
     };
-  }, [animationService]);
+  }, [animationService, pages]); // Add pages to dependency array
 
   // Get frames organized by frame index for timeline display
   const getFramesByIndex = (): Map<number, AnimationFrame[]> => {

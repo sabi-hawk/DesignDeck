@@ -32,6 +32,7 @@ export class AnimationService {
   private onElementAnimationStarted?: (elementId: string, frameIndex: number) => void;
   private onElementAnimationStopped?: (elementId: string) => void;
   private nextFrameIndex = 0;
+  private pages: any[] = []; // Store pages data from useEditor
 
   static getInstance(): AnimationService {
     if (!AnimationService.instance) {
@@ -40,8 +41,55 @@ export class AnimationService {
     return AnimationService.instance;
   }
 
+  // Update pages data from useEditor
+  updatePagesData(pages: any[]): void {
+    this.pages = pages;
+  }
+
   // Start animating an element (supports multiple elements)
   startAnimation(elementId: string, settings: AnimationSettings): boolean {
+    // Check if element is already animated
+    if (this.animatedElements.has(elementId)) {
+      console.log(`Element ${elementId} is already being animated`);
+      return false;
+    }
+
+    // Check if this is a SimpleFrame - if so, animate its children instead
+    const elementType = this.getElementType(elementId);
+    if (elementType === 'SimpleFrame') {
+      console.log(`🎬 SimpleFrame detected for ${elementId}, animating child elements instead`);
+      return this.startAnimationForSimpleFrame(elementId, settings);
+    }
+
+    // Regular animation for non-SimpleFrame elements
+    return this.startAnimationForElement(elementId, settings);
+  }
+
+  // Start animation for a SimpleFrame by animating its child elements
+  private startAnimationForSimpleFrame(frameId: string, settings: AnimationSettings): boolean {
+    const childElementIds = this.getChildElementIds(frameId);
+    
+    if (childElementIds.length === 0) {
+      console.warn(`SimpleFrame ${frameId} has no child elements to animate`);
+      return false;
+    }
+
+    console.log(`🎬 Starting animation for SimpleFrame ${frameId} with ${childElementIds.length} child elements:`, childElementIds);
+    
+    let successCount = 0;
+    for (const childId of childElementIds) {
+      const success = this.startAnimationForElement(childId, settings);
+      if (success) {
+        successCount++;
+      }
+    }
+
+    console.log(`✅ Successfully started animation for ${successCount}/${childElementIds.length} child elements of SimpleFrame ${frameId}`);
+    return successCount > 0;
+  }
+
+  // Start animation for a single element (original logic)
+  private startAnimationForElement(elementId: string, settings: AnimationSettings): boolean {
     // Check if element is already animated
     if (this.animatedElements.has(elementId)) {
       console.log(`Element ${elementId} is already being animated`);
@@ -86,6 +134,40 @@ export class AnimationService {
 
   // Stop animating an element
   stopAnimation(elementId: string): void {
+    // Check if this is a SimpleFrame - if so, stop animation for all its children
+    const elementType = this.getElementType(elementId);
+    if (elementType === 'SimpleFrame') {
+      console.log(`⏹️ SimpleFrame detected for ${elementId}, stopping animation for all child elements`);
+      this.stopAnimationForSimpleFrame(elementId);
+      return;
+    }
+
+    // Regular stop animation for non-SimpleFrame elements
+    this.stopAnimationForElement(elementId);
+  }
+
+  // Stop animation for a SimpleFrame by stopping all its child elements
+  private stopAnimationForSimpleFrame(frameId: string): void {
+    const childElementIds = this.getChildElementIds(frameId);
+    
+    if (childElementIds.length === 0) {
+      console.warn(`SimpleFrame ${frameId} has no child elements to stop animation for`);
+      return;
+    }
+
+    console.log(`⏹️ Stopping animation for SimpleFrame ${frameId} with ${childElementIds.length} child elements:`, childElementIds);
+    
+    let stoppedCount = 0;
+    for (const childId of childElementIds) {
+      this.stopAnimationForElement(childId);
+      stoppedCount++;
+    }
+
+    console.log(`✅ Successfully stopped animation for ${stoppedCount}/${childElementIds.length} child elements of SimpleFrame ${frameId}`);
+  }
+
+  // Stop animation for a single element (original logic)
+  private stopAnimationForElement(elementId: string): void {
     const animatedElement = this.animatedElements.get(elementId);
     if (!animatedElement) {
       console.log(`Element ${elementId} is not currently animated`);
@@ -114,6 +196,14 @@ export class AnimationService {
 
   // Check if an element is currently animated
   isAnimated(elementId: string): boolean {
+    // Check if this is a SimpleFrame - if so, check if any of its children are animated
+    const elementType = this.getElementType(elementId);
+    if (elementType === 'SimpleFrame') {
+      const childElementIds = this.getChildElementIds(elementId);
+      return childElementIds.some(childId => this.animatedElements.has(childId));
+    }
+
+    // Regular check for non-SimpleFrame elements
     return this.animatedElements.has(elementId);
   }
 
@@ -371,6 +461,121 @@ export class AnimationService {
       const textContent = element.textContent || '';
       console.log(`  ${index}: ${element.tagName} (${element.className}) - ${rect.width}x${rect.height} - "${textContent.substring(0, 30)}${textContent.length > 30 ? '...' : ''}"`);
     });
+  }
+
+  // Get the type of an element from the pages data
+  private getElementType(elementId: string): string | null {
+    try {
+      if (!this.pages || this.pages.length === 0) {
+        return null;
+      }
+
+      const page = this.pages[0];
+      if (!page.layers) {
+        return null;
+      }
+
+      const layer = page.layers[elementId];
+      if (layer && layer.data && layer.data.type) {
+        return layer.data.type;
+      }
+
+      return null;
+    } catch (error) {
+      console.warn(`Error getting element type for ${elementId}:`, error);
+      return null;
+    }
+  }
+
+  // Get child element IDs for a SimpleFrame based on spatial coordinates
+  private getChildElementIds(frameId: string): string[] {
+    try {
+      if (!this.pages || this.pages.length === 0) {
+        return [];
+      }
+
+      const page = this.pages[0];
+      if (!page.layers) {
+        return [];
+      }
+
+      // Get the frame layer and its properties
+      const frameLayer = page.layers[frameId];
+      if (!frameLayer || !frameLayer.data || !frameLayer.data.props) {
+        console.warn(`Frame layer ${frameId} not found or missing data`);
+        return [];
+      }
+
+      const frameProps = frameLayer.data.props;
+      const framePosition = frameProps.position || { x: 0, y: 0 };
+      const frameSize = frameProps.boxSize || { width: 0, height: 0 };
+
+      // Calculate frame boundaries
+      const frameLeft = framePosition.x;
+      const frameTop = framePosition.y;
+      const frameRight = frameLeft + frameSize.width;
+      const frameBottom = frameTop + frameSize.height;
+
+      console.log(`🔍 Frame ${frameId} boundaries:`, {
+        left: frameLeft,
+        top: frameTop,
+        right: frameRight,
+        bottom: frameBottom,
+        width: frameSize.width,
+        height: frameSize.height
+      });
+
+      const childElementIds: string[] = [];
+
+      // Iterate through all layers to find elements within the frame boundaries
+      for (const [elementId, layer] of Object.entries(page.layers)) {
+        // Skip the frame itself
+        if (elementId === frameId) {
+          continue;
+        }
+
+        // Skip if not a valid layer with position data
+        if (!layer || !(layer as any).data || !(layer as any).data.props || !(layer as any).data.props.position) {
+          continue;
+        }
+
+        const elementProps = (layer as any).data.props;
+        const elementPosition = elementProps.position;
+        const elementSize = elementProps.boxSize || { width: 0, height: 0 };
+
+        // Calculate element boundaries
+        const elementLeft = elementPosition.x;
+        const elementTop = elementPosition.y;
+        const elementRight = elementLeft + elementSize.width;
+        const elementBottom = elementTop + elementSize.height;
+
+        // Check if element is completely within the frame boundaries
+        const isInsideFrame = 
+          elementLeft >= frameLeft &&
+          elementTop >= frameTop &&
+          elementRight <= frameRight &&
+          elementBottom <= frameBottom;
+
+        if (isInsideFrame) {
+          childElementIds.push(elementId);
+          console.log(`✅ Element ${elementId} (${(layer as any).data.type}) is inside frame ${frameId}:`, {
+            elementLeft,
+            elementTop,
+            elementRight,
+            elementBottom,
+            elementWidth: elementSize.width,
+            elementHeight: elementSize.height
+          });
+        }
+      }
+
+      console.log(`🔍 Found ${childElementIds.length} child elements for SimpleFrame ${frameId}:`, childElementIds);
+      return childElementIds;
+      
+    } catch (error) {
+      console.warn(`Error getting child elements for frame ${frameId}:`, error);
+      return [];
+    }
   }
 }
 
