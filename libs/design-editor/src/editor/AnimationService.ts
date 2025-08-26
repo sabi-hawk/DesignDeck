@@ -80,6 +80,16 @@ export class AnimationService {
 
     console.log(`🎬 Starting animation for SimpleFrame ${frameId} with ${childElementIds.length} child elements:`, childElementIds);
     
+    // Dispatch custom event to auto-lock the frame
+    const animationStartEvent = new CustomEvent('animationStart', {
+      detail: {
+        frameId: frameId,
+        settings: settings
+      }
+    });
+    document.dispatchEvent(animationStartEvent);
+    console.log(`🔒 Dispatched animation start event for frame ${frameId}`);
+    
     let successCount = 0;
     for (const childId of childElementIds) {
       const success = this.startAnimationForElement(childId, settings, frameId);
@@ -167,6 +177,15 @@ export class AnimationService {
       this.stopAnimationForElement(childId);
       stoppedCount++;
     }
+
+    // Dispatch custom event to auto-unlock the frame
+    const animationStopEvent = new CustomEvent('animationStop', {
+      detail: {
+        frameId: frameId
+      }
+    });
+    document.dispatchEvent(animationStopEvent);
+    console.log(`🔓 Dispatched animation stop event for frame ${frameId}`);
 
     console.log(`✅ Successfully stopped animation for ${stoppedCount}/${childElementIds.length} child elements of SimpleFrame ${frameId}`);
   }

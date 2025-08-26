@@ -1,4 +1,5 @@
 import { LayerComponentProps } from '@lidojs/design-core';
+// eslint-disable-next-line @nx/enforce-module-boundaries
 import { useEditor, useSelectedLayers } from '@lidojs/design-editor';
 import React, { FC, useState, useEffect } from 'react';
 
@@ -52,6 +53,37 @@ export const SimpleFrameContent: FC<SimpleFrameContentProps> = ({
       console.log('Error storing frame color:', error);
     }
   }, [layerId, frameColor]);
+
+  // Listen for animation start events to auto-lock the frame
+  useEffect(() => {
+    const handleAnimationStart = (event: CustomEvent) => {
+      if (event.detail.frameId === layerId) {
+        console.log(`🔒 Auto-locking frame ${layerId} due to animation start`);
+        setIsLocked(true);
+        // Also trigger the lock behavior to select frame and contents
+        lockFrameAndContents();
+      }
+    };
+
+    const handleAnimationStop = (event: CustomEvent) => {
+      if (event.detail.frameId === layerId) {
+        console.log(`🔓 Auto-unlocking frame ${layerId} due to animation stop`);
+        setIsLocked(false);
+        // Also trigger the unlock behavior to select only frame
+        unlockFrameAndContents();
+      }
+    };
+
+    // Listen for custom animation events
+    document.addEventListener('animationStart', handleAnimationStart as EventListener);
+    document.addEventListener('animationStop', handleAnimationStop as EventListener);
+    
+    return () => {
+      document.removeEventListener('animationStart', handleAnimationStart as EventListener);
+      document.removeEventListener('animationStop', handleAnimationStop as EventListener);
+    };
+  }, [layerId]);
+
   // Only unlock when user manually clicks the lock button
   // Remove automatic unlocking logic to maintain persistent lock state
 
