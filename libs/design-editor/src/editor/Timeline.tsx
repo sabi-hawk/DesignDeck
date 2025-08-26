@@ -79,6 +79,91 @@ const Timeline: FC<TimelineProps> = ({ isVisible, onToggle }) => {
     }
   };
 
+  // Get all frames organized by parent frame ID for grouping
+  const getFramesByParentFrame = (): Map<string, { frameIndex: number; frame: AnimationFrame }[]> => {
+    const framesByParent = new Map<string, { frameIndex: number; frame: AnimationFrame }[]>();
+    
+    const framesByIndex = getFramesByIndex();
+    for (const [frameIndex, frames] of framesByIndex.entries()) {
+      if (frames.length > 0) {
+        const frame = frames[0];
+        const parentFrameId = frame.parentFrameId;
+        
+        if (parentFrameId) {
+          if (!framesByParent.has(parentFrameId)) {
+            framesByParent.set(parentFrameId, []);
+          }
+          framesByParent.get(parentFrameId)!.push({ frameIndex, frame });
+        }
+      }
+    }
+    
+    return framesByParent;
+  };
+
+  // Calculate all parent frame groups upfront and create a mapping
+  const getParentFrameGroupMapping = (): Map<number, { 
+    parentFrameId: string; 
+    groupFrames: { frameIndex: number; frame: AnimationFrame }[];
+    isFirst: boolean;
+    isLast: boolean;
+    isMiddle: boolean;
+  } | null> => {
+    const mapping = new Map<number, any>();
+    const framesByParent = getFramesByParentFrame();
+    
+    // For each parent frame group, determine first/last/middle for each frame
+    for (const [parentFrameId, groupFrames] of framesByParent.entries()) {
+      // Sort frames by frameIndex to ensure proper order
+      const sortedFrames = groupFrames.sort((a, b) => a.frameIndex - b.frameIndex);
+      
+      for (let i = 0; i < sortedFrames.length; i++) {
+        const { frameIndex, frame } = sortedFrames[i];
+        const isFirst = i === 0;
+        const isLast = i === sortedFrames.length - 1;
+        const isMiddle = !isFirst && !isLast;
+        
+        mapping.set(frameIndex, {
+          parentFrameId,
+          groupFrames: sortedFrames,
+          isFirst,
+          isLast,
+          isMiddle
+        });
+      }
+    }
+    
+    return mapping;
+  };
+
+  // Get parent frame group info for a specific segment (using the pre-calculated mapping)
+  const getParentFrameGroupInfo = (segmentIndex: number): { 
+    parentFrameId: string; 
+    groupFrames: { frameIndex: number; frame: AnimationFrame }[];
+    isFirst: boolean;
+    isLast: boolean;
+    isMiddle: boolean;
+  } | null => {
+    const mapping = getParentFrameGroupMapping();
+    return mapping.get(segmentIndex) || null;
+  };
+
+  // Check if this segment is the first in its parent frame group
+  const isFirstInParentFrameGroup = (segmentIndex: number): boolean => {
+    const group = getParentFrameGroupInfo(segmentIndex);
+    if (!group) return false;
+    
+    return group.isFirst;
+  };
+
+  // Check if this segment is the last in its parent frame group
+  const isLastInParentFrameGroup = (segmentIndex: number): boolean => {
+    const group = getParentFrameGroupInfo(segmentIndex);
+    if (!group) return false;
+    
+    return group.isLast;
+  };
+
   // Handle animation start
   const handleStartAnimation = (
     elementId: string,
@@ -295,6 +380,25 @@ const Timeline: FC<TimelineProps> = ({ isVisible, onToggle }) => {
                     const endTime = startTime + timelineScale;
                     const frame = getFrameForSegment(i);
                     const hasFrames = frame !== null;
+                    const parentFrameGroupInfo = getParentFrameGroupInfo(i);
+                    const isFirstInGroup = isFirstInParentFrameGroup(i);
+                    const isLastInGroup = isLastInParentFrameGroup(i);
+
+                    // Debug logging for segments 0 and 1
+                    if (i === 0 || i === 1) {
+                      console.log(`Segment ${i}:`, {
+                        hasFrames,
+                        parentFrameGroupInfo: parentFrameGroupInfo ? {
+                          parentFrameId: parentFrameGroupInfo.parentFrameId,
+                          groupFrames: parentFrameGroupInfo.groupFrames.map(f => f.frameIndex),
+                          isFirst: parentFrameGroupInfo.isFirst,
+                          isLast: parentFrameGroupInfo.isLast,
+                          isMiddle: parentFrameGroupInfo.isMiddle
+                        } : null,
+                        isFirstInGroup,
+                        isLastInGroup
+                      });
+                    }
 
                     return (
                       <div
@@ -309,6 +413,26 @@ const Timeline: FC<TimelineProps> = ({ isVisible, onToggle }) => {
                           justifyContent: 'center',
                           position: 'relative',
                           flexShrink: 0,
+                          // Add red border styling for parent frame groups
+                          ...(parentFrameGroupInfo && {
+                            border: 'none', // Remove default border
+                            borderLeft: isFirstInGroup ? '2px solid #ff0000' : 'none', // Only left border for first element
+                            borderTop: '2px solid #ff0000', // Top border for all elements in group
+                            borderBottom: '2px solid #ff0000', // Bottom border for all elements in group
+                            borderRight: isLastInGroup ? '2px solid #ff0000' : 'none', // Only right border for last element
+                            borderRadius: isFirstInGroup ? '8px 0 0 8px' : isLastInGroup ? '0 8px 8px 0' : '0',
+                            marginLeft: isFirstInGroup ? '2px' : '0',
+                            marginRight: isLastInGroup ? '2px' : '0',
+                            marginTop: '2px', // Add top margin for symmetry
+                            marginBottom: '2px', // Add bottom margin for symmetry
+                            zIndex: 10,
+                            // Temporary debugging - add background colors to see grouping
+                            // background: isFirstInGroup ? 'rgba(255, 0, 0, 0.1)' : isLastInGroup ? 'rgba(0, 255, 0, 0.1)' : 'rgba(0, 0, 255, 0.1)',
+                            // Force the right border to be visible for debugging
+                            ...(isLastInGroup && {
+                              borderRight: '2px solid #ff0000 !important',
+                            }),
+                          }),
                         }}
                       >
                         {/* Time Label */}
@@ -324,56 +448,27 @@ const Timeline: FC<TimelineProps> = ({ isVisible, onToggle }) => {
                           {startTime}s
                         </span>
 
-                        {/* Element Info */}
-                        {hasFrames && frame && (
+                        {/* Parent Frame Group Label */}
+                        {parentFrameGroupInfo && isFirstInGroup && (
                           <div
                             css={{
                               position: 'absolute',
-                              top: '4px',
-                              left: '4px',
-                              fontSize: '8px',
+                              top: '-20px',
+                              left: '50%',
+                              transform: 'translateX(-50%)',
+                              background: '#ff0000',
                               color: 'white',
-                              background: 'rgba(0, 0, 0, 0.8)',
-                              padding: '2px 4px',
-                              borderRadius: '2px',
-                              maxWidth: '90px',
-                              overflow: 'hidden',
-                              textOverflow: 'ellipsis',
+                              fontSize: '8px',
+                              fontWeight: 'bold',
+                              padding: '2px 6px',
+                              borderRadius: '4px',
                               whiteSpace: 'nowrap',
+                              zIndex: 20,
+                              boxShadow: '0 2px 4px rgba(0, 0, 0, 0.3)',
                             }}
                           >
-                            {frame.elementId}
+                            Frame Group ({parentFrameGroupInfo.groupFrames.length} elements)
                           </div>
-                        )}
-
-                        {/* Stop Button for Individual Elements */}
-                        {hasFrames && frame && (
-                          <button
-                            css={{
-                              position: 'absolute',
-                              top: '4px',
-                              right: '4px',
-                              width: '16px',
-                              height: '16px',
-                              background: 'rgba(239, 68, 68, 0.9)',
-                              border: 'none',
-                              borderRadius: '50%',
-                              color: 'white',
-                              fontSize: '8px',
-                              cursor: 'pointer',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              ':hover': {
-                                background: 'rgba(239, 68, 68, 1)',
-                                transform: 'scale(1.1)',
-                              },
-                            }}
-                            title={`Stop animation for ${frame.elementId}`}
-                            onClick={() => handleStopAnimation(frame.elementId)}
-                          >
-                            ×
-                          </button>
                         )}
 
                         {/* Thumbnail if frames exist */}
@@ -561,6 +656,59 @@ const Timeline: FC<TimelineProps> = ({ isVisible, onToggle }) => {
               }}
             >
               Stop All
+            </button>
+
+            {/* Debug Parent Frame Groups */}
+            <button
+              css={{
+                background: 'rgba(255, 0, 0, 0.2)',
+                border: '1px solid rgba(255, 0, 0, 0.4)',
+                borderRadius: '6px',
+                padding: '8px 16px',
+                color: 'white',
+                fontSize: '14px',
+                fontWeight: '500',
+                cursor: 'pointer',
+                ':hover': {
+                  background: 'rgba(255, 0, 0, 0.3)',
+                },
+              }}
+              onClick={() => {
+                const framesByParent = getFramesByParentFrame();
+                console.log('🔍 Parent Frame Groups Debug:');
+                console.log(`Found ${framesByParent.size} parent frame groups`);
+                
+                for (const [parentFrameId, groupFrames] of framesByParent.entries()) {
+                  console.log(`Parent Frame ${parentFrameId}:`);
+                  groupFrames.forEach(({ frameIndex, frame }) => {
+                    console.log(`  - Frame ${frameIndex}: ${frame.elementId} (${frame.isInsideFrame ? 'inside frame' : 'not in frame'})`);
+                  });
+                }
+                
+                // Also show all frames
+                const framesByIndex = getFramesByIndex();
+                console.log('🎯 All Timeline Frames:');
+                for (const [frameIndex, frames] of framesByIndex.entries()) {
+                  if (frames.length > 0) {
+                    const frame = frames[0];
+                    const parentFrameGroupInfo = getParentFrameGroupInfo(frameIndex);
+                    const isFirst = isFirstInParentFrameGroup(frameIndex);
+                    const isLast = isLastInParentFrameGroup(frameIndex);
+                    console.log(`  Frame ${frameIndex}: ${frame.elementId} - Parent: ${parentFrameGroupInfo?.parentFrameId || 'none'} - Inside Frame: ${frame.isInsideFrame || false} - First: ${isFirst} - Last: ${isLast}`);
+                  }
+                }
+                
+                // Test the grouping logic for specific segments
+                console.log('🧪 Testing Grouping Logic:');
+                for (let i = 0; i < 5; i++) {
+                  const groupInfo = getParentFrameGroupInfo(i);
+                  const isFirst = isFirstInParentFrameGroup(i);
+                  const isLast = isLastInParentFrameGroup(i);
+                  console.log(`  Segment ${i}: Group: ${groupInfo ? 'Yes' : 'No'}, First: ${isFirst}, Last: ${isLast}`);
+                }
+              }}
+            >
+              Debug Groups
             </button>
 
             {/* Timeline Progress Bar */}
