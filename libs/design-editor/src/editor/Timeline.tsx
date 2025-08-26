@@ -388,6 +388,7 @@ const Timeline: FC<TimelineProps> = ({ isVisible, onToggle }) => {
                     if (i === 0 || i === 1) {
                       console.log(`Segment ${i}:`, {
                         hasFrames,
+                        frameColor: frame?.parentFrameBorderColor,
                         parentFrameGroupInfo: parentFrameGroupInfo ? {
                           parentFrameId: parentFrameGroupInfo.parentFrameId,
                           groupFrames: parentFrameGroupInfo.groupFrames.map(f => f.frameIndex),
@@ -398,6 +399,11 @@ const Timeline: FC<TimelineProps> = ({ isVisible, onToggle }) => {
                         isFirstInGroup,
                         isLastInGroup
                       });
+                    }
+
+                    // Debug all frames to see their colors
+                    if (hasFrames && frame) {
+                      console.log(`Frame ${i} (${frame.elementId}): parentFrameBorderColor = "${frame.parentFrameBorderColor}"`);
                     }
 
                     return (
@@ -416,11 +422,11 @@ const Timeline: FC<TimelineProps> = ({ isVisible, onToggle }) => {
                           // Add red border styling for parent frame groups
                           ...(parentFrameGroupInfo && {
                             border: 'none', // Remove default border
-                            borderLeft: isFirstInGroup ? '2px solid #ff0000' : 'none', // Only left border for first element
-                            borderTop: '2px solid #ff0000', // Top border for all elements in group
-                            borderBottom: '2px solid #ff0000', // Bottom border for all elements in group
-                            borderRight: isLastInGroup ? '2px solid #ff0000' : 'none', // Only right border for last element
-                            borderRadius: isFirstInGroup ? '8px 0 0 8px' : isLastInGroup ? '0 8px 8px 0' : '0',
+                            borderLeft: isFirstInGroup ? `2px solid ${frame?.parentFrameBorderColor || '#ff0000'}` : 'none', // Only left border for first element
+                            borderTop: `2px solid ${frame?.parentFrameBorderColor || '#ff0000'}`, // Top border for all elements in group
+                            borderBottom: `2px solid ${frame?.parentFrameBorderColor || '#ff0000'}`, // Bottom border for all elements in group
+                            borderRight: isLastInGroup ? `2px solid ${frame?.parentFrameBorderColor || '#ff0000'}` : 'none', // Only right border for last element
+                            borderRadius: isFirstInGroup && isLastInGroup ? '8px' : isFirstInGroup ? '8px 0 0 8px' : isLastInGroup ? '0 8px 8px 0' : '0',
                             marginLeft: isFirstInGroup ? '2px' : '0',
                             marginRight: isLastInGroup ? '2px' : '0',
                             marginTop: '2px', // Add top margin for symmetry
@@ -430,7 +436,7 @@ const Timeline: FC<TimelineProps> = ({ isVisible, onToggle }) => {
                             // background: isFirstInGroup ? 'rgba(255, 0, 0, 0.1)' : isLastInGroup ? 'rgba(0, 255, 0, 0.1)' : 'rgba(0, 0, 255, 0.1)',
                             // Force the right border to be visible for debugging
                             ...(isLastInGroup && {
-                              borderRight: '2px solid #ff0000 !important',
+                              borderRight: `2px solid ${frame?.parentFrameBorderColor || '#ff0000'} !important`,
                             }),
                           }),
                         }}
@@ -456,7 +462,7 @@ const Timeline: FC<TimelineProps> = ({ isVisible, onToggle }) => {
                               top: '-20px',
                               left: '50%',
                               transform: 'translateX(-50%)',
-                              background: '#ff0000',
+                              background: 'rgba(0, 0, 0, 0.8)',
                               color: 'white',
                               fontSize: '8px',
                               fontWeight: 'bold',
@@ -465,6 +471,7 @@ const Timeline: FC<TimelineProps> = ({ isVisible, onToggle }) => {
                               whiteSpace: 'nowrap',
                               zIndex: 20,
                               boxShadow: '0 2px 4px rgba(0, 0, 0, 0.3)',
+                              border: `1px solid ${frame?.parentFrameBorderColor || '#ff0000'}`,
                             }}
                           >
                             Frame Group ({parentFrameGroupInfo.groupFrames.length} elements)
@@ -709,6 +716,28 @@ const Timeline: FC<TimelineProps> = ({ isVisible, onToggle }) => {
               }}
             >
               Debug Groups
+            </button>
+
+            {/* Debug SimpleFrame Colors */}
+            <button
+              css={{
+                background: 'rgba(0, 255, 0, 0.2)',
+                border: '1px solid rgba(0, 255, 0, 0.4)',
+                borderRadius: '6px',
+                padding: '8px 16px',
+                color: 'white',
+                fontSize: '14px',
+                fontWeight: '500',
+                cursor: 'pointer',
+                ':hover': {
+                  background: 'rgba(0, 255, 0, 0.3)',
+                },
+              }}
+              onClick={() => {
+                animationService.debugSimpleFrameColors();
+              }}
+            >
+              Debug Colors
             </button>
 
             {/* Timeline Progress Bar */}

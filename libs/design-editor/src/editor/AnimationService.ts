@@ -15,6 +15,7 @@ export interface AnimationFrame {
   settings: AnimationSettings; // Animation configuration settings
   isInsideFrame?: boolean; // Whether this element was animated as part of a SimpleFrame
   parentFrameId?: string; // The ID of the SimpleFrame that contains this element
+  parentFrameBorderColor?: string; // The border color of the parent frame
 }
 
 export interface AnimatedElement {
@@ -278,6 +279,64 @@ export class AnimationService {
     this.onElementAnimationStopped = callback;
   }
 
+  // Get the border color of a parent frame
+  private getParentFrameBorderColor(parentFrameId: string): string | undefined {
+    try {
+      console.log(`🔍 Looking for parent frame color for: ${parentFrameId}`);
+      
+      // First, try to get the color from the pages data (most reliable)
+      if (this.pages && this.pages.length > 0) {
+        const page = this.pages[0];
+        if (page.layers && page.layers[parentFrameId]) {
+          const frameLayer = page.layers[parentFrameId];
+          if (frameLayer && frameLayer.data && frameLayer.data.props) {
+            // Generate the same color that would be used in SimpleFrameContent
+            const frameColor = this.generateFrameColor(parentFrameId);
+            console.log(`✅ Found frame color from pages data for ${parentFrameId}: ${frameColor}`);
+            return frameColor;
+          }
+        }
+      }
+      
+      // Fallback: try to get from DOM data attribute
+      const parentFrameElement = document.querySelector(`.${CSS.escape(parentFrameId)}`);
+      if (parentFrameElement) {
+        const frameColor = parentFrameElement.getAttribute('data-frame-color');
+        if (frameColor) {
+          console.log(`✅ Found frame color from DOM data attribute for ${parentFrameId}: ${frameColor}`);
+          return frameColor;
+        }
+      }
+      
+      // If we can't find the color, generate it using the same algorithm
+      const generatedColor = this.generateFrameColor(parentFrameId);
+      console.log(`🎨 Generated frame color for ${parentFrameId}: ${generatedColor}`);
+      return generatedColor;
+      
+    } catch (error) {
+      console.warn(`Error getting parent frame border color for ${parentFrameId}:`, error);
+      return this.generateFrameColor(parentFrameId);
+    }
+  }
+
+  // Generate the same unique color as SimpleFrameContent
+  private generateFrameColor(layerId: string): string {
+    // Use the same algorithm as in SimpleFrameContent
+    let hash = 0;
+    for (let i = 0; i < layerId.length; i++) {
+      const char = layerId.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash; // Convert to 32-bit integer
+    }
+    
+    // Generate hue, saturation, and lightness values
+    const hue = Math.abs(hash) % 360; // 0-359 degrees
+    const saturation = 60 + (Math.abs(hash) % 40); // 60-99%
+    const lightness = 45 + (Math.abs(hash) % 20); // 45-64%
+    
+    return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+  }
+
   // Capture a single frame of an element
   private async captureFrame(elementId: string): Promise<void> {
     try {
@@ -330,7 +389,20 @@ export class AnimationService {
          settings: animatedElement.settings,
          isInsideFrame: !!animatedElement.parentFrameId,
          parentFrameId: animatedElement.parentFrameId,
+         parentFrameBorderColor: animatedElement.parentFrameId ? 
+           this.getParentFrameBorderColor(animatedElement.parentFrameId) : undefined,
        };
+
+      // If we couldn't get the parent frame color initially, try again after a short delay
+      if (animatedElement.parentFrameId && !frame.parentFrameBorderColor) {
+        setTimeout(() => {
+          const retryColor = this.getParentFrameBorderColor(animatedElement.parentFrameId!);
+          if (retryColor && retryColor !== '#ff0000') {
+            frame.parentFrameBorderColor = retryColor;
+            console.log(`🔄 Updated frame color for ${elementId} to ${retryColor}`);
+          }
+        }, 100);
+      }
 
       // Store in history (replace previous frame for this element)
       const history = this.frameHistory.get(elementId) || [];
@@ -415,6 +487,40 @@ export class AnimationService {
     this.nextFrameIndex = 0;
     
     console.log('✅ All animations cleaned up');
+  }
+
+  // Debug method to inspect all SimpleFrame elements and their colors
+  debugSimpleFrameColors(): void {
+    console.log('🔍 Debugging SimpleFrame Colors:');
+    
+    // Find all elements that might be SimpleFrames
+    const allElements = document.querySelectorAll('*');
+    const simpleFrameElements = Array.from(allElements).filter(el => {
+      const className = el.className || '';
+      const style = el.getAttribute('style') || '';
+      return className.includes('css-') || style.includes('border') || el.getAttribute('data-frame-color');
+    });
+    
+    console.log(`Found ${simpleFrameElements.length} potential SimpleFrame elements`);
+    
+    simpleFrameElements.forEach((element, index) => {
+      const className = element.className || '';
+      const dataFrameColor = element.getAttribute('data-frame-color');
+      const computedStyle = window.getComputedStyle(element);
+      
+      console.log(`Element ${index}:`, {
+        tagName: element.tagName,
+        className: className,
+        id: element.id,
+        dataFrameColor: dataFrameColor,
+        computedBorderColor: computedStyle.borderColor,
+        computedBorderTopColor: computedStyle.borderTopColor,
+        computedBorderLeftColor: computedStyle.borderLeftColor,
+        computedBorderRightColor: computedStyle.borderRightColor,
+        computedBorderBottomColor: computedStyle.borderBottomColor,
+        element: element
+      });
+    });
   }
 
   // Debug method to show current state
