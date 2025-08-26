@@ -130,11 +130,11 @@ export class AnimationService {
     console.log(`📊 Total animated elements: ${this.animatedElements.size}`);
 
     // Start capturing frames every 10 minutes
-    const interval = setInterval(async () => {
-      await this.captureFrame(elementId);
-    }, 600000); // 600,000 ms = 10 minutes
+    // const interval = setInterval(async () => {
+    //   await this.captureFrame(elementId);
+    // }, 600000); // 600,000 ms = 10 minutes
 
-    this.animationIntervals.set(elementId, interval);
+    // this.animationIntervals.set(elementId, interval);
 
     // Capture first frame immediately
     this.captureFrame(elementId);

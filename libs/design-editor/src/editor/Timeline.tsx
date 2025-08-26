@@ -516,6 +516,53 @@ const Timeline: FC<TimelineProps> = ({ isVisible, onToggle }) => {
                                 : '0KB'}
                             </div>
 
+                            {/* Loading/Processing Overlay */}
+                            <div
+                              css={{
+                                position: 'absolute',
+                                top: 0,
+                                left: 0,
+                                right: 0,
+                                bottom: 0,
+                                background: 'rgba(0, 0, 0, 0.7)',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                zIndex: 15,
+                                borderRadius: '4px',
+                              }}
+                            >
+                              {/* Spinning Animation */}
+                              <div
+                                css={{
+                                  width: '20px',
+                                  height: '20px',
+                                  border: '2px solid rgba(255, 255, 255, 0.3)',
+                                  borderTop: '2px solid #667eea',
+                                  borderRadius: '50%',
+                                  animation: 'spin 1s linear infinite',
+                                  marginBottom: '4px',
+                                  '@keyframes spin': {
+                                    '0%': { transform: 'rotate(0deg)' },
+                                    '100%': { transform: 'rotate(360deg)' },
+                                  },
+                                }}
+                              />
+                              {/* Processing Text */}
+                              <div
+                                css={{
+                                  color: 'white',
+                                  fontSize: '8px',
+                                  fontWeight: '500',
+                                  textAlign: 'center',
+                                  textShadow: '0 1px 2px rgba(0, 0, 0, 0.5)',
+                                }}
+                              >
+                                Processing...
+                              </div>
+                            </div>
+
                             {/* Try to display the image */}
                             {frame?.imageDataUrl &&
                             frame.imageDataUrl.startsWith('data:image/') ? (
