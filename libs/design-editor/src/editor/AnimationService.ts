@@ -16,6 +16,7 @@ export interface AnimationFrame {
   isInsideFrame?: boolean; // Whether this element was animated as part of a SimpleFrame
   parentFrameId?: string; // The ID of the SimpleFrame that contains this element
   parentFrameBorderColor?: string; // The border color of the parent frame
+  fileId?: string; // ID of the file uploaded to speedpaint.co
 }
 
 export interface AnimatedElement {
@@ -412,6 +413,9 @@ export class AnimationService {
            this.getParentFrameBorderColor(animatedElement.parentFrameId) : undefined,
        };
 
+      // Submit frame to API for processing
+      this.submitFrameToAPI(frame, elementId);
+
       // If we couldn't get the parent frame color initially, try again after a short delay
       if (animatedElement.parentFrameId && !frame.parentFrameBorderColor) {
         setTimeout(() => {
@@ -444,6 +448,146 @@ export class AnimationService {
     }
   }
 
+  // Submit frame to API for processing
+  private async submitFrameToAPI(frame: AnimationFrame, elementId: string): Promise<void> {
+    try {
+      console.log(`🚀 Submitting frame ${frame.id} to API for processing...`);
+
+      // Convert image data URL to file
+      const imageFile = await this.dataURLToFile(frame.imageDataUrl, `element-${elementId}.png`);
+      
+      // Get element coordinates and dimensions
+      const elementData = await this.getElementCoordinates(elementId, frame.parentFrameId);
+      
+      // Create form data
+      const formData = new FormData();
+      formData.append('file', imageFile);
+      formData.append('hand', '0'); // Default hand style
+      formData.append('sketch_duration', '10'); // Default sketch duration
+      formData.append('color_duration', '5'); // Default color duration
+      formData.append('email', 'test@example.com'); // Test email
+      formData.append('frame_width', '1920'); // Frame width
+      formData.append('frame_length', '1080'); // Frame height
+      formData.append('center_x', elementData.centerX.toString());
+      formData.append('center_y', elementData.centerY.toString());
+      formData.append('element_width', elementData.width.toString());
+      formData.append('element_length', elementData.height.toString());
+
+      // Submit to API
+      const response = await fetch('https://speedpaint.co/api/submit', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error(`API request failed with status ${response.status}`);
+      }
+
+      const result = await response.json();
+      console.log(`✅ Frame submitted successfully:`, result);
+
+      // Store the file_id for later use
+      if (result.file_id) {
+        frame.fileId = result.file_id;
+        console.log(`📁 File ID stored: ${result.file_id}`);
+      }
+
+    } catch (error) {
+      console.error(`❌ Error submitting frame to API:`, error);
+      // Don't re-throw to prevent breaking the animation loop
+    }
+  }
+
+  // Convert data URL to File object
+  private dataURLToFile(dataURL: string, filename: string): Promise<File> {
+    return new Promise((resolve, reject) => {
+      try {
+        const arr = dataURL.split(',');
+        const mime = arr[0].match(/:(.*?);/)?.[1] || 'image/png';
+        const bstr = atob(arr[1]);
+        let n = bstr.length;
+        const u8arr = new Uint8Array(n);
+        
+        while (n--) {
+          u8arr[n] = bstr.charCodeAt(n);
+        }
+        
+        const file = new File([u8arr], filename, { type: mime });
+        resolve(file);
+      } catch (error) {
+        reject(error);
+      }
+    });
+  }
+
+  // Get element coordinates and dimensions
+  private async getElementCoordinates(elementId: string, parentFrameId?: string): Promise<{
+    centerX: number;
+    centerY: number;
+    width: number;
+    height: number;
+  }> {
+    try {
+      const element = this.findElementByLayerId(elementId);
+      if (!element) {
+        throw new Error(`Element ${elementId} not found`);
+      }
+
+      const rect = element.getBoundingClientRect();
+      
+      let centerX: number;
+      let centerY: number;
+      
+      if (parentFrameId) {
+        // Get the parent frame element using its ID
+        const parentFrame = document.querySelector(`.${CSS.escape(parentFrameId)}`);
+        if (parentFrame) {
+          const parentRect = parentFrame.getBoundingClientRect();
+          
+          // Calculate element center relative to the parent frame
+          const elementCenterX = rect.left + rect.width / 2;
+          const elementCenterY = rect.top + rect.height / 2;
+          
+          // Convert to coordinates relative to the parent frame
+          centerX = ((elementCenterX - parentRect.left) / parentRect.width) * 1920;
+          centerY = ((elementCenterY - parentRect.top) / parentRect.height) * 1080;
+        } else {
+          // Fallback to window-based calculation if parent frame not found
+          centerX = (rect.left + rect.width / 2) / window.innerWidth * 1920;
+          centerY = (rect.top + rect.height / 2) / window.innerHeight * 1080;
+        }
+      } else {
+        // No parent frame, use window-based calculation
+        centerX = (rect.left + rect.width / 2) / window.innerWidth * 1920;
+        centerY = (rect.top + rect.height / 2) / window.innerHeight * 1080;
+      }
+      
+      // Get unscaled dimensions from computed styles
+      const computedStyle = window.getComputedStyle(element);
+      const width = parseFloat(computedStyle.width);
+      const height = parseFloat(computedStyle.height);
+
+      console.log(`📍 Element coordinates: center(${Math.round(centerX)}, ${Math.round(centerY)}), size(${Math.round(width)}x${Math.round(height)})`);
+
+      return {
+        centerX: Math.round(Math.max(0, Math.min(1920, centerX))),
+        centerY: Math.round(Math.max(0, Math.min(1080, centerY))),
+        width: Math.round(Math.max(1, Math.min(1920, width))),
+        height: Math.round(Math.max(1, Math.min(1080, height))),
+      };
+
+    } catch (error) {
+      console.error(`Error getting element coordinates for ${elementId}:`, error);
+      // Return default values if we can't get coordinates
+      return {
+        centerX: 960, // Center of 1920
+        centerY: 540, // Center of 1080
+        width: 200,
+        height: 200,
+      };
+    }
+  }
+  // END - Submit frame to API for processing
   // Find the actual DOM element by layer ID
   private findElementByLayerId(layerId: string): Element | null {
     // First, try to find by the new class-based approach (element ID as class)
