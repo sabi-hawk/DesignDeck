@@ -90,8 +90,8 @@ const CommonSettings: React.FC<CommonSettingsProps> = ({ onShowAnimationPopup })
   );
 
   // Check if we can animate the selected elements
-  // With the new multi-element system, we can animate multiple elements
-  const canAnimate = selectedLayerIds.length > 0;
+  // Disable animation for ROOT element (canvas) and require at least one selected element
+  const canAnimate = selectedLayerIds.length > 0 && !selectedLayerIds.includes('ROOT');
 
   // Check if any of the selected elements are already animated
   const selectedAnimatedElements = selectedLayerIds.filter(id => 
@@ -135,6 +135,11 @@ const CommonSettings: React.FC<CommonSettingsProps> = ({ onShowAnimationPopup })
       return 'Animate Element';
     }
     
+    // Check if ROOT is selected
+    if (selectedLayerIds.includes('ROOT')) {
+      return 'Cannot Animate Canvas';
+    }
+    
     if (hasAnimatedElements) {
       return 'Stop Animation';
     }
@@ -149,6 +154,16 @@ const CommonSettings: React.FC<CommonSettingsProps> = ({ onShowAnimationPopup })
         color: '#94a3b8',
         cursor: 'not-allowed',
         ':hover': { background: '#e2e8f0' },
+      };
+    }
+    
+    // Check if ROOT is selected - show disabled style
+    if (selectedLayerIds.includes('ROOT')) {
+      return {
+        background: '#f3f4f6',
+        color: '#9ca3af',
+        cursor: 'not-allowed',
+        ':hover': { background: '#f3f4f6' },
       };
     }
     
