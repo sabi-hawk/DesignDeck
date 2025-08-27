@@ -15,14 +15,13 @@ interface AnimationPopupProps {
 }
 
 const handStyles = [
-  { id: 'none', name: 'No Hand', icon: '🚫', color: '#8B5CF6' },
-  { id: 'point', name: 'Pointing', icon: '👆', color: '#10B981' },
-  { id: 'fist', name: 'Fist', icon: '✊', color: '#059669' },
-  { id: 'open', name: 'Open Palm', icon: '✋', color: '#3B82F6' },
-  { id: 'hold', name: 'Holding', icon: '🤏', color: '#EC4899' },
-  { id: 'pen', name: 'Pen', icon: '✍️', color: '#2563EB' },
-  { id: 'beckon', name: 'Beckoning', icon: '👋', color: '#84CC16' },
-  { id: 'shaka', name: 'Shaka', icon: '🤙', color: '#F97316' },
+  { id: '0', name: 'Shaka', icon: '🤙', color: '#8B5CF6' },
+  { id: '1', name: 'Pointing', icon: '👆', color: '#10B981' },
+  { id: '2', name: 'Fist', icon: '✊', color: '#059669' },
+  { id: '3', name: 'Open Palm', icon: '✋', color: '#3B82F6' },
+  { id: '4', name: 'Holding', icon: '🤏', color: '#EC4899' },
+  { id: '5', name: 'Pen', icon: '✍️', color: '#2563EB' },
+  { id: '6', name: 'Beckoning', icon: '👋', color: '#84CC16' },
 ];
 
 const AnimationPopup: FC<AnimationPopupProps> = ({
@@ -33,9 +32,9 @@ const AnimationPopup: FC<AnimationPopupProps> = ({
   elementName = 'Selected Element'
 }) => {
   const [settings, setSettings] = useState<AnimationSettings>({
-    sketchingDuration: 10,
-    colorFillDuration: 5,
-    handStyle: 'point'
+    sketchingDuration: 5,
+    colorFillDuration: 3,
+    handStyle: '1'
   });
 
   const handleAnimate = () => {
@@ -245,7 +244,7 @@ const AnimationPopup: FC<AnimationPopupProps> = ({
                 outline: 'none',
                 cursor: 'pointer',
               }}
-              max="30"
+              max="10"
               min="1"
               type="range"
               value={settings.sketchingDuration}
@@ -295,7 +294,7 @@ const AnimationPopup: FC<AnimationPopupProps> = ({
                 outline: 'none',
                 cursor: 'pointer',
               }}
-              max="20"
+              max="10"
               min="0"
               type="range"
               value={settings.colorFillDuration}
@@ -380,6 +379,16 @@ const AnimationPopup: FC<AnimationPopupProps> = ({
                   }}
                 >
                   {style.name}
+                </div>
+                <div
+                  css={{
+                    fontSize: '8px',
+                    color: 'rgba(255, 255, 255, 0.7)',
+                    fontWeight: '400',
+                    textAlign: 'center',
+                  }}
+                >
+                  {style.id}
                 </div>
               </button>
             ))}

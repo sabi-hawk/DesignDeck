@@ -468,12 +468,19 @@ export class AnimationService {
       // Get element coordinates and dimensions
       const elementData = await this.getElementCoordinates(elementId, frame.parentFrameId);
       
+      // Get the animation settings from the frame
+      const animatedElement = this.animatedElements.get(elementId);
+      if (!animatedElement) {
+        console.warn(`No animated element found for ${elementId}, using default settings`);
+        return;
+      }
+
       // Create form data
       const formData = new FormData();
       formData.append('file', imageFile);
-      formData.append('hand', '0'); // Default hand style
-      formData.append('sketch_duration', '10'); // Default sketch duration
-      formData.append('color_duration', '5'); // Default color duration
+      formData.append('hand', animatedElement.settings.handStyle); // Use actual hand style from settings
+      formData.append('sketch_duration', animatedElement.settings.sketchingDuration.toString()); // Use actual sketch duration
+      formData.append('color_duration', animatedElement.settings.colorFillDuration.toString()); // Use actual color duration
       formData.append('email', 'test@example.com'); // Test email
       formData.append('frame_width', '1920'); // Frame width
       formData.append('frame_length', '1080'); // Frame height
