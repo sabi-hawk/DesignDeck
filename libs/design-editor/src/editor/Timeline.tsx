@@ -52,6 +52,54 @@ const Timeline: FC<TimelineProps> = ({ isVisible, onToggle }) => {
       // Animation stopped
     });
 
+    // Listen for processing events
+    const handleProcessingComplete = (event: CustomEvent) => {
+      const { elementId, frameId, resultUrl } = event.detail;
+      console.log(`🎉 Processing complete for ${elementId}: ${resultUrl}`);
+      
+      // Update the frame with the result URL
+      setCurrentFrames((prev) => 
+        prev.map((frame) => 
+          frame.id === frameId 
+            ? { ...frame, resultUrl, progress: 100 }
+            : frame
+        )
+      );
+    };
+
+    const handleProgressUpdate = (event: CustomEvent) => {
+      const { elementId, frameId, progress } = event.detail;
+      console.log(`📊 Progress update for ${elementId}: ${progress}%`);
+      
+      // Update the frame with the progress
+      setCurrentFrames((prev) => 
+        prev.map((frame) => 
+          frame.id === frameId 
+            ? { ...frame, progress }
+            : frame
+        )
+      );
+    };
+
+    const handleProcessingFailed = (event: CustomEvent) => {
+      const { elementId, frameId } = event.detail;
+      console.log(`❌ Processing failed for ${elementId}`);
+      
+      // Mark the frame as failed
+      setCurrentFrames((prev) => 
+        prev.map((frame) => 
+          frame.id === frameId 
+            ? { ...frame, progress: -1 } // -1 indicates failure
+            : frame
+        )
+      );
+    };
+
+    // Add event listeners
+    document.addEventListener('processingComplete', handleProcessingComplete as EventListener);
+    document.addEventListener('progressUpdate', handleProgressUpdate as EventListener);
+    document.addEventListener('processingFailed', handleProcessingFailed as EventListener);
+
     // Update current time every second for timeline display
     const timeInterval = setInterval(() => {
       setCurrentTime((prev) => prev + 1);
@@ -59,6 +107,10 @@ const Timeline: FC<TimelineProps> = ({ isVisible, onToggle }) => {
 
     return () => {
       clearInterval(timeInterval);
+      // Remove event listeners
+      document.removeEventListener('processingComplete', handleProcessingComplete as EventListener);
+      document.removeEventListener('progressUpdate', handleProgressUpdate as EventListener);
+      document.removeEventListener('processingFailed', handleProcessingFailed as EventListener);
     };
   }, [animationService, pages]); // Add pages to dependency array
 
@@ -493,6 +545,16 @@ const Timeline: FC<TimelineProps> = ({ isVisible, onToggle }) => {
                               overflow: 'hidden',
                               position: 'absolute',
                               top: '25px',
+                              cursor: frame?.resultUrl ? 'pointer' : 'default',
+                              ':hover': frame?.resultUrl ? {
+                                border: '1px solid #667eea',
+                                boxShadow: '0 2px 8px rgba(102, 126, 234, 0.3)',
+                              } : {},
+                            }}
+                            onClick={() => {
+                              if (frame?.resultUrl) {
+                                window.open(frame.resultUrl, '_blank');
+                              }
                             }}
                           >
                             {/* Debug info */}
@@ -516,52 +578,140 @@ const Timeline: FC<TimelineProps> = ({ isVisible, onToggle }) => {
                                 : '0KB'}
                             </div>
 
-                            {/* Loading/Processing Overlay */}
-                            <div
-                              css={{
-                                position: 'absolute',
-                                top: 0,
-                                left: 0,
-                                right: 0,
-                                bottom: 0,
-                                background: 'rgba(0, 0, 0, 0.7)',
-                                display: 'flex',
-                                flexDirection: 'column',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                zIndex: 15,
-                                borderRadius: '4px',
-                              }}
-                            >
-                              {/* Spinning Animation */}
+                                                         {/* Processing Status Overlay */}
+                             {(!frame.resultUrl && frame.progress !== -1) && (
+                               <div
+                                 css={{
+                                   position: 'absolute',
+                                   top: 0,
+                                   left: 0,
+                                   right: 0,
+                                   bottom: 0,
+                                   background: 'rgba(0, 0, 0, 0.7)',
+                                   display: 'flex',
+                                   flexDirection: 'column',
+                                   alignItems: 'center',
+                                   justifyContent: 'center',
+                                   zIndex: 15,
+                                   borderRadius: '4px',
+                                 }}
+                               >
+                                 {/* Spinning Animation */}
+                                 <div
+                                   css={{
+                                     width: '20px',
+                                     height: '20px',
+                                     border: '2px solid rgba(255, 255, 255, 0.3)',
+                                     borderTop: '2px solid #667eea',
+                                     borderRadius: '50%',
+                                     animation: 'spin 1s linear infinite',
+                                     marginBottom: '4px',
+                                     '@keyframes spin': {
+                                       '0%': { transform: 'rotate(0deg)' },
+                                       '100%': { transform: 'rotate(360deg)' },
+                                     },
+                                   }}
+                                 />
+                                 {/* Processing Text */}
+                                 <div
+                                   css={{
+                                     color: 'white',
+                                     fontSize: '8px',
+                                     fontWeight: '500',
+                                     textAlign: 'center',
+                                     textShadow: '0 1px 2px rgba(0, 0, 0, 0.5)',
+                                   }}
+                                 >
+                                   Processing...
+                                 </div>
+                               </div>
+                             )}
+
+                            {/* Failed Processing Overlay */}
+                            {frame.progress === -1 && (
                               <div
                                 css={{
-                                  width: '20px',
-                                  height: '20px',
-                                  border: '2px solid rgba(255, 255, 255, 0.3)',
-                                  borderTop: '2px solid #667eea',
-                                  borderRadius: '50%',
-                                  animation: 'spin 1s linear infinite',
-                                  marginBottom: '4px',
-                                  '@keyframes spin': {
-                                    '0%': { transform: 'rotate(0deg)' },
-                                    '100%': { transform: 'rotate(360deg)' },
-                                  },
-                                }}
-                              />
-                              {/* Processing Text */}
-                              <div
-                                css={{
-                                  color: 'white',
-                                  fontSize: '8px',
-                                  fontWeight: '500',
-                                  textAlign: 'center',
-                                  textShadow: '0 1px 2px rgba(0, 0, 0, 0.5)',
+                                  position: 'absolute',
+                                  top: 0,
+                                  left: 0,
+                                  right: 0,
+                                  bottom: 0,
+                                  background: 'rgba(220, 38, 38, 0.8)',
+                                  display: 'flex',
+                                  flexDirection: 'column',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  zIndex: 15,
+                                  borderRadius: '4px',
                                 }}
                               >
-                                Processing...
+                                {/* Error Icon */}
+                                <div
+                                  css={{
+                                    color: 'white',
+                                    fontSize: '16px',
+                                    marginBottom: '4px',
+                                  }}
+                                >
+                                  ❌
+                                </div>
+                                {/* Error Text */}
+                                <div
+                                  css={{
+                                    color: 'white',
+                                    fontSize: '8px',
+                                    fontWeight: '500',
+                                    textAlign: 'center',
+                                    textShadow: '0 1px 2px rgba(0, 0, 0, 0.5)',
+                                  }}
+                                >
+                                  Failed
+                                </div>
                               </div>
-                            </div>
+                            )}
+
+                            {/* Success Overlay */}
+                            {frame.resultUrl && (
+                              <div
+                                css={{
+                                  position: 'absolute',
+                                  top: 0,
+                                  left: 0,
+                                  right: 0,
+                                  bottom: 0,
+                                  background: 'rgba(16, 185, 129, 0.8)',
+                                  display: 'flex',
+                                  flexDirection: 'column',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  zIndex: 15,
+                                  borderRadius: '4px',
+                                }}
+                              >
+                                {/* Success Icon */}
+                                <div
+                                  css={{
+                                    color: 'white',
+                                    fontSize: '16px',
+                                    marginBottom: '4px',
+                                  }}
+                                >
+                                  ✅
+                                </div>
+                                {/* Success Text */}
+                                <div
+                                  css={{
+                                    color: 'white',
+                                    fontSize: '8px',
+                                    fontWeight: '500',
+                                    textAlign: 'center',
+                                    textShadow: '0 1px 2px rgba(0, 0, 0, 0.5)',
+                                  }}
+                                >
+                                  Ready
+                                </div>
+                              </div>
+                            )}
 
                             {/* Try to display the image */}
                             {frame?.imageDataUrl &&

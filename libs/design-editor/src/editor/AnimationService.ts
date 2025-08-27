@@ -17,6 +17,8 @@ export interface AnimationFrame {
   parentFrameId?: string; // The ID of the SimpleFrame that contains this element
   parentFrameBorderColor?: string; // The border color of the parent frame
   fileId?: string; // ID of the file uploaded to speedpaint.co
+  resultUrl?: string; // URL of the processed video when ready
+  progress?: number; // Processing progress percentage (0-100)
 }
 
 export interface AnimatedElement {
@@ -497,12 +499,120 @@ export class AnimationService {
       if (result.file_id) {
         frame.fileId = result.file_id;
         console.log(`📁 File ID stored: ${result.file_id}`);
+        
+        // Start polling for result
+        this.pollForResult(frame.fileId, frame, elementId);
       }
 
     } catch (error) {
       console.error(`❌ Error submitting frame to API:`, error);
       // Don't re-throw to prevent breaking the animation loop
     }
+  }
+
+  // Poll for result from the API
+  private async pollForResult(fileId: string, frame: AnimationFrame, elementId: string): Promise<void> {
+    const maxAttempts = 60; // 10 minutes max (60 * 10 seconds)
+    let attempts = 0;
+    
+    const pollInterval = setInterval(async () => {
+      try {
+        attempts++;
+        console.log(`🔄 Polling for result (attempt ${attempts}/${maxAttempts}) for file ${fileId}`);
+        
+        const response = await fetch(`https://speedpaint.co/api/result?file_id=${fileId}`);
+        
+        if (!response.ok) {
+          throw new Error(`Result API request failed with status ${response.status}`);
+        }
+        
+        const result = await response.json();
+        console.log(`📊 Poll result for ${fileId}:`, result);
+        
+        if (result.status === 'success' && result.result_url) {
+          console.log(`🎉 Video ready for ${fileId}: ${result.result_url}`);
+          
+          // Update frame with result URL
+          frame.resultUrl = result.result_url;
+          
+          // Notify that processing is complete
+          this.notifyProcessingComplete(elementId, frame);
+          
+          // Stop polling
+          clearInterval(pollInterval);
+          
+        } else if (result.status === 'pending') {
+          console.log(`⏳ Still processing ${fileId}: ${result.progress}% - ${result.message}`);
+          
+          // Update progress if available
+          if (result.progress !== undefined) {
+            frame.progress = result.progress;
+            this.notifyProgressUpdate(elementId, frame);
+          }
+          
+        } else {
+          console.warn(`⚠️ Unexpected status for ${fileId}:`, result);
+        }
+        
+        // Stop polling if max attempts reached
+        if (attempts >= maxAttempts) {
+          console.warn(`⏰ Max polling attempts reached for ${fileId}`);
+          clearInterval(pollInterval);
+          this.notifyProcessingFailed(elementId, frame);
+        }
+        
+      } catch (error) {
+        console.error(`❌ Error polling for result ${fileId}:`, error);
+        attempts++;
+        
+        // Stop polling if too many errors
+        if (attempts >= maxAttempts) {
+          console.warn(`⏰ Max polling attempts reached due to errors for ${fileId}`);
+          clearInterval(pollInterval);
+          this.notifyProcessingFailed(elementId, frame);
+        }
+      }
+    }, 10000); // Poll every 10 seconds
+  }
+
+  // Notify that processing is complete
+  private notifyProcessingComplete(elementId: string, frame: AnimationFrame): void {
+    // Dispatch custom event to notify timeline
+    const processingCompleteEvent = new CustomEvent('processingComplete', {
+      detail: {
+        elementId: elementId,
+        frameId: frame.id,
+        resultUrl: frame.resultUrl
+      }
+    });
+    document.dispatchEvent(processingCompleteEvent);
+    console.log(`📢 Dispatched processing complete event for ${elementId}`);
+  }
+
+  // Notify progress update
+  private notifyProgressUpdate(elementId: string, frame: AnimationFrame): void {
+    // Dispatch custom event to update progress
+    const progressUpdateEvent = new CustomEvent('progressUpdate', {
+      detail: {
+        elementId: elementId,
+        frameId: frame.id,
+        progress: frame.progress
+      }
+    });
+    document.dispatchEvent(progressUpdateEvent);
+  }
+
+  // Notify that processing failed
+  private notifyProcessingFailed(elementId: string, frame: AnimationFrame): void {
+    // Dispatch custom event to notify failure
+    const processingFailedEvent = new CustomEvent('processingFailed', {
+      detail: {
+        elementId: elementId,
+        frameId: frame.id
+      }
+    });
+    document.dispatchEvent(processingFailedEvent);
+    console.log(`📢 Dispatched processing failed event for ${elementId}`);
   }
 
   // Convert data URL to File object
