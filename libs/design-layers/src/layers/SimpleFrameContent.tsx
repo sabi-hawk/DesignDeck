@@ -84,6 +84,34 @@ export const SimpleFrameContent: FC<SimpleFrameContentProps> = ({
     };
   }, [layerId]);
 
+  // Listen for removeElementsFromState events to remove child elements from editor state
+  useEffect(() => {
+    const handleRemoveElementsFromState = (event: CustomEvent) => {
+      if (event.detail.frameId === layerId) {
+        console.log(`🗑️ Removing ${event.detail.elementIds.length} child elements from state for frame ${layerId}:`, event.detail.elementIds);
+        
+        try {
+          // Remove each child element from the editor state
+          event.detail.elementIds.forEach((elementId: string) => {
+            console.log(`🗑️ Removing element ${elementId} from editor state`);
+            actions.deleteLayer(0, elementId);
+          });
+          
+          console.log(`✅ Successfully removed ${event.detail.elementIds.length} child elements from editor state`);
+        } catch (error) {
+          console.error(`❌ Error removing child elements from editor state:`, error);
+        }
+      }
+    };
+
+    // Listen for removeElementsFromState events
+    document.addEventListener('removeElementsFromState', handleRemoveElementsFromState as EventListener);
+    
+    return () => {
+      document.removeEventListener('removeElementsFromState', handleRemoveElementsFromState as EventListener);
+    };
+  }, [layerId, actions]);
+
   // Only unlock when user manually clicks the lock button
   // Remove automatic unlocking logic to maintain persistent lock state
 

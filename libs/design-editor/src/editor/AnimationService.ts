@@ -408,12 +408,12 @@ export class AnimationService {
         return;
       }
 
-             // Create frame data
-       const frame: AnimationFrame = {
-         id: `${elementId}-${Date.now()}`,
-         timestamp: Date.now(),
-         imageDataUrl,
-         elementId,
+      // Create frame data
+      const frame: AnimationFrame = {
+        id: `${elementId}-${Date.now()}`,
+        timestamp: Date.now(),
+        imageDataUrl,
+        elementId,
          frameIndex: animatedElement.frameIndex,
          settings: animatedElement.settings,
          isInsideFrame: !!animatedElement.parentFrameId,
@@ -594,6 +594,190 @@ export class AnimationService {
     });
     document.dispatchEvent(processingCompleteEvent);
     console.log(`📢 Dispatched processing complete event for ${elementId}`);
+
+    // Replace the frame with video on the canvas
+    this.replaceFrameWithVideo(elementId, frame.resultUrl);
+  }
+
+  // Replace the SimpleFrame div with a video element
+  private replaceFrameWithVideo(elementId: string, videoUrl: string): void {
+    try {
+      console.log(`🎬 Replacing frame ${elementId} with video: ${videoUrl}`);
+
+      // Check if this is a SimpleFrame or a child element
+      const elementType = this.getElementType(elementId);
+      let targetElementId = elementId;
+
+      // If this is a child element inside a SimpleFrame, find the parent frame
+      if (elementType !== 'SimpleFrame') {
+        const parentFrameId = this.findParentSimpleFrame(elementId);
+        if (parentFrameId) {
+          console.log(`🎬 Child element ${elementId} is inside SimpleFrame ${parentFrameId}, replacing parent frame`);
+          targetElementId = parentFrameId;
+        }
+      }
+
+      // Remove all child elements from the editor state first
+      this.removeChildElementsFromState(targetElementId);
+
+      // Find the frame element on the canvas
+      const frameElement = this.findElementByLayerId(targetElementId);
+      if (!frameElement) {
+        console.warn(`❌ Frame element ${targetElementId} not found on canvas`);
+        return;
+      }
+
+      // Get the parent container that controls positioning
+      const parentContainer = frameElement.parentElement;
+      if (!parentContainer) {
+        console.warn(`❌ Parent container not found for frame ${targetElementId}`);
+        return;
+      }
+
+      // Get the current styles and position
+      const frameRect = frameElement.getBoundingClientRect();
+      const parentRect = parentContainer.getBoundingClientRect();
+
+      console.log(`📍 Frame position: ${frameRect.left}, ${frameRect.top}, ${frameRect.width}x${frameRect.height}`);
+      console.log(`📍 Parent position: ${parentRect.left}, ${parentRect.top}, ${parentRect.width}x${parentRect.height}`);
+
+      // Get the frame's border color
+      const frameBorderColor = this.getFrameBorderColor(targetElementId);
+      console.log(`🎨 Frame border color: ${frameBorderColor}`);
+
+      // Create the video element
+      const videoElement = document.createElement('video');
+      videoElement.src = videoUrl;
+      videoElement.autoplay = true;
+      videoElement.loop = true;
+      videoElement.muted = true;
+      videoElement.controls = false;
+      videoElement.style.cssText = `
+        width: 1920px;
+        height: 1080px;
+        object-fit: cover;
+        display: block;
+        border: none;
+        outline: none;
+        background: transparent;
+        position: absolute;
+        top: 0;
+        left: 0;
+        z-index: 1;
+      `;
+
+      // Set video attributes
+      videoElement.setAttribute('data-animation-video', 'true');
+      videoElement.setAttribute('data-original-frame-id', targetElementId);
+
+      // Handle video loading
+      videoElement.addEventListener('loadeddata', () => {
+        console.log(`✅ Video loaded successfully for frame ${targetElementId}`);
+      });
+
+      videoElement.addEventListener('error', (e) => {
+        console.error(`❌ Video loading error for frame ${targetElementId}:`, e);
+      });
+
+      // Replace the frame content with the video
+      // Clear the frame element and append the video
+      frameElement.innerHTML = '';
+      frameElement.appendChild(videoElement);
+
+      // Update the frame element's class to indicate it now contains a video
+      frameElement.classList.add('animation-video-container');
+      frameElement.setAttribute('data-video-url', videoUrl);
+
+      // Apply the frame's border color to the video container
+      (frameElement as HTMLElement).style.cssText = `
+        width: 1920px;
+        height: 1080px;
+        position: relative;
+        overflow: hidden;
+        border: 4px solid ${frameBorderColor};
+        border-radius: 8px;
+      `;
+
+      console.log(`🎬 Successfully replaced frame ${targetElementId} with video and applied border color: ${frameBorderColor}`);
+
+      // Dispatch a custom event to notify other components
+      const videoReplacedEvent = new CustomEvent('videoReplaced', {
+        detail: {
+          elementId: targetElementId,
+          videoUrl: videoUrl,
+          frameElement: frameElement,
+          originalElementId: elementId,
+          borderColor: frameBorderColor
+        }
+      });
+      document.dispatchEvent(videoReplacedEvent);
+
+    } catch (error) {
+      console.error(`❌ Error replacing frame ${elementId} with video:`, error);
+    }
+  }
+
+  // Remove all child elements from the editor state
+  private removeChildElementsFromState(frameId: string): void {
+    try {
+      console.log(`🗑️ Removing child elements from state for frame ${frameId}`);
+
+      // Get child element IDs
+      const childElementIds = this.getChildElementIds(frameId);
+      console.log(`🗑️ Found ${childElementIds.length} child elements to remove:`, childElementIds);
+
+      // Dispatch custom event to remove elements from editor state
+      const removeElementsEvent = new CustomEvent('removeElementsFromState', {
+        detail: {
+          elementIds: childElementIds,
+          frameId: frameId
+        }
+      });
+      document.dispatchEvent(removeElementsEvent);
+
+      console.log(`🗑️ Dispatched removeElementsFromState event for ${childElementIds.length} elements`);
+
+    } catch (error) {
+      console.error(`❌ Error removing child elements from state for frame ${frameId}:`, error);
+    }
+  }
+
+  // Get the frame's border color
+  private getFrameBorderColor(frameId: string): string {
+    try {
+      // First try to get from pages data
+      if (this.pages && this.pages.length > 0) {
+        const page = this.pages[0];
+        if (page.layers && page.layers[frameId]) {
+          const frameLayer = page.layers[frameId];
+          if (frameLayer && frameLayer.data && frameLayer.data.props) {
+            // Generate the same color that would be used in SimpleFrameContent
+            const frameColor = this.generateFrameColor(frameId);
+            console.log(`✅ Found frame color from pages data for ${frameId}: ${frameColor}`);
+            return frameColor;
+          }
+        }
+      }
+
+      // Fallback: try to get from DOM data attribute
+      const frameElement = document.querySelector(`.${CSS.escape(frameId)}`);
+      if (frameElement) {
+        const frameColor = frameElement.getAttribute('data-frame-color');
+        if (frameColor) {
+          console.log(`✅ Found frame color from DOM data attribute for ${frameId}: ${frameColor}`);
+          return frameColor;
+        }
+      }
+
+      // If we can't find the color, generate it using the same algorithm
+      const generatedColor = this.generateFrameColor(frameId);
+      console.log(`🎨 Generated frame color for ${frameId}: ${generatedColor}`);
+      return generatedColor;
+
+    } catch (error) {
+      console.warn(`Error getting frame border color for ${frameId}:`, error);
+      return this.generateFrameColor(frameId);
+    }
   }
 
   // Notify progress update
