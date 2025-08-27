@@ -66,6 +66,13 @@ export class AnimationService {
       return this.startAnimationForSimpleFrame(elementId, settings);
     }
 
+    // Check if this element is inside a SimpleFrame - if so, animate the entire frame instead
+    const parentFrameId = this.findParentSimpleFrame(elementId);
+    if (parentFrameId) {
+      console.log(`🎬 Element ${elementId} is inside SimpleFrame ${parentFrameId}, animating entire frame instead`);
+      return this.startAnimationForSimpleFrame(parentFrameId, settings);
+    }
+
     // Regular animation for non-SimpleFrame elements
     return this.startAnimationForElement(elementId, settings);
   }
@@ -739,7 +746,7 @@ export class AnimationService {
   }
 
   // Get the type of an element from the pages data
-  private getElementType(elementId: string): string | null {
+  public getElementType(elementId: string): string | null {
     try {
       if (!this.pages || this.pages.length === 0) {
         return null;
@@ -758,6 +765,79 @@ export class AnimationService {
       return null;
     } catch (error) {
       console.warn(`Error getting element type for ${elementId}:`, error);
+      return null;
+    }
+  }
+
+  // Find the parent SimpleFrame that contains a given element
+  private findParentSimpleFrame(elementId: string): string | null {
+    try {
+      if (!this.pages || this.pages.length === 0) {
+        return null;
+      }
+
+      const page = this.pages[0];
+      if (!page.layers) {
+        return null;
+      }
+
+      // Get the element's position and size
+      const elementLayer = page.layers[elementId];
+      if (!elementLayer || !(elementLayer as any).data || !(elementLayer as any).data.props || !(elementLayer as any).data.props.position || !(elementLayer as any).data.props.boxSize) {
+        return null;
+      }
+
+      const elementProps = (elementLayer as any).data.props;
+      const elementPosition = elementProps.position;
+      const elementSize = elementProps.boxSize;
+
+      const elementLeft = elementPosition.x;
+      const elementTop = elementPosition.y;
+      const elementRight = elementLeft + elementSize.width;
+      const elementBottom = elementTop + elementSize.height;
+
+      // Iterate through all layers to find SimpleFrames that contain this element
+      for (const [frameId, layer] of Object.entries(page.layers)) {
+        // Skip the element itself and root layer
+        if (frameId === elementId || frameId === 'ROOT') {
+          continue;
+        }
+
+        // Check if this is a SimpleFrame
+        if (!layer || !(layer as any).data || (layer as any).data.type !== 'SimpleFrame') {
+          continue;
+        }
+
+        // Skip if not a valid layer with position data
+        if (!(layer as any).data.props || !(layer as any).data.props.position || !(layer as any).data.props.boxSize) {
+          continue;
+        }
+
+        const frameProps = (layer as any).data.props;
+        const framePosition = frameProps.position;
+        const frameSize = frameProps.boxSize;
+
+        const frameLeft = framePosition.x;
+        const frameTop = framePosition.y;
+        const frameRight = frameLeft + frameSize.width;
+        const frameBottom = frameTop + frameSize.height;
+
+        // Check if element is completely contained within the frame's boundaries
+        if (
+          elementLeft >= frameLeft &&
+          elementRight <= frameRight &&
+          elementTop >= frameTop &&
+          elementBottom <= frameBottom
+        ) {
+          console.log(`🔍 Found parent SimpleFrame ${frameId} for element ${elementId}`);
+          return frameId;
+        }
+      }
+
+      return null;
+
+    } catch (error) {
+      console.warn(`Error finding parent SimpleFrame for element ${elementId}:`, error);
       return null;
     }
   }

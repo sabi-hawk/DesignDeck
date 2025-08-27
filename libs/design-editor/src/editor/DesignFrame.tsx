@@ -9,6 +9,7 @@ import {
   SerializedPage,
   visualCorners,
 } from '@lidojs/design-core';
+// eslint-disable-next-line @nx/enforce-module-boundaries
 import { GlobalStyle } from '@lidojs/design-layers';
 import { getPosition, isMouseEvent, isTouchEvent } from '@lidojs/design-utils';
 import React, {

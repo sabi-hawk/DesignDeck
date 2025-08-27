@@ -90,8 +90,17 @@ const CommonSettings: React.FC<CommonSettingsProps> = ({ onShowAnimationPopup })
   );
 
   // Check if we can animate the selected elements
-  // Disable animation for ROOT element (canvas) and require at least one selected element
-  const canAnimate = selectedLayerIds.length > 0 && !selectedLayerIds.includes('ROOT');
+  // Disable animation for ROOT element (canvas), SimpleFrame elements, and require at least one selected element
+  const canAnimate = selectedLayerIds.length > 0 && 
+    !selectedLayerIds.includes('ROOT') && 
+    !selectedLayerIds.some(id => {
+      try {
+        const elementType = animationService.getElementType(id);
+        return elementType === 'SimpleFrame';
+      } catch (error) {
+        return false;
+      }
+    });
 
   // Check if any of the selected elements are already animated
   const selectedAnimatedElements = selectedLayerIds.filter(id => 
@@ -102,22 +111,24 @@ const CommonSettings: React.FC<CommonSettingsProps> = ({ onShowAnimationPopup })
     if (selectedLayerIds.length > 0) {
       if (hasAnimatedElements) {
         // Stop animation for all selected elements
-        try {
-          selectedLayerIds.forEach(id => {
-            try {
-              if (animationService.isAnimated(id)) {
-                animationService.stopAnimation(id);
-              }
-            } catch (error) {
-              console.error(`Error stopping animation for element ${id}:`, error);
-            }
-          });
-          actions.unmarkLayerAsAnimated(activePage, selectedLayerIds);
-          setCurrentAnimatedElement(animationService.getCurrentAnimatedElement());
-        } catch (error) {
-          console.error('Error stopping animations:', error);
-          alert('An error occurred while stopping animations.');
-        }
+        // try {
+        //   selectedLayerIds.forEach(id => {
+        //     try {
+        //       if (animationService.isAnimated(id)) {
+        //         animationService.stopAnimation(id);
+        //       }
+        //     } catch (error) {
+        //       console.error(`Error stopping animation for element ${id}:`, error);
+        //     }
+        //   });
+        //   actions.unmarkLayerAsAnimated(activePage, selectedLayerIds);
+        //   setCurrentAnimatedElement(animationService.getCurrentAnimatedElement());
+        // } catch (error) {
+        //   console.error('Error stopping animations:', error);
+        //   alert('An error occurred while stopping animations.');
+        // }
+
+        return;
       } else {
         // Show animation popup for configuration
         const elementToAnimate = selectedLayerIds[0];
@@ -140,8 +151,22 @@ const CommonSettings: React.FC<CommonSettingsProps> = ({ onShowAnimationPopup })
       return 'Cannot Animate Canvas';
     }
     
+    // Check if SimpleFrame is selected
+    const hasSimpleFrame = selectedLayerIds.some(id => {
+      try {
+        const elementType = animationService.getElementType(id);
+        return elementType === 'SimpleFrame';
+      } catch (error) {
+        return false;
+      }
+    });
+    
+    if (hasSimpleFrame) {
+      return 'Cannot Animate Frame';
+    }
+    
     if (hasAnimatedElements) {
-      return 'Stop Animation';
+      return 'Animated';
     }
     
     return 'Animate Element';
@@ -167,12 +192,31 @@ const CommonSettings: React.FC<CommonSettingsProps> = ({ onShowAnimationPopup })
       };
     }
     
+    // Check if SimpleFrame is selected - show disabled style
+    const hasSimpleFrame = selectedLayerIds.some(id => {
+      try {
+        const elementType = animationService.getElementType(id);
+        return elementType === 'SimpleFrame';
+      } catch (error) {
+        return false;
+      }
+    });
+    
+    if (hasSimpleFrame) {
+      return {
+        background: '#f3f4f6',
+        color: '#9ca3af',
+        cursor: 'not-allowed',
+        ':hover': { background: '#f3f4f6' },
+      };
+    }
+    
     if (hasAnimatedElements) {
       return {
-        background: '#ef4444',
+        background: '#10b981',
         color: 'white',
-        cursor: 'pointer',
-        ':hover': { background: '#dc2626' },
+        cursor: 'not-allowed',
+        ':hover': { background: '#10b981' },
       };
     }
     
