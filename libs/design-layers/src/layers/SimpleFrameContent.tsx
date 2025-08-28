@@ -112,6 +112,27 @@ export const SimpleFrameContent: FC<SimpleFrameContentProps> = ({
     };
   }, [layerId, actions]);
 
+  // Listen for removeFrameFromState events to remove the frame itself from editor state
+  useEffect(() => {
+    const handleRemoveFrameFromState = (event: CustomEvent) => {
+      if (event.detail.frameId === layerId) {
+        console.log(`🗑️ Removing frame ${layerId} from editor state`);
+        try {
+          actions.deleteLayer(0, layerId);
+          console.log(`✅ Successfully removed frame ${layerId} from editor state`);
+        } catch (error) {
+          console.error(`❌ Error removing frame from editor state:`, error);
+        }
+      }
+    };
+
+    document.addEventListener('removeFrameFromState', handleRemoveFrameFromState as EventListener);
+    
+    return () => {
+      document.removeEventListener('removeFrameFromState', handleRemoveFrameFromState as EventListener);
+    };
+  }, [layerId, actions]);
+
   // Only unlock when user manually clicks the lock button
   // Remove automatic unlocking logic to maintain persistent lock state
 
