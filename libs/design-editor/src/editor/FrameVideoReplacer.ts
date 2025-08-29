@@ -255,6 +255,10 @@ export class FrameVideoReplacer {
       const frameBorderColor = this.getFrameBorderColor(originalFrameId);
       console.log(`🎨 Using frame border color for ${originalFrameId}: ${frameBorderColor}`);
 
+      // Get the scene number for this frame
+      const sceneNumber = this.getSceneNumberForFrame(originalFrameId);
+      console.log(`🎬 Scene number for frame ${originalFrameId}: ${sceneNumber}`);
+
       // Get the transform property from the original css-19b3lhe div
       const originalTransform = (css19b3lheDiv as HTMLElement).style.transform || '';
       console.log(`🎬 Original transform from css-19b3lhe div: ${originalTransform}`);
@@ -262,7 +266,8 @@ export class FrameVideoReplacer {
       console.log(`🎬 Creating video container with frame data:`, {
         size: boxSize,
         transform: originalTransform,
-        borderColor: frameBorderColor
+        borderColor: frameBorderColor,
+        sceneNumber: sceneNumber
       });
 
       // Create a new video container div
@@ -381,6 +386,32 @@ export class FrameVideoReplacer {
         filter: drop-shadow(0 2px 8px rgba(0,0,0,0.3));
       `;
 
+      // Create pause button overlay
+      const pauseButton = document.createElement('div');
+      pauseButton.className = `video-pause-button ${originalFrameId}-pause-button`;
+      pauseButton.setAttribute('data-original-frame-id', originalFrameId);
+      pauseButton.innerHTML = `
+        <div class="pause-button-inner">
+          <div class="pause-icon">
+            <svg width="120" height="120" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M6 4H10V20H6V4Z" fill="currentColor"/>
+              <path d="M14 4H18V20H14V4Z" fill="currentColor"/>
+            </svg>
+          </div>
+        </div>
+      `;
+      pauseButton.style.cssText = `
+        position: absolute;
+        top: 12px;
+        left: 12px;
+        cursor: pointer;
+        z-index: 1001;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        opacity: 0;
+        pointer-events: none;
+        filter: drop-shadow(0 2px 8px rgba(0,0,0,0.3));
+      `;
+
       // Add CSS for the play button styling
       const playButtonStyle = document.createElement('style');
       playButtonStyle.textContent = `
@@ -470,57 +501,165 @@ export class FrameVideoReplacer {
       `;
       document.head.appendChild(lockIconStyle);
 
+      // Add CSS for the pause button styling
+      const pauseButtonStyle = document.createElement('style');
+      pauseButtonStyle.textContent = `
+        .pause-button-inner {
+          position: relative;
+          width: 248px;
+          height: 248px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+        
+        .pause-icon {
+          width: 248px;
+          height: 248px;
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          border-radius: 16px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: white;
+          box-shadow: 0 8px 32px rgba(102, 126, 234, 0.4);
+          transition: all 0.3s ease;
+          z-index: 2;
+          position: relative;
+          border: 4px solid rgba(255, 255, 255, 0.3);
+        }
+        
+        .pause-icon:hover {
+          transform: scale(1.1);
+          box-shadow: 0 12px 40px rgba(102, 126, 234, 0.5);
+        }
+      `;
+      document.head.appendChild(pauseButtonStyle);
+
       // Play button click handler
       playButton.addEventListener('click', (e) => {
         e.stopPropagation();
         videoElement.play();
         playButton.style.opacity = '0';
         playButton.style.pointerEvents = 'none';
+        pauseButton.style.opacity = '1';
+        pauseButton.style.pointerEvents = 'auto';
+        
+        // Auto-hide pause button after 2 seconds
+        setTimeout(() => {
+          if (!videoElement.paused && !videoElement.ended) {
+            pauseButton.style.opacity = '0';
+            pauseButton.style.pointerEvents = 'none';
+          }
+        }, 2000);
+      });
+
+      // Pause button click handler
+      pauseButton.addEventListener('click', (e) => {
+        e.stopPropagation();
+        videoElement.pause();
+        pauseButton.style.opacity = '0';
+        pauseButton.style.pointerEvents = 'none';
+        playButton.style.opacity = '1';
+        playButton.style.pointerEvents = 'auto';
       });
 
       // Video event handlers
       videoElement.addEventListener('play', () => {
         playButton.style.opacity = '0';
         playButton.style.pointerEvents = 'none';
+        pauseButton.style.opacity = '1';
+        pauseButton.style.pointerEvents = 'auto';
+        
+        // Auto-hide pause button after 2 seconds
+        setTimeout(() => {
+          if (!videoElement.paused && !videoElement.ended) {
+            pauseButton.style.opacity = '0';
+            pauseButton.style.pointerEvents = 'none';
+          }
+        }, 2000);
       });
 
       videoElement.addEventListener('pause', () => {
+        pauseButton.style.opacity = '0';
+        pauseButton.style.pointerEvents = 'none';
         playButton.style.opacity = '1';
         playButton.style.pointerEvents = 'auto';
       });
 
       // Handle video end - show play button again
       videoElement.addEventListener('ended', () => {
+        pauseButton.style.opacity = '0';
+        pauseButton.style.pointerEvents = 'none';
         playButton.style.opacity = '1';
         playButton.style.pointerEvents = 'auto';
       });
 
       // Show pause button on hover when video is playing
       videoContainer.addEventListener('mouseenter', () => {
-        // if (!videoElement.paused && !videoElement.ended) { // This line is removed as per the new_code
-        //   pauseButton.style.opacity = '1'; // This line is removed as per the new_code
-        //   pauseButton.style.pointerEvents = 'auto'; // This line is removed as per the new_code
-        // } // This line is removed as per the new_code
+        if (!videoElement.paused && !videoElement.ended) {
+          pauseButton.style.opacity = '1';
+          pauseButton.style.pointerEvents = 'auto';
+        }
       });
 
       // Hide pause button on mouse leave (with delay)
       videoContainer.addEventListener('mouseleave', () => {
-        // if (!videoElement.paused && !videoElement.ended) { // This line is removed as per the new_code
-        //   setTimeout(() => { // This line is removed as per the new_code
-        //     if (!videoContainer.matches(':hover')) { // This line is removed as per the new_code
-        //       pauseButton.style.opacity = '0'; // This line is removed as per the new_code
-        //       pauseButton.style.pointerEvents = 'none'; // This line is removed as per the new_code
-        //     } // This line is removed as per the new_code
-        //   }, 1000); // This line is removed as per the new_code
-        // } // This line is removed as per the new_code
+        if (!videoElement.paused && !videoElement.ended) {
+          setTimeout(() => {
+            if (!videoContainer.matches(':hover')) {
+              pauseButton.style.opacity = '0';
+              pauseButton.style.pointerEvents = 'none';
+            }
+          }, 1000);
+        }
       });
 
       // Add video, overlay, and buttons to container
       videoContainer.appendChild(videoElement);
       videoContainer.appendChild(videoOverlay);
       videoContainer.appendChild(playButton);
+      videoContainer.appendChild(pauseButton); // Added pause button
       videoContainer.appendChild(lockIcon); // Added lock icon
-      // videoContainer.appendChild(pauseButton); // This line is removed as per the new_code
+
+      // Add scene label to the video container
+      if (sceneNumber > 0) {
+        const sceneLabel = document.createElement('div');
+        sceneLabel.className = `video-scene-label ${originalFrameId}-scene-label`;
+        sceneLabel.setAttribute('data-original-frame-id', originalFrameId);
+        sceneLabel.textContent = `Scene ${sceneNumber}`;
+        sceneLabel.style.cssText = `
+          position: absolute;
+          top: 8px;
+          right: 8px;
+          background: rgba(0, 0, 0, 0.8);
+          color: white;
+          font-size: 70px;
+          font-weight: bold;
+          padding: 6px 10px;
+          border-radius: 6px;
+          white-space: nowrap;
+          z-index: 1002;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+          border: 2px solid ${frameBorderColor};
+          text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+          backdrop-filter: blur(4px);
+          transition: all 0.3s ease;
+        `;
+
+        // Add hover effect for scene label
+        sceneLabel.addEventListener('mouseenter', () => {
+          sceneLabel.style.background = 'rgba(0, 0, 0, 0.9)';
+          sceneLabel.style.transform = 'scale(1.05)';
+        });
+
+        sceneLabel.addEventListener('mouseleave', () => {
+          sceneLabel.style.background = 'rgba(0, 0, 0, 0.8)';
+          sceneLabel.style.transform = 'scale(1)';
+        });
+
+        videoContainer.appendChild(sceneLabel);
+      }
 
       // Add a subtle entrance animation
       videoContainer.style.opacity = '0';
@@ -926,6 +1065,73 @@ export class FrameVideoReplacer {
       console.log(`⚠️ Using fallback element for ${layerId}`);
     }
     return fallbackElement;
+  }
+
+  // Get the scene number for a given frame
+  private getSceneNumberForFrame(frameId: string): number {
+    try {
+      if (!this.pages || this.pages.length === 0) {
+        console.warn(`❌ No pages data available to determine scene number for frame ${frameId}`);
+        return 0;
+      }
+
+      const page = this.pages[0];
+      if (!page.layers) {
+        console.warn(`❌ Page layers not found for frame ${frameId}`);
+        return 0;
+      }
+
+      // Find all SimpleFrames and sort them by their position to determine scene order
+      const simpleFrames: { frameId: string; position: { x: number; y: number } }[] = [];
+
+      for (const [layerId, layer] of Object.entries(page.layers)) {
+        // Skip if not a SimpleFrame
+        if (!layer || !(layer as any).data || (layer as any).data.type !== 'SimpleFrame') {
+          continue;
+        }
+
+        // Skip if not a valid layer with position data
+        if (!(layer as any).data.props || !(layer as any).data.props.position) {
+          continue;
+        }
+
+        const frameProps = (layer as any).data.props;
+        const framePosition = frameProps.position;
+
+        simpleFrames.push({
+          frameId: layerId,
+          position: framePosition
+        });
+      }
+
+      // Sort frames by their position (top to bottom, left to right)
+      simpleFrames.sort((a, b) => {
+        // First sort by Y position (top to bottom)
+        if (Math.abs(a.position.y - b.position.y) > 50) {
+          return a.position.y - b.position.y;
+        }
+        // If Y positions are close, sort by X position (left to right)
+        return a.position.x - b.position.x;
+      });
+
+      // Find the index of our frame in the sorted list
+      const frameIndex = simpleFrames.findIndex(frame => frame.frameId === frameId);
+      
+      if (frameIndex === -1) {
+        console.warn(`❌ Frame ${frameId} not found in SimpleFrames list`);
+        return 0;
+      }
+
+      // Scene number is 1-based index
+      const sceneNumber = frameIndex + 1;
+      console.log(`🎬 Frame ${frameId} is scene ${sceneNumber} (${simpleFrames.length} total scenes)`);
+      
+      return sceneNumber;
+
+    } catch (error) {
+      console.error(`❌ Error getting scene number for frame ${frameId}:`, error);
+      return 0;
+    }
   }
 }
 
