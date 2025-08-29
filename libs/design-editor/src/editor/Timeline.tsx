@@ -200,6 +200,13 @@ const Timeline: FC<TimelineProps> = ({ isVisible, onToggle }) => {
     return mapping.get(segmentIndex) || null;
   };
 
+  // Get scene number for a parent frame group
+  const getSceneNumber = (parentFrameId: string): number => {
+    const framesByParent = getFramesByParentFrame();
+    const parentFrameIds = Array.from(framesByParent.keys()).sort();
+    return parentFrameIds.indexOf(parentFrameId) + 1;
+  };
+
   // Check if this segment is the first in its parent frame group
   const isFirstInParentFrameGroup = (segmentIndex: number): boolean => {
     const group = getParentFrameGroupInfo(segmentIndex);
@@ -261,6 +268,26 @@ const Timeline: FC<TimelineProps> = ({ isVisible, onToggle }) => {
     segmentWidth * Math.ceil(totalTimelineDuration / timelineScale),
     800
   ); // Minimum 800px width
+
+  // Get only the segments that have actual frames (no empty segments)
+  const getAnimatedSegments = (): { segmentIndex: number; frame: AnimationFrame }[] => {
+    const segments: { segmentIndex: number; frame: AnimationFrame }[] = [];
+    const framesByIndex = getFramesByIndex();
+    
+    for (const [frameIndex, frames] of framesByIndex.entries()) {
+      if (frames.length > 0) {
+        segments.push({
+          segmentIndex: frameIndex,
+          frame: frames[0]
+        });
+      }
+    }
+    
+    return segments.sort((a, b) => a.segmentIndex - b.segmentIndex);
+  };
+
+  const animatedSegments = getAnimatedSegments();
+  const timelineWidth = animatedSegments.length > 0 ? animatedSegments.length * segmentWidth : 800;
 
   return (
     <>
@@ -364,30 +391,7 @@ const Timeline: FC<TimelineProps> = ({ isVisible, onToggle }) => {
               marginBottom: '20px',
             }}
           >
-            {/* Timeline Header with Scroll Info */}
-            {totalTimelineWidth > 800 && (
-              <div
-                css={{
-                  position: 'absolute',
-                  top: '0',
-                  left: '0',
-                  right: '0',
-                  height: '16px',
-                  background: 'rgba(255, 255, 255, 0.1)',
-                  borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '10px',
-                  color: '#a0aec0',
-                  zIndex: 1,
-                }}
-              >
-                Timeline: {Math.ceil(totalTimelineDuration / timelineScale)}{' '}
-                segments • {animationService.getAnimatedElementIds().length}{' '}
-                animated elements • Scroll horizontally to view all
-              </div>
-            )}
+
 
             {/* Alternative: Native Scrollbar with Better Styling */}
             <div
@@ -414,10 +418,10 @@ const Timeline: FC<TimelineProps> = ({ isVisible, onToggle }) => {
                 },
               }}
             >
-              {/* Timeline Content with Fixed Width */}
+              {/* Timeline Content with Dynamic Width */}
               <div
                 css={{
-                  width: `${totalTimelineWidth}px`,
+                  width: `${timelineWidth}px`,
                   height: '100%',
                   display: 'flex',
                   alignItems: 'center',
@@ -425,362 +429,377 @@ const Timeline: FC<TimelineProps> = ({ isVisible, onToggle }) => {
                 }}
               >
                 {/* Timeline Segments with Thumbnails */}
-                {Array.from(
-                  { length: Math.ceil(totalTimelineDuration / timelineScale) },
-                  (_, i) => {
-                    const startTime = i * timelineScale;
-                    const endTime = startTime + timelineScale;
-                    const frame = getFrameForSegment(i);
-                    const hasFrames = frame !== null;
-                    const parentFrameGroupInfo = getParentFrameGroupInfo(i);
-                    const isFirstInGroup = isFirstInParentFrameGroup(i);
-                    const isLastInGroup = isLastInParentFrameGroup(i);
+                {animatedSegments.map(({ segmentIndex, frame }) => {
+                  const startTime = segmentIndex * timelineScale;
+                  const endTime = startTime + timelineScale;
+                  const parentFrameGroupInfo = getParentFrameGroupInfo(segmentIndex);
+                  const isFirstInGroup = isFirstInParentFrameGroup(segmentIndex);
+                  const isLastInGroup = isLastInParentFrameGroup(segmentIndex);
 
-                    // Debug logging for segments 0 and 1
-                    if (i === 0 || i === 1) {
-                      console.log(`Segment ${i}:`, {
-                        hasFrames,
-                        frameColor: frame?.parentFrameBorderColor,
-                        parentFrameGroupInfo: parentFrameGroupInfo ? {
-                          parentFrameId: parentFrameGroupInfo.parentFrameId,
-                          groupFrames: parentFrameGroupInfo.groupFrames.map(f => f.frameIndex),
-                          isFirst: parentFrameGroupInfo.isFirst,
-                          isLast: parentFrameGroupInfo.isLast,
-                          isMiddle: parentFrameGroupInfo.isMiddle
-                        } : null,
-                        isFirstInGroup,
-                        isLastInGroup
-                      });
-                    }
+                  // Debug logging for segments 0 and 1
+                  if (segmentIndex === 0 || segmentIndex === 1) {
+                    console.log(`Segment ${segmentIndex}:`, {
+                      hasFrames: !!frame,
+                      frameColor: frame?.parentFrameBorderColor,
+                      parentFrameGroupInfo: parentFrameGroupInfo ? {
+                        parentFrameId: parentFrameGroupInfo.parentFrameId,
+                        groupFrames: parentFrameGroupInfo.groupFrames.map(f => f.frameIndex),
+                        isFirst: parentFrameGroupInfo.isFirst,
+                        isLast: parentFrameGroupInfo.isLast,
+                        isMiddle: parentFrameGroupInfo.isMiddle
+                      } : null,
+                      isFirstInGroup,
+                      isLastInGroup
+                    });
+                  }
 
-                    // Debug all frames to see their colors
-                    if (hasFrames && frame) {
-                      console.log(`Frame ${i} (${frame.elementId}): parentFrameBorderColor = "${frame.parentFrameBorderColor}"`);
-                    }
+                  // Debug all frames to see their colors
+                  if (frame) {
+                    console.log(`Frame ${segmentIndex} (${frame.elementId}): parentFrameBorderColor = "${frame.parentFrameBorderColor}"`);
+                  }
 
-                    return (
-                      <div
-                        key={i}
-                        css={{
-                          width: `${segmentWidth}px`,
-                          height: '100%',
-                          borderRight: '1px solid rgba(255, 255, 255, 0.1)',
-                          display: 'flex',
-                          flexDirection: 'column',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          position: 'relative',
-                          flexShrink: 0,
-                          // Add red border styling for parent frame groups
-                          ...(parentFrameGroupInfo && {
-                            border: 'none', // Remove default border
-                            borderLeft: isFirstInGroup ? `2px solid ${frame?.parentFrameBorderColor || '#ff0000'}` : 'none', // Only left border for first element
-                            borderTop: `2px solid ${frame?.parentFrameBorderColor || '#ff0000'}`, // Top border for all elements in group
-                            borderBottom: `2px solid ${frame?.parentFrameBorderColor || '#ff0000'}`, // Bottom border for all elements in group
-                            borderRight: isLastInGroup ? `2px solid ${frame?.parentFrameBorderColor || '#ff0000'}` : 'none', // Only right border for last element
-                            borderRadius: isFirstInGroup && isLastInGroup ? '8px' : isFirstInGroup ? '8px 0 0 8px' : isLastInGroup ? '0 8px 8px 0' : '0',
-                            marginLeft: isFirstInGroup ? '2px' : '0',
-                            marginRight: isLastInGroup ? '2px' : '0',
-                            marginTop: '2px', // Add top margin for symmetry
-                            marginBottom: '2px', // Add bottom margin for symmetry
-                            zIndex: 10,
-                            // Temporary debugging - add background colors to see grouping
-                            // background: isFirstInGroup ? 'rgba(255, 0, 0, 0.1)' : isLastInGroup ? 'rgba(0, 255, 0, 0.1)' : 'rgba(0, 0, 255, 0.1)',
-                            // Force the right border to be visible for debugging
-                            ...(isLastInGroup && {
-                              borderRight: `2px solid ${frame?.parentFrameBorderColor || '#ff0000'} !important`,
-                            }),
+                  return (
+                    <div
+                      key={segmentIndex}
+                      css={{
+                        width: `${segmentWidth}px`,
+                        height: '100%',
+                        borderRight: '1px solid rgba(255, 255, 255, 0.1)',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        position: 'relative',
+                        flexShrink: 0,
+                        // Add red border styling for parent frame groups
+                        ...(parentFrameGroupInfo && {
+                          border: 'none', // Remove default border
+                          borderLeft: isFirstInGroup ? `2px solid ${frame?.parentFrameBorderColor || '#ff0000'}` : 'none', // Only left border for first element
+                          borderTop: `2px solid ${frame?.parentFrameBorderColor || '#ff0000'}`, // Top border for all elements in group
+                          borderBottom: `2px solid ${frame?.parentFrameBorderColor || '#ff0000'}`, // Bottom border for all elements in group
+                          borderRight: isLastInGroup ? `2px solid ${frame?.parentFrameBorderColor || '#ff0000'}` : 'none', // Only right border for last element
+                          borderRadius: isFirstInGroup && isLastInGroup ? '8px' : isFirstInGroup ? '8px 0 0 8px' : isLastInGroup ? '0 8px 8px 0' : '0',
+                          marginLeft: isFirstInGroup ? '2px' : '0',
+                          marginRight: isLastInGroup ? '2px' : '0',
+                          marginTop: '2px', // Add top margin for symmetry
+                          marginBottom: '2px', // Add bottom margin for symmetry
+                          zIndex: 10,
+                          // Temporary debugging - add background colors to see grouping
+                          // background: isFirstInGroup ? 'rgba(255, 0, 0, 0.1)' : isLastInGroup ? 'rgba(0, 255, 0, 0.1)' : 'rgba(0, 0, 255, 0.1)',
+                          // Force the right border to be visible for debugging
+                          ...(isLastInGroup && {
+                            borderRight: `2px solid ${frame?.parentFrameBorderColor || '#ff0000'} !important`,
                           }),
-                        }}
-                      >
-                        {/* Time Label */}
-                        <span
+                        }),
+                      }}
+                    >
+                      
+
+                      {/* Parent Frame Group Label */}
+                      {parentFrameGroupInfo && isFirstInGroup && (
+                        <div
                           css={{
-                            fontSize: '10px',
-                            color: '#a0aec0',
-                            fontWeight: '500',
                             position: 'absolute',
-                            bottom: '4px',
+                            top: '-20px',
+                            left: '50%',
+                            transform: 'translateX(-50%)',
+                            background: 'rgba(0, 0, 0, 0.8)',
+                            color: 'white',
+                            fontSize: '8px',
+                            fontWeight: 'bold',
+                            padding: '2px 6px',
+                            borderRadius: '4px',
+                            whiteSpace: 'nowrap',
+                            zIndex: 20,
+                            boxShadow: '0 2px 4px rgba(0, 0, 0, 0.3)',
+                            border: `1px solid ${frame?.parentFrameBorderColor || '#ff0000'}`,
                           }}
                         >
-                          {startTime}s
-                        </span>
+                          Frame Group ({parentFrameGroupInfo.groupFrames.length} elements)
+                        </div>
+                      )}
 
-                        {/* Parent Frame Group Label */}
-                        {parentFrameGroupInfo && isFirstInGroup && (
+                      {/* Scene Label - Only show on first element of each group */}
+                      {parentFrameGroupInfo && isFirstInGroup && (
+                        <div
+                          css={{
+                            position: 'absolute',
+                            top: '4px',
+                            left: '4px',
+                            background: 'rgba(0, 0, 0, 0.8)',
+                            color: 'white',
+                            fontSize: '10px',
+                            fontWeight: 'bold',
+                            padding: '3px 6px',
+                            borderRadius: '3px',
+                            whiteSpace: 'nowrap',
+                            zIndex: 25,
+                            boxShadow: '0 1px 3px rgba(0, 0, 0, 0.5)',
+                            border: `1px solid ${frame?.parentFrameBorderColor || '#ff0000'}`,
+                            textShadow: '0 1px 2px rgba(0, 0, 0, 0.8)',
+                          }}
+                        >
+                          Scene {getSceneNumber(parentFrameGroupInfo.parentFrameId)}
+                        </div>
+                      )}
+
+                      {/* Thumbnail if frames exist */}
+                      {frame && (
+                        <div
+                          css={{
+                            height: '70px',
+                            width: '100px',
+                            background: 'rgba(0, 0, 0, 0.3)',
+                            border: '1px solid rgba(255, 255, 255, 0.2)',
+                            borderRadius: '4px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            overflow: 'hidden',
+                            position: 'absolute',
+                            top: '25px',
+                            cursor: frame.resultUrl ? 'pointer' : 'default',
+                            ':hover': frame.resultUrl ? {
+                              border: '1px solid #667eea',
+                              boxShadow: '0 2px 8px rgba(102, 126, 234, 0.3)',
+                            } : {},
+                          }}
+                          onClick={() => {
+                            if (frame.resultUrl) {
+                              window.open(frame.resultUrl, '_blank');
+                            }
+                          }}
+                        >
+                          {/* Debug info */}
                           <div
                             css={{
                               position: 'absolute',
-                              top: '-20px',
-                              left: '50%',
-                              transform: 'translateX(-50%)',
-                              background: 'rgba(0, 0, 0, 0.8)',
-                              color: 'white',
+                              top: '2px',
+                              left: '2px',
                               fontSize: '8px',
-                              fontWeight: 'bold',
-                              padding: '2px 6px',
-                              borderRadius: '4px',
-                              whiteSpace: 'nowrap',
-                              zIndex: 20,
-                              boxShadow: '0 2px 4px rgba(0, 0, 0, 0.3)',
-                              border: `1px solid ${frame?.parentFrameBorderColor || '#ff0000'}`,
+                              color: 'white',
+                              background: 'rgba(0, 0, 0, 0.7)',
+                              padding: '1px 2px',
+                              borderRadius: '2px',
+                              zIndex: 10,
                             }}
                           >
-                            Frame Group ({parentFrameGroupInfo.groupFrames.length} elements)
+                            {frame.imageDataUrl
+                              ? `${Math.round(
+                                  frame.imageDataUrl.length / 1024
+                                )}KB`
+                              : '0KB'}
                           </div>
-                        )}
 
-                        {/* Thumbnail if frames exist */}
-                        {hasFrames && (
-                          <div
-                            css={{
-                              height: '70px',
-                              width: '100px',
-                              background: 'rgba(0, 0, 0, 0.3)',
-                              border: '1px solid rgba(255, 255, 255, 0.2)',
-                              borderRadius: '4px',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              overflow: 'hidden',
-                              position: 'absolute',
-                              top: '25px',
-                              cursor: frame?.resultUrl ? 'pointer' : 'default',
-                              ':hover': frame?.resultUrl ? {
-                                border: '1px solid #667eea',
-                                boxShadow: '0 2px 8px rgba(102, 126, 234, 0.3)',
-                              } : {},
-                            }}
-                            onClick={() => {
-                              if (frame?.resultUrl) {
-                                window.open(frame.resultUrl, '_blank');
-                              }
-                            }}
-                          >
-                            {/* Debug info */}
+                           {/* Processing Status Overlay */}
+                           {(!frame.resultUrl && frame.progress !== -1) && (
+                             <div
+                               css={{
+                                 position: 'absolute',
+                                 top: 0,
+                                 left: 0,
+                                 right: 0,
+                                 bottom: 0,
+                                 background: 'rgba(0, 0, 0, 0.7)',
+                                 display: 'flex',
+                                 flexDirection: 'column',
+                                 alignItems: 'center',
+                                 justifyContent: 'center',
+                                 zIndex: 15,
+                                 borderRadius: '4px',
+                               }}
+                             >
+                               {/* Spinning Animation */}
+                               <div
+                                 css={{
+                                   width: '20px',
+                                   height: '20px',
+                                   border: '2px solid rgba(255, 255, 255, 0.3)',
+                                   borderTop: '2px solid #667eea',
+                                   borderRadius: '50%',
+                                   animation: 'spin 1s linear infinite',
+                                   marginBottom: '4px',
+                                   '@keyframes spin': {
+                                     '0%': { transform: 'rotate(0deg)' },
+                                     '100%': { transform: 'rotate(360deg)' },
+                                   },
+                                 }}
+                               />
+                               {/* Processing Text */}
+                               <div
+                                 css={{
+                                   color: 'white',
+                                   fontSize: '8px',
+                                   fontWeight: '500',
+                                   textAlign: 'center',
+                                   textShadow: '0 1px 2px rgba(0, 0, 0, 0.5)',
+                                 }}
+                               >
+                                 Processing...
+                               </div>
+                             </div>
+                           )}
+
+                          {/* Failed Processing Overlay */}
+                          {frame.progress === -1 && (
                             <div
                               css={{
                                 position: 'absolute',
-                                top: '2px',
-                                left: '2px',
-                                fontSize: '8px',
-                                color: 'white',
-                                background: 'rgba(0, 0, 0, 0.7)',
-                                padding: '1px 2px',
-                                borderRadius: '2px',
-                                zIndex: 10,
+                                top: 0,
+                                left: 0,
+                                right: 0,
+                                bottom: 0,
+                                background: 'rgba(220, 38, 38, 0.8)',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                zIndex: 15,
+                                borderRadius: '4px',
                               }}
                             >
-                              {frame?.imageDataUrl
-                                ? `${Math.round(
-                                    frame.imageDataUrl.length / 1024
-                                  )}KB`
-                                : '0KB'}
-                            </div>
-
-                                                         {/* Processing Status Overlay */}
-                             {(!frame.resultUrl && frame.progress !== -1) && (
-                               <div
-                                 css={{
-                                   position: 'absolute',
-                                   top: 0,
-                                   left: 0,
-                                   right: 0,
-                                   bottom: 0,
-                                   background: 'rgba(0, 0, 0, 0.7)',
-                                   display: 'flex',
-                                   flexDirection: 'column',
-                                   alignItems: 'center',
-                                   justifyContent: 'center',
-                                   zIndex: 15,
-                                   borderRadius: '4px',
-                                 }}
-                               >
-                                 {/* Spinning Animation */}
-                                 <div
-                                   css={{
-                                     width: '20px',
-                                     height: '20px',
-                                     border: '2px solid rgba(255, 255, 255, 0.3)',
-                                     borderTop: '2px solid #667eea',
-                                     borderRadius: '50%',
-                                     animation: 'spin 1s linear infinite',
-                                     marginBottom: '4px',
-                                     '@keyframes spin': {
-                                       '0%': { transform: 'rotate(0deg)' },
-                                       '100%': { transform: 'rotate(360deg)' },
-                                     },
-                                   }}
-                                 />
-                                 {/* Processing Text */}
-                                 <div
-                                   css={{
-                                     color: 'white',
-                                     fontSize: '8px',
-                                     fontWeight: '500',
-                                     textAlign: 'center',
-                                     textShadow: '0 1px 2px rgba(0, 0, 0, 0.5)',
-                                   }}
-                                 >
-                                   Processing...
-                                 </div>
-                               </div>
-                             )}
-
-                            {/* Failed Processing Overlay */}
-                            {frame.progress === -1 && (
-                              <div
-                                css={{
-                                  position: 'absolute',
-                                  top: 0,
-                                  left: 0,
-                                  right: 0,
-                                  bottom: 0,
-                                  background: 'rgba(220, 38, 38, 0.8)',
-                                  display: 'flex',
-                                  flexDirection: 'column',
-                                  alignItems: 'center',
-                                  justifyContent: 'center',
-                                  zIndex: 15,
-                                  borderRadius: '4px',
-                                }}
-                              >
-                                {/* Error Icon */}
-                                <div
-                                  css={{
-                                    color: 'white',
-                                    fontSize: '16px',
-                                    marginBottom: '4px',
-                                  }}
-                                >
-                                  ❌
-                                </div>
-                                {/* Error Text */}
-                                <div
-                                  css={{
-                                    color: 'white',
-                                    fontSize: '8px',
-                                    fontWeight: '500',
-                                    textAlign: 'center',
-                                    textShadow: '0 1px 2px rgba(0, 0, 0, 0.5)',
-                                  }}
-                                >
-                                  Failed
-                                </div>
-                              </div>
-                            )}
-
-                            {/* Success Overlay */}
-                            {frame.resultUrl && (
-                              <div
-                                css={{
-                                  position: 'absolute',
-                                  top: 0,
-                                  left: 0,
-                                  right: 0,
-                                  bottom: 0,
-                                  background: 'rgba(16, 185, 129, 0.8)',
-                                  display: 'flex',
-                                  flexDirection: 'column',
-                                  alignItems: 'center',
-                                  justifyContent: 'center',
-                                  zIndex: 15,
-                                  borderRadius: '4px',
-                                }}
-                              >
-                                {/* Success Icon */}
-                                <div
-                                  css={{
-                                    color: 'white',
-                                    fontSize: '16px',
-                                    marginBottom: '4px',
-                                  }}
-                                >
-                                  ✅
-                                </div>
-                                {/* Success Text */}
-                                <div
-                                  css={{
-                                    color: 'white',
-                                    fontSize: '8px',
-                                    fontWeight: '500',
-                                    textAlign: 'center',
-                                    textShadow: '0 1px 2px rgba(0, 0, 0, 0.5)',
-                                  }}
-                                >
-                                  Ready
-                                </div>
-                              </div>
-                            )}
-
-                            {/* Try to display the image */}
-                            {frame?.imageDataUrl &&
-                            frame.imageDataUrl.startsWith('data:image/') ? (
-                              <img
-                                alt={`Frame at ${startTime}s`}
-                                css={{
-                                  height: '100%',
-                                  objectFit: 'contain',
-                                  width: '100%',
-                                  maxHeight: '100%',
-                                  maxWidth: '100%',
-                                  display: 'block',
-                                }}
-                                src={frame.imageDataUrl}
-                                onAbort={() => {
-                                  // Image loading aborted
-                                }}
-                                onError={(e) => {
-                                  console.warn(
-                                    `Failed to load image for segment ${startTime}s`
-                                  );
-                                }}
-                                onLoad={() => {
-                                  // Image loaded successfully
-                                }}
-                              />
-                            ) : (
+                              {/* Error Icon */}
                               <div
                                 css={{
                                   color: 'white',
-                                  fontSize: '10px',
-                                  textAlign: 'center',
-                                  padding: '4px',
+                                  fontSize: '16px',
+                                  marginBottom: '4px',
                                 }}
                               >
-                                Invalid Image Data
+                                ❌
                               </div>
-                            )}
-                          </div>
-                        )}
+                              {/* Error Text */}
+                              <div
+                                css={{
+                                  color: 'white',
+                                  fontSize: '8px',
+                                  fontWeight: '500',
+                                  textAlign: 'center',
+                                  textShadow: '0 1px 2px rgba(0, 0, 0, 0.5)',
+                                }}
+                              >
+                                Failed
+                              </div>
+                            </div>
+                          )}
 
-                        {/* Empty state indicator if no frames */}
-                        {!hasFrames && (
-                          <div
-                            css={{
-                              height: '70px',
-                              width: '100px',
-                              background: 'rgba(255, 255, 255, 0.05)',
-                              border: '1px dashed rgba(255, 255, 255, 0.1)',
-                              borderRadius: '4px',
-                              color: 'rgba(255, 255, 255, 0.3)',
-                              display: 'flex',
-                              alignItems: 'center',
-                              fontSize: '10px',
-                              justifyContent: 'center',
-                              padding: '4px',
-                              position: 'absolute',
-                              textAlign: 'center',
-                              top: '25px',
-                            }}
-                          >
-                            No frame
-                          </div>
-                        )}
-                      </div>
-                    );
-                  }
-                )}
+                          {/* Success Overlay */}
+                          {frame.resultUrl && (
+                            <div
+                              css={{
+                                position: 'absolute',
+                                top: 0,
+                                left: 0,
+                                right: 0,
+                                bottom: 0,
+                                background: 'rgba(16, 185, 129, 0.8)',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                zIndex: 15,
+                                borderRadius: '4px',
+                              }}
+                            >
+                              {/* Play Button Icon - Top Left */}
+                              <div
+                                css={{
+                                  position: 'absolute',
+                                  top: '4px',
+                                  left: '4px',
+                                  width: '16px',
+                                  height: '16px',
+                                  background: 'rgba(0, 0, 0, 0.7)',
+                                  borderRadius: '3px',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  zIndex: 16,
+                                  border: '1px solid rgba(255, 255, 255, 0.3)',
+                                }}
+                              >
+                                <svg 
+                                  fill="none" 
+                                  height="10" 
+                                  viewBox="0 0 24 24" 
+                                  width="10" 
+                                  xmlns="http://www.w3.org/2000/svg"
+                                >
+                                  <path 
+                                    d="M8 5V19L19 12L8 5Z" 
+                                    fill="white"
+                                  />
+                                </svg>
+                              </div>
+
+                              {/* Success Icon */}
+                              <div
+                                css={{
+                                  color: 'white',
+                                  fontSize: '16px',
+                                  marginBottom: '4px',
+                                }}
+                              >
+                                ✅
+                              </div>
+                              {/* Success Text */}
+                              <div
+                                css={{
+                                  color: 'white',
+                                  fontSize: '8px',
+                                  fontWeight: '500',
+                                  textAlign: 'center',
+                                  textShadow: '0 1px 2px rgba(0, 0, 0, 0.5)',
+                                }}
+                              >
+                                Ready
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Try to display the image */}
+                          {frame?.imageDataUrl &&
+                          frame.imageDataUrl.startsWith('data:image/') ? (
+                            <img
+                              alt={`Frame at ${startTime}s`}
+                              css={{
+                                height: '100%',
+                                objectFit: 'contain',
+                                width: '100%',
+                                maxHeight: '100%',
+                                maxWidth: '100%',
+                                display: 'block',
+                              }}
+                              src={frame.imageDataUrl}
+                              onAbort={() => {
+                                // Image loading aborted
+                              }}
+                              onError={(e) => {
+                                console.warn(
+                                  `Failed to load image for segment ${startTime}s`
+                                );
+                              }}
+                              onLoad={() => {
+                                // Image loaded successfully
+                              }}
+                            />
+                          ) : (
+                            <div
+                              css={{
+                                color: 'white',
+                                fontSize: '10px',
+                                textAlign: 'center',
+                                padding: '4px',
+                              }}
+                            >
+                              Invalid Image Data
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </div>
           </div>
@@ -978,7 +997,7 @@ const Timeline: FC<TimelineProps> = ({ isVisible, onToggle }) => {
             </span>
 
             {/* Scroll Indicator */}
-            {totalTimelineWidth > 800 && (
+            {timelineWidth > 800 && (
               <div
                 css={{
                   fontSize: '10px',
