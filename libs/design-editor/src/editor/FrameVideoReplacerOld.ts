@@ -75,11 +75,11 @@ export class FrameVideoReplacer {
 
       console.log(`📍 Frame DOM position:`, domPosition);
 
-             // Create a new video container with the same properties as the frame
-       this.createVideoContainerFromFrameData(frameData, domPosition, videoUrl, targetElementId);
+      // Create a new video container with the same properties as the frame
+      this.createVideoContainerFromFrameData(frameData, domPosition, videoUrl, targetElementId);
 
-       // Remove all child elements from the editor state
-       this.removeChildElementsFromState(targetElementId);
+      // Remove all child elements from the editor state
+      this.removeChildElementsFromState(targetElementId);
 
       console.log(`🎬 Successfully replaced frame ${targetElementId} with video container`);
 
@@ -138,7 +138,7 @@ export class FrameVideoReplacer {
     try {
       // Get the bounding rect of the frame element
       const frameRect = frameElement.getBoundingClientRect();
-      
+
       // Find the parent container (canvas or main container)
       const parentContainer = this.findCanvasContainer(frameElement);
       if (!parentContainer) {
@@ -192,26 +192,26 @@ export class FrameVideoReplacer {
       // Navigate up the DOM tree to find the parent of the css-19b3lhe div
       // The frameElement is the SimpleFrameContent div, we need to go up 3 levels
       // to find the parent container where both css-19b3lhe and our video div will be siblings
-      
+
       let currentElement = frameElement;
-      
+
       // Go up to the generic div (first level up)
       if (currentElement.parentElement) {
         currentElement = currentElement.parentElement;
         console.log(`📍 Level 1 parent (generic div):`, currentElement);
       }
-      
+
       // Go up to the css-19b3lhe div (second level up)
       if (currentElement.parentElement) {
         currentElement = currentElement.parentElement;
         console.log(`📍 Level 2 parent (css-19b3lhe div):`, currentElement);
       }
-      
+
       // Go up to the parent container (third level up) - this is where we want to place our video div
       if (currentElement.parentElement) {
         currentElement = currentElement.parentElement;
         console.log(`📍 Level 3 parent (target container):`, currentElement);
-        
+
         // This should be the container where we want to place our video div
         // It should be at the same level as the css-19b3lhe div
         return currentElement;
@@ -544,7 +544,7 @@ export class FrameVideoReplacer {
         playButton.style.pointerEvents = 'none';
         pauseButton.style.opacity = '1';
         pauseButton.style.pointerEvents = 'auto';
-        
+
         // Auto-hide pause button after 2 seconds
         setTimeout(() => {
           if (!videoElement.paused && !videoElement.ended) {
@@ -570,7 +570,7 @@ export class FrameVideoReplacer {
         playButton.style.pointerEvents = 'none';
         pauseButton.style.opacity = '1';
         pauseButton.style.pointerEvents = 'auto';
-        
+
         // Auto-hide pause button after 2 seconds
         setTimeout(() => {
           if (!videoElement.paused && !videoElement.ended) {
@@ -664,14 +664,14 @@ export class FrameVideoReplacer {
       // Add a subtle entrance animation
       videoContainer.style.opacity = '0';
       videoContainer.style.transform = `${originalTransform} scale(0.9)`;
-      
+
       // Trigger entrance animation after a brief delay
       setTimeout(() => {
         videoContainer.style.opacity = '1';
         videoContainer.style.transform = originalTransform;
       }, 100);
 
-             // Add container to the same parent as the original frame
+      // Add container to the same parent as the original frame
       parentContainer.appendChild(videoContainer);
 
       // Remove the frame itself from the editor state after video container is added
@@ -819,12 +819,12 @@ export class FrameVideoReplacer {
       hash = ((hash << 5) - hash) + char;
       hash = hash & hash; // Convert to 32-bit integer
     }
-    
+
     // Generate hue, saturation, and lightness values
     const hue = Math.abs(hash) % 360; // 0-359 degrees
     const saturation = 60 + (Math.abs(hash) % 40); // 60-99%
     const lightness = 45 + (Math.abs(hash) % 20); // 45-64%
-    
+
     return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
   }
 
@@ -988,7 +988,7 @@ export class FrameVideoReplacer {
         const elementBottom = elementTop + elementSize.height;
 
         // Check if element is completely within the frame boundaries
-        const isInsideFrame = 
+        const isInsideFrame =
           elementLeft >= frameLeft &&
           elementTop >= frameTop &&
           elementRight <= frameRight &&
@@ -1009,7 +1009,7 @@ export class FrameVideoReplacer {
 
       console.log(`🔍 Found ${childElementIds.length} child elements for SimpleFrame ${frameId}:`, childElementIds);
       return childElementIds;
-      
+
     } catch (error) {
       console.warn(`Error getting child elements for frame ${frameId}:`, error);
       return [];
@@ -1025,16 +1025,16 @@ export class FrameVideoReplacer {
       console.log(`✅ Found element ${layerId} by class name`);
       return elementByClass;
     }
-    
+
     // Fallback: Look for elements with class css-19b3lhe that might contain our layer
     const elements = document.querySelectorAll('.css-19b3lhe');
     console.log(`🔍 Fallback: Found ${elements.length} elements with css-19b3lhe class`);
-    
+
     // First, try to find by data attributes or IDs
     for (const element of elements) {
-      if (element.getAttribute('data-layer-id') === layerId || 
-          element.id === layerId ||
-          element.textContent?.includes(layerId)) {
+      if (element.getAttribute('data-layer-id') === layerId ||
+        element.id === layerId ||
+        element.textContent?.includes(layerId)) {
         console.log(`✅ Found element ${layerId} by fallback method`);
         return element;
       }
@@ -1046,11 +1046,11 @@ export class FrameVideoReplacer {
       // Check if this element contains text that might indicate it's our target
       const textContent = element.textContent || '';
       const hasText = textContent.trim().length > 0;
-      
+
       // Check if element has reasonable dimensions (not too small)
       const rect = element.getBoundingClientRect();
       const hasSize = rect.width > 50 && rect.height > 50;
-      
+
       // If element has content and size, it might be our target
       if (hasText && hasSize) {
         // For now, return the first suitable element as a fallback
@@ -1116,7 +1116,7 @@ export class FrameVideoReplacer {
 
       // Find the index of our frame in the sorted list
       const frameIndex = simpleFrames.findIndex(frame => frame.frameId === frameId);
-      
+
       if (frameIndex === -1) {
         console.warn(`❌ Frame ${frameId} not found in SimpleFrames list`);
         return 0;
@@ -1125,7 +1125,7 @@ export class FrameVideoReplacer {
       // Scene number is 1-based index
       const sceneNumber = frameIndex + 1;
       console.log(`🎬 Frame ${frameId} is scene ${sceneNumber} (${simpleFrames.length} total scenes)`);
-      
+
       return sceneNumber;
 
     } catch (error) {

@@ -2,7 +2,7 @@ import LockKeyIcon from '@duyank/icons/regular/LockKey';
 import LockKeyOpenIcon from '@duyank/icons/regular/LockKeyOpen';
 import React, { Fragment, useEffect, useMemo, useRef, useState } from 'react';
 import Popover from '../common/popover/Popover';
-import AnimationService from '../editor/AnimationService';
+import { AnimationService } from '../editor/animation';
 import { useEditor, useSelectedLayers } from '../hooks';
 import { RootLayerProps } from '../layers';
 import { isRootLayer } from '../ultils/layer/layers';

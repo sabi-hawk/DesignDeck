@@ -1,7 +1,7 @@
 import React, { FC, useEffect, useState } from 'react';
 import { useEditor } from '../hooks';
+import { AnimationService, AnimationFrame } from './animation';
 import AnimationPopup from './AnimationPopup';
-import AnimationService, { AnimationFrame } from './AnimationService';
 
 export interface AnimationSettings {
   sketchingDuration: number;

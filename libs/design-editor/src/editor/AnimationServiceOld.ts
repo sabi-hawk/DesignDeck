@@ -1,5 +1,5 @@
 import { captureElement } from '../ultils/elementCapture';
-import FrameVideoReplacer from './FrameVideoReplacer';
+import FrameVideoReplacer from './FrameVideoReplacerOld';
 
 export interface AnimationSettings {
   sketchingDuration: number;
@@ -89,14 +89,14 @@ export class AnimationService {
   // Start animation for a SimpleFrame by animating its child elements
   private startAnimationForSimpleFrame(frameId: string, settings: AnimationSettings): boolean {
     const childElementIds = this.getChildElementIds(frameId);
-    
+
     if (childElementIds.length === 0) {
       console.warn(`SimpleFrame ${frameId} has no child elements to animate`);
       return false;
     }
 
     console.log(`🎬 Starting animation for SimpleFrame ${frameId} with ${childElementIds.length} child elements:`, childElementIds);
-    
+
     // Dispatch custom event to auto-lock the frame
     const animationStartEvent = new CustomEvent('animationStart', {
       detail: {
@@ -106,7 +106,7 @@ export class AnimationService {
     });
     document.dispatchEvent(animationStartEvent);
     console.log(`🔒 Dispatched animation start event for frame ${frameId}`);
-    
+
     let successCount = 0;
     for (const childId of childElementIds) {
       const success = this.startAnimationForElement(childId, settings, frameId);
@@ -129,7 +129,7 @@ export class AnimationService {
 
     // Reserve a frame index for this element
     const frameIndex = this.nextFrameIndex++;
-    
+
     // Create animated element record
     const animatedElement: AnimatedElement = {
       id: elementId,
@@ -181,14 +181,14 @@ export class AnimationService {
   // Stop animation for a SimpleFrame by stopping all its child elements
   private stopAnimationForSimpleFrame(frameId: string): void {
     const childElementIds = this.getChildElementIds(frameId);
-    
+
     if (childElementIds.length === 0) {
       console.warn(`SimpleFrame ${frameId} has no child elements to stop animation for`);
       return;
     }
 
     console.log(`⏹️ Stopping animation for SimpleFrame ${frameId} with ${childElementIds.length} child elements:`, childElementIds);
-    
+
     let stoppedCount = 0;
     for (const childId of childElementIds) {
       this.stopAnimationForElement(childId);
@@ -216,9 +216,9 @@ export class AnimationService {
     }
 
     console.log(`⏹️ Stopping animation for element ${elementId} at frame index ${animatedElement.frameIndex}`);
-    
+
     this.animatedElements.delete(elementId);
-    
+
     const interval = this.animationIntervals.get(elementId);
     if (interval) {
       clearInterval(interval);
@@ -287,14 +287,14 @@ export class AnimationService {
   // Get frames organized by frame index for timeline display
   getFramesByIndex(): Map<number, AnimationFrame[]> {
     const framesByIndex = new Map<number, AnimationFrame[]>();
-    
+
     for (const [elementId, frames] of this.frameHistory.entries()) {
       const animatedElement = this.animatedElements.get(elementId);
       if (animatedElement && frames.length > 0) {
         // Get the latest frame for this element
         const latestFrame = frames[frames.length - 1];
         framesByIndex.set(animatedElement.frameIndex, [latestFrame]);
-        
+
       }
     }
     return framesByIndex;
@@ -319,7 +319,7 @@ export class AnimationService {
   private getParentFrameBorderColor(parentFrameId: string): string | undefined {
     try {
       console.log(`🔍 Looking for parent frame color for: ${parentFrameId}`);
-      
+
       // First, try to get the color from the pages data (most reliable)
       if (this.pages && this.pages.length > 0) {
         const page = this.pages[0];
@@ -333,7 +333,7 @@ export class AnimationService {
           }
         }
       }
-      
+
       // Fallback: try to get from DOM data attribute
       const parentFrameElement = document.querySelector(`.${CSS.escape(parentFrameId)}`);
       if (parentFrameElement) {
@@ -343,12 +343,12 @@ export class AnimationService {
           return frameColor;
         }
       }
-      
+
       // If we can't find the color, generate it using the same algorithm
       const generatedColor = this.generateFrameColor(parentFrameId);
       console.log(`🎨 Generated frame color for ${parentFrameId}: ${generatedColor}`);
       return generatedColor;
-      
+
     } catch (error) {
       console.warn(`Error getting parent frame border color for ${parentFrameId}:`, error);
       return this.generateFrameColor(parentFrameId);
@@ -364,12 +364,12 @@ export class AnimationService {
       hash = ((hash << 5) - hash) + char;
       hash = hash & hash; // Convert to 32-bit integer
     }
-    
+
     // Generate hue, saturation, and lightness values
     const hue = Math.abs(hash) % 360; // 0-359 degrees
     const saturation = 60 + (Math.abs(hash) % 40); // 60-99%
     const lightness = 45 + (Math.abs(hash) % 20); // 45-64%
-    
+
     return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
   }
 
@@ -400,13 +400,13 @@ export class AnimationService {
         timestamp: Date.now(),
         imageDataUrl,
         elementId,
-         frameIndex: animatedElement.frameIndex,
-         settings: animatedElement.settings,
-         isInsideFrame: !!animatedElement.parentFrameId,
-         parentFrameId: animatedElement.parentFrameId,
-         parentFrameBorderColor: animatedElement.parentFrameId ? 
-           this.getParentFrameBorderColor(animatedElement.parentFrameId) : undefined,
-       };
+        frameIndex: animatedElement.frameIndex,
+        settings: animatedElement.settings,
+        isInsideFrame: !!animatedElement.parentFrameId,
+        parentFrameId: animatedElement.parentFrameId,
+        parentFrameBorderColor: animatedElement.parentFrameId ?
+          this.getParentFrameBorderColor(animatedElement.parentFrameId) : undefined,
+      };
 
       // Submit frame to API for processing
       this.submitFrameToAPI(frame, elementId);
@@ -448,10 +448,10 @@ export class AnimationService {
 
       // Convert image data URL to file
       const imageFile = await this.dataURLToFile(frame.imageDataUrl, `element-${elementId}.png`);
-      
+
       // Get element coordinates and dimensions
       const elementData = await this.getElementCoordinates(elementId, frame.parentFrameId);
-      
+
       // Get the animation settings from the frame
       const animatedElement = this.animatedElements.get(elementId);
       if (!animatedElement) {
@@ -491,7 +491,7 @@ export class AnimationService {
       if (result.file_id) {
         frame.fileId = result.file_id;
         console.log(`📁 File ID stored: ${result.file_id}`);
-        
+
         // Start polling for result
         this.pollForResult(frame.fileId, frame, elementId);
       }
@@ -506,57 +506,57 @@ export class AnimationService {
   private async pollForResult(fileId: string, frame: AnimationFrame, elementId: string): Promise<void> {
     const maxAttempts = 60; // 10 minutes max (60 * 10 seconds)
     let attempts = 0;
-    
+
     const pollInterval = setInterval(async () => {
       try {
         attempts++;
         console.log(`🔄 Polling for result (attempt ${attempts}/${maxAttempts}) for file ${fileId}`);
-        
+
         const response = await fetch(`https://speedpaint.co/api/result?file_id=${fileId}`);
-        
+
         if (!response.ok) {
           throw new Error(`Result API request failed with status ${response.status}`);
         }
-        
+
         const result = await response.json();
         console.log(`📊 Poll result for ${fileId}:`, result);
-        
+
         if (result.status === 'success' && result.result_url) {
           console.log(`🎉 Video ready for ${fileId}: ${result.result_url}`);
-          
+
           // Update frame with result URL
           frame.resultUrl = result.result_url;
-          
+
           // Notify that processing is complete
           this.notifyProcessingComplete(elementId, frame);
-          
+
           // Stop polling
           clearInterval(pollInterval);
-          
+
         } else if (result.status === 'pending') {
           console.log(`⏳ Still processing ${fileId}: ${result.progress}% - ${result.message}`);
-          
+
           // Update progress if available
           if (result.progress !== undefined) {
             frame.progress = result.progress;
             this.notifyProgressUpdate(elementId, frame);
           }
-          
+
         } else {
           console.warn(`⚠️ Unexpected status for ${fileId}:`, result);
         }
-        
+
         // Stop polling if max attempts reached
         if (attempts >= maxAttempts) {
           console.warn(`⏰ Max polling attempts reached for ${fileId}`);
           clearInterval(pollInterval);
           this.notifyProcessingFailed(elementId, frame);
         }
-        
+
       } catch (error) {
         console.error(`❌ Error polling for result ${fileId}:`, error);
         attempts++;
-        
+
         // Stop polling if too many errors
         if (attempts >= maxAttempts) {
           console.warn(`⏰ Max polling attempts reached due to errors for ${fileId}`);
@@ -633,11 +633,11 @@ export class AnimationService {
         const bstr = atob(arr[1]);
         let n = bstr.length;
         const u8arr = new Uint8Array(n);
-        
+
         while (n--) {
           u8arr[n] = bstr.charCodeAt(n);
         }
-        
+
         const file = new File([u8arr], filename, { type: mime });
         resolve(file);
       } catch (error) {
@@ -661,20 +661,20 @@ export class AnimationService {
       }
 
       const rect = element.getBoundingClientRect();
-      
+
       let centerX: number;
       let centerY: number;
-      
+
       if (parentFrameId) {
         // Get the parent frame element using its ID
         const parentFrame = document.querySelector(`.${CSS.escape(parentFrameId)}`);
         if (parentFrame) {
           const parentRect = parentFrame.getBoundingClientRect();
-          
+
           // Calculate element center relative to the parent frame
           const elementCenterX = rect.left + rect.width / 2;
           const elementCenterY = rect.top + rect.height / 2;
-          
+
           // Convert to coordinates relative to the parent frame
           centerX = ((elementCenterX - parentRect.left) / parentRect.width) * 1920;
           centerY = ((elementCenterY - parentRect.top) / parentRect.height) * 1080;
@@ -688,7 +688,7 @@ export class AnimationService {
         centerX = (rect.left + rect.width / 2) / window.innerWidth * 1920;
         centerY = (rect.top + rect.height / 2) / window.innerHeight * 1080;
       }
-      
+
       // Get unscaled dimensions from computed styles
       const computedStyle = window.getComputedStyle(element);
       const width = parseFloat(computedStyle.width);
@@ -724,16 +724,16 @@ export class AnimationService {
       console.log(`✅ Found element ${layerId} by class name`);
       return elementByClass;
     }
-    
+
     // Fallback: Look for elements with class css-19b3lhe that might contain our layer
     const elements = document.querySelectorAll('.css-19b3lhe');
     console.log(`🔍 Fallback: Found ${elements.length} elements with css-19b3lhe class`);
-    
+
     // First, try to find by data attributes or IDs
     for (const element of elements) {
-      if (element.getAttribute('data-layer-id') === layerId || 
-          element.id === layerId ||
-          element.textContent?.includes(layerId)) {
+      if (element.getAttribute('data-layer-id') === layerId ||
+        element.id === layerId ||
+        element.textContent?.includes(layerId)) {
         console.log(`✅ Found element ${layerId} by fallback method`);
         return element;
       }
@@ -745,11 +745,11 @@ export class AnimationService {
       // Check if this element contains text that might indicate it's our target
       const textContent = element.textContent || '';
       const hasText = textContent.trim().length > 0;
-      
+
       // Check if element has reasonable dimensions (not too small)
       const rect = element.getBoundingClientRect();
       const hasSize = rect.width > 50 && rect.height > 50;
-      
+
       // If element has content and size, it might be our target
       if (hasText && hasSize) {
         // For now, return the first suitable element as a fallback
@@ -769,20 +769,20 @@ export class AnimationService {
   // Clean up all animations
   cleanup(): void {
     console.log(`🧹 Cleaning up all animations (${this.animatedElements.size} elements)`);
-    
+
     this.animationIntervals.forEach(interval => clearInterval(interval));
     this.animationIntervals.clear();
     this.animatedElements.clear();
     this.frameHistory.clear();
     this.nextFrameIndex = 0;
-    
+
     console.log('✅ All animations cleaned up');
   }
 
   // Debug method to inspect all SimpleFrame elements and their colors
   debugSimpleFrameColors(): void {
     console.log('🔍 Debugging SimpleFrame Colors:');
-    
+
     // Find all elements that might be SimpleFrames
     const allElements = document.querySelectorAll('*');
     const simpleFrameElements = Array.from(allElements).filter(el => {
@@ -790,14 +790,14 @@ export class AnimationService {
       const style = el.getAttribute('style') || '';
       return className.includes('css-') || style.includes('border') || el.getAttribute('data-frame-color');
     });
-    
+
     console.log(`Found ${simpleFrameElements.length} potential SimpleFrame elements`);
-    
+
     simpleFrameElements.forEach((element, index) => {
       const className = element.className || '';
       const dataFrameColor = element.getAttribute('data-frame-color');
       const computedStyle = window.getComputedStyle(element);
-      
+
       console.log(`Element ${index}:`, {
         tagName: element.tagName,
         className: className,
@@ -817,11 +817,11 @@ export class AnimationService {
   debugState(): void {
     console.log('🔍 AnimationService State:');
     console.log(`📊 ${this.animatedElements.size} animated elements, next index: ${this.nextFrameIndex}`);
-    
+
     for (const [elementId, animatedElement] of this.animatedElements.entries()) {
       const frames = this.frameHistory.get(elementId) || [];
       console.log(`  ${elementId}: frame ${animatedElement.frameIndex}, ${frames.length} captures`);
-      
+
       // Show detailed frame info
       if (frames.length > 0) {
         const latestFrame = frames[frames.length - 1];
@@ -829,13 +829,13 @@ export class AnimationService {
         console.log(`    Frame timestamp: ${new Date(latestFrame.timestamp).toLocaleTimeString()}`);
       }
     }
-    
+
     // Show frames by index
     const framesByIndex = this.getFramesByIndex();
-    console.log('🎯 Timeline frames:', Array.from(framesByIndex.entries()).map(([index, frames]) => 
+    console.log('🎯 Timeline frames:', Array.from(framesByIndex.entries()).map(([index, frames]) =>
       `${index}:${frames[0]?.elementId}`
     ).join(', '));
-    
+
     // Debug element finding with new class-based approach
     console.log('🔍 Element finding debug (new class-based approach):');
     for (const [elementId, animatedElement] of this.animatedElements.entries()) {
@@ -854,7 +854,7 @@ export class AnimationService {
         console.log(`  Element ${elementId}: NOT FOUND by class`);
       }
     }
-    
+
     // Also show all elements with css-19b3lhe class for comparison
     const cssElements = document.querySelectorAll('.css-19b3lhe');
     console.log(`🔍 Found ${cssElements.length} elements with css-19b3lhe class:`);
@@ -1025,7 +1025,7 @@ export class AnimationService {
         const elementBottom = elementTop + elementSize.height;
 
         // Check if element is completely within the frame boundaries
-        const isInsideFrame = 
+        const isInsideFrame =
           elementLeft >= frameLeft &&
           elementTop >= frameTop &&
           elementRight <= frameRight &&
@@ -1046,7 +1046,7 @@ export class AnimationService {
 
       console.log(`🔍 Found ${childElementIds.length} child elements for SimpleFrame ${frameId}:`, childElementIds);
       return childElementIds;
-      
+
     } catch (error) {
       console.warn(`Error getting child elements for frame ${frameId}:`, error);
       return [];
