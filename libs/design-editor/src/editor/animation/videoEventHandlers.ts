@@ -12,10 +12,45 @@ export class VideoEventHandlers {
     videoContainer: HTMLDivElement,
     originalFrameId: string
   ): void {
+    console.log(`🎬 Setting up video controls for frame ${originalFrameId}`);
+    console.log(`🎬 Video element:`, videoElement);
+    console.log(`🎬 Play button:`, playButton);
+    console.log(`🎬 Pause button:`, pauseButton);
+    console.log(`🎬 Video container:`, videoContainer);
+    
     // Play button click handler
     playButton.addEventListener('click', (e) => {
+      console.log(`▶️ Play button clicked for frame ${originalFrameId}`);
       e.stopPropagation();
-      videoElement.play();
+      
+      // Check video state before playing
+      console.log(`🎬 Video state before play:`, {
+        paused: videoElement.paused,
+        ended: videoElement.ended,
+        readyState: videoElement.readyState,
+        networkState: videoElement.networkState,
+        src: videoElement.src
+      });
+      
+      // Check if video is ready to play
+      if (videoElement.readyState < 2) { // HAVE_CURRENT_DATA
+        console.log(`⏳ Video not ready to play, waiting for data...`);
+        videoElement.addEventListener('canplay', () => {
+          console.log(`✅ Video is now ready to play for frame ${originalFrameId}`);
+          videoElement.play().then(() => {
+            console.log(`✅ Video started playing for frame ${originalFrameId}`);
+          }).catch((error) => {
+            console.error(`❌ Error playing video for frame ${originalFrameId}:`, error);
+          });
+        }, { once: true });
+      } else {
+        videoElement.play().then(() => {
+          console.log(`✅ Video started playing for frame ${originalFrameId}`);
+        }).catch((error) => {
+          console.error(`❌ Error playing video for frame ${originalFrameId}:`, error);
+        });
+      }
+      
       playButton.style.opacity = '0';
       playButton.style.pointerEvents = 'none';
       pauseButton.style.opacity = '1';
@@ -32,6 +67,7 @@ export class VideoEventHandlers {
 
     // Pause button click handler
     pauseButton.addEventListener('click', (e) => {
+      console.log(`⏸️ Pause button clicked for frame ${originalFrameId}`);
       e.stopPropagation();
       videoElement.pause();
       pauseButton.style.opacity = '0';
@@ -42,6 +78,7 @@ export class VideoEventHandlers {
 
     // Video event handlers
     videoElement.addEventListener('play', () => {
+      console.log(`▶️ Video play event fired for frame ${originalFrameId}`);
       playButton.style.opacity = '0';
       playButton.style.pointerEvents = 'none';
       pauseButton.style.opacity = '1';
@@ -57,6 +94,7 @@ export class VideoEventHandlers {
     });
 
     videoElement.addEventListener('pause', () => {
+      console.log(`⏸️ Video pause event fired for frame ${originalFrameId}`);
       pauseButton.style.opacity = '0';
       pauseButton.style.pointerEvents = 'none';
       playButton.style.opacity = '1';
@@ -65,6 +103,7 @@ export class VideoEventHandlers {
 
     // Handle video end - show play button again
     videoElement.addEventListener('ended', () => {
+      console.log(`🔚 Video ended for frame ${originalFrameId}`);
       pauseButton.style.opacity = '0';
       pauseButton.style.pointerEvents = 'none';
       playButton.style.opacity = '1';

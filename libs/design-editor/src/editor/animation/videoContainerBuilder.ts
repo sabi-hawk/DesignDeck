@@ -108,6 +108,56 @@ export class VideoContainerBuilder {
         console.log(`▶️ Video can play for frame ${originalFrameId}`);
       });
 
+      // Wait for video to be ready before setting up controls
+      const setupControlsWhenReady = () => {
+        if (videoElement.readyState >= 2) { // HAVE_CURRENT_DATA
+          console.log(`🎬 Video is ready, setting up controls for frame ${originalFrameId}`);
+          
+          // Set up video controls and event handlers
+          VideoEventHandlers.setupVideoControls(
+            videoElement,
+            playButton,
+            pauseButton,
+            videoContainer,
+            originalFrameId
+          );
+          
+          console.log(`🎬 Setting up container hover effects for frame ${originalFrameId}...`);
+          
+          // Set up container hover effects
+          VideoEventHandlers.setupContainerHoverEffects(
+            videoContainer,
+            videoElement,
+            pauseButton,
+            originalTransform
+          );
+        } else {
+          console.log(`⏳ Video not ready yet for frame ${originalFrameId}, waiting...`);
+          setTimeout(setupControlsWhenReady, 100);
+        }
+      };
+
+      // Set a timeout to ensure controls are set up even if video fails to load
+      setTimeout(() => {
+        if (videoElement.readyState < 2) {
+          console.log(`⚠️ Video loading timeout for frame ${originalFrameId}, setting up controls anyway`);
+          VideoEventHandlers.setupVideoControls(
+            videoElement,
+            playButton,
+            pauseButton,
+            videoContainer,
+            originalFrameId
+          );
+          
+          VideoEventHandlers.setupContainerHoverEffects(
+            videoContainer,
+            videoElement,
+            pauseButton,
+            originalTransform
+          );
+        }
+      }, 5000); // 5 second timeout
+
       // Set video attributes (matching old implementation for stability)
       videoElement.setAttribute('data-animation-video', 'true');
       videoElement.setAttribute('data-original-frame-id', originalFrameId);
@@ -373,26 +423,16 @@ export class VideoContainerBuilder {
       // This is the key step that was missing - positioning the video container
       parentContainer.appendChild(videoContainer);
       
-      // Set up video controls and event handlers
-      VideoEventHandlers.setupVideoControls(
-        videoElement,
-        playButton,
-        pauseButton,
-        videoContainer,
-        originalFrameId
-      );
+      console.log(`🎬 Setting up video controls for frame ${originalFrameId}...`);
       
-      // Set up container hover effects
-      VideoEventHandlers.setupContainerHoverEffects(
-        videoContainer,
-        videoElement,
-        pauseButton,
-        originalTransform
-      );
+      // Set up video controls and event handlers
+      setupControlsWhenReady();
       
       console.log(`✅ Video container created and positioned successfully for ${originalFrameId}`);
       console.log(`🎬 Video container size: ${boxSize.width}x${boxSize.height}`);
       console.log(`🎬 Video container added to parent:`, parentContainer);
+      console.log(`🎬 Play button element:`, playButton);
+      console.log(`🎬 Video element:`, videoElement);
       return videoContainer;
 
     } catch (error) {
