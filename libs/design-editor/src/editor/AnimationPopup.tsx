@@ -1,4 +1,5 @@
-import React, { FC, useState } from 'react';
+import React, { FC, useState, useEffect } from 'react';
+import { captureElement } from '../ultils/elementCapture';
 
 export interface AnimationSettings {
   sketchingDuration: number;
@@ -12,6 +13,7 @@ interface AnimationPopupProps {
   onAnimate: (settings: AnimationSettings) => void;
   elementType?: string;
   elementName?: string;
+  elementId?: string | null; // Make it optional and allow null
 }
 
 const handStyles = [
@@ -29,13 +31,54 @@ const AnimationPopup: FC<AnimationPopupProps> = ({
   onClose,
   onAnimate,
   elementType = 'Element',
-  elementName = 'Selected Element'
+  elementName = 'Selected Element',
+  elementId
 }) => {
+  console.log('🎭 AnimationPopup render:', { isVisible, elementId, elementType, elementName });
+  
   const [settings, setSettings] = useState<AnimationSettings>({
     sketchingDuration: 5,
     colorFillDuration: 3,
     handStyle: '1'
   });
+
+  const [elementPreview, setElementPreview] = useState<string | null>(null);
+  const [isCapturing, setIsCapturing] = useState(false);
+
+  // Capture element preview when popup becomes visible
+  useEffect(() => {
+    console.log('🔍 AnimationPopup useEffect:', { isVisible, elementId });
+    if (isVisible && elementId && elementId.trim() !== '') {
+      console.log('✅ Starting element capture for:', elementId);
+      captureElementPreview();
+    } else if (isVisible && (!elementId || elementId.trim() === '')) {
+      console.warn('⚠️ AnimationPopup is visible but elementId is undefined, null, or empty');
+    }
+  }, [isVisible, elementId]);
+
+  const captureElementPreview = async () => {
+    if (!elementId || elementId.trim() === '') {
+      console.warn('❌ captureElementPreview called without valid elementId:', elementId);
+      return;
+    }
+    
+    console.log('🎬 Capturing preview for element:', elementId);
+    setIsCapturing(true);
+    try {
+      const preview = await captureElement(elementId, {
+        quality: 0.8,
+        maxWidth: 300,
+        maxHeight: 200
+      });
+      console.log('📸 Preview captured:', preview ? 'success' : 'failed');
+      setElementPreview(preview);
+    } catch (error) {
+      console.error('❌ Failed to capture element preview:', error);
+      setElementPreview(null);
+    } finally {
+      setIsCapturing(false);
+    }
+  };
 
   const handleAnimate = () => {
     console.log('🎬 Starting animation with settings:', settings);
@@ -160,29 +203,72 @@ const AnimationPopup: FC<AnimationPopupProps> = ({
               overflow: 'hidden',
             }}
           >
-            <div
-              css={{
-                position: 'absolute',
-                top: '8px',
-                left: '8px',
-                fontSize: '12px',
-                background: 'rgba(0, 0, 0, 0.7)',
-                padding: '4px 8px',
-                borderRadius: '4px',
-                color: 'white',
-              }}
-            >
-              {elementType}
-            </div>
-            <div
-              css={{
-                fontSize: '32px',
-                filter: 'drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3))',
-              }}
-            >
-              {handStyles.find((h) => h.id === settings.handStyle)?.icon ||
-                '👆'}
-            </div>
+            {isCapturing ? (
+              <div
+                css={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  gap: '8px',
+                  color: '#9CA3AF',
+                }}
+              >
+                <div
+                  css={{
+                    width: '20px',
+                    height: '20px',
+                    border: '2px solid #9CA3AF',
+                    borderTop: '2px solid transparent',
+                    borderRadius: '50%',
+                    animation: 'spin 1s linear infinite',
+                  }}
+                />
+                <span css={{ fontSize: '12px' }}>Capturing...</span>
+              </div>
+            ) : elementPreview ? (
+              <img
+                alt="Element Preview"
+                css={{
+                  maxWidth: '100%',
+                  maxHeight: '100%',
+                  objectFit: 'contain',
+                  borderRadius: '4px',
+                }}
+                src={elementPreview}
+              />
+            ) : (
+              <div
+                css={{
+                  fontSize: '32px',
+                  filter: 'drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3))',
+                }}
+              >
+                {handStyles.find((h) => h.id === settings.handStyle)?.icon || '👆'}
+              </div>
+            )}
+            
+            {/* Hand icon overlay when element preview is shown */}
+            {elementPreview && (
+              <div
+                css={{
+                  position: 'absolute',
+                  bottom: '8px',
+                  right: '8px',
+                  fontSize: '24px',
+                  background: 'rgba(0, 0, 0, 0.7)',
+                  padding: '4px',
+                  borderRadius: '50%',
+                  width: '32px',
+                  height: '32px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  filter: 'drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3))',
+                }}
+              >
+                {handStyles.find((h) => h.id === settings.handStyle)?.icon || '👆'}
+              </div>
+            )}
           </div>
         </div>
 
@@ -446,6 +532,14 @@ const AnimationPopup: FC<AnimationPopupProps> = ({
             Start Animation
           </button>
         </div>
+
+        {/* CSS for loading spinner */}
+        <style>{`
+          @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+          }
+        `}</style>
       </div>
     </div>
   );

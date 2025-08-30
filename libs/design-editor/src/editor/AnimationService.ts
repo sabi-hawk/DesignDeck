@@ -1,4 +1,4 @@
-import { toPng } from 'html-to-image';
+import { captureElement } from '../ultils/elementCapture';
 import FrameVideoReplacer from './FrameVideoReplacer';
 
 export interface AnimationSettings {
@@ -382,36 +382,15 @@ export class AnimationService {
         return;
       }
 
-
-
-      // Find the specific layer element to capture
-      const element = this.findElementByLayerId(elementId);
-      
-      if (!element) {
-        console.warn(`Element with ID ${elementId} not found for screenshot`);
-        return;
-      }
-
-      // Check if element is visible and has dimensions
-      const rect = element.getBoundingClientRect();
-      if (rect.width === 0 || rect.height === 0) {
-        console.warn(`Element ${elementId} has no dimensions, skipping capture`);
-        return;
-      }
-
-      // Capture the screenshot directly from the element
-      const imageDataUrl = await toPng(element as HTMLElement, {
-        style: {
-          transform: 'none', // Ensure no transforms are applied during capture
-        },
-        // quality: 0.8, // Reduce quality to prevent memory issues
-        // width: Math.min(rect.width, 800), // Limit width
-        // height: Math.min(rect.height, 600), // Limit height
+      // Use the utility function to capture the element
+      const imageDataUrl = await captureElement(elementId, {
+        quality: 0.8,
+        maxWidth: 800,
+        maxHeight: 600
       });
 
-      // Validate the captured image data
-      if (!imageDataUrl || imageDataUrl.length < 100) {
-        console.warn(`Invalid image data captured for element ${elementId}`);
+      if (!imageDataUrl) {
+        console.warn(`Failed to capture element ${elementId}`);
         return;
       }
 
@@ -450,8 +429,6 @@ export class AnimationService {
 
       // Update last capture time
       animatedElement.lastCaptureTime = Date.now();
-
-
 
       // Call callback if set
       if (this.onFrameCaptured) {
@@ -677,6 +654,7 @@ export class AnimationService {
     height: number;
   }> {
     try {
+      // Find the element using the same logic as the utility
       const element = this.findElementByLayerId(elementId);
       if (!element) {
         throw new Error(`Element ${elementId} not found`);

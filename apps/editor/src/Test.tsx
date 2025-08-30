@@ -22,6 +22,16 @@ const Test = ({ googleFontList }: { googleFontList: FontData[] }) => {
   const [selectedElementName, setSelectedElementName] = useState<string>('Selected Element');
   const [animationService] = useState(() => AnimationService.getInstance());
 
+  // Debug state changes
+  useEffect(() => {
+    console.log('🔍 Test component state changed:', {
+      showAnimationPopup,
+      selectedElementId,
+      selectedElementType,
+      selectedElementName
+    });
+  }, [showAnimationPopup, selectedElementId, selectedElementType, selectedElementName]);
+
   const getFonts = useCallback(
     async (query: GetFontQuery) => {
       return googleFontList
@@ -74,10 +84,12 @@ const Test = ({ googleFontList }: { googleFontList: FontData[] }) => {
   };
 
   const handleShowAnimationPopup = (elementId: string, elementType: string, elementName: string) => {
+    console.log('🎬 handleShowAnimationPopup called with:', { elementId, elementType, elementName });
     setSelectedElementId(elementId);
     setSelectedElementType(elementType);
     setSelectedElementName(elementName);
     setShowAnimationPopup(true);
+    console.log('🎬 State updated, showAnimationPopup set to true');
   };
 
   const handleAnimateWithSettings = (settings: AnimationSettings) => {
@@ -178,6 +190,7 @@ const Test = ({ googleFontList }: { googleFontList: FontData[] }) => {
       
       {/* Animation Popup */}
       <AnimationPopup
+        elementId={selectedElementId}
         elementName={selectedElementName}
         elementType={selectedElementType}
         isVisible={showAnimationPopup}

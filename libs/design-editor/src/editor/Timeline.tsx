@@ -293,6 +293,7 @@ const Timeline: FC<TimelineProps> = ({ isVisible, onToggle }) => {
     <>
       {/* Animation Popup */}
       <AnimationPopup
+        elementId={selectedElementId}
         elementName={selectedElementName}
         elementType={selectedElementType}
         isVisible={showAnimationPopup}
