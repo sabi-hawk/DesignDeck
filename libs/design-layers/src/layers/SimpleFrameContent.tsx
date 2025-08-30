@@ -40,6 +40,46 @@ export const SimpleFrameContent: FC<SimpleFrameContentProps> = ({
   // Get direct access to editor state for more reliable selection checking
   const editorState = useEditor((state) => state);
 
+  // Get scene number for this frame
+  const getSceneNumber = (): number => {
+    try {
+      const allLayers = query.getLayers(0);
+      if (!allLayers) return 1;
+
+      const simpleFrames: { frameId: string; position: { x: number; y: number } }[] = [];
+
+      // Find all SimpleFrames
+      Object.entries(allLayers).forEach(([id, layer]) => {
+        if ((layer.data.type as any) === 'SimpleFrame' && id !== 'ROOT') {
+          const frameProps = layer.data.props;
+          if (frameProps.position) {
+            simpleFrames.push({
+              frameId: id,
+              position: frameProps.position
+            });
+          }
+        }
+      });
+
+      // Sort frames by position (top to bottom, left to right)
+      simpleFrames.sort((a, b) => {
+        if (Math.abs(a.position.y - b.position.y) > 50) {
+          return a.position.y - b.position.y;
+        }
+        return a.position.x - b.position.x;
+      });
+
+      // Find the index of current frame
+      const frameIndex = simpleFrames.findIndex(frame => frame.frameId === layerId);
+      return frameIndex >= 0 ? frameIndex + 1 : 1;
+    } catch (error) {
+      console.log('Error getting scene number:', error);
+      return 1;
+    }
+  };
+
+  const sceneNumber = getSceneNumber();
+
   // Store the color in the DOM element's data attribute when component mounts
   useEffect(() => {
     try {
@@ -271,14 +311,37 @@ export const SimpleFrameContent: FC<SimpleFrameContentProps> = ({
       onClick={handleFrameClick}
       onMouseDown={handleMouseDown}
     >
-      {/* Camera Icon - Top Left (Outside Frame) */}
+      {/* Scene Label - Top Left Corner */}
+      <div
+        css={{
+          position: 'absolute',
+          top: '8px',
+          left: '8px',
+          background: 'rgba(0, 0, 0, 0.8)',
+          color: 'white',
+          padding: '4px 8px',
+          borderRadius: '4px',
+          fontSize: `${fontSize * 0.8}px`,
+          fontWeight: 600,
+          fontFamily: 'monospace',
+          border: `2px solid ${frameColor}`,
+          boxShadow: '0 2px 6px rgba(0, 0, 0, 0.3)',
+          zIndex: 10,
+          pointerEvents: 'none',
+          textShadow: '0 1px 2px rgba(0, 0, 0, 0.8)',
+          backdropFilter: 'blur(4px)',
+        }}
+      >
+        Scene {sceneNumber}
+      </div>
+
+      {/* Lock/Unlock Button - Centered Top (Outside Frame) */}
       <div
         css={{
           position: 'absolute',
           top: '-60px',
           left: '50%',
           transform: 'translateX(-50%)',
-          marginLeft: '-120px',
           width: `${iconSize}px`,
           height: `${iconSize}px`,
           background: 'rgba(255, 255, 255, 0.95)',
@@ -297,42 +360,12 @@ export const SimpleFrameContent: FC<SimpleFrameContentProps> = ({
             boxShadow: '0 6px 12px rgba(0, 0, 0, 0.2)',
           },
         }}
-      >
-        📷
-      </div>
-
-      {/* Lock/Unlock Button - Top Right (Outside Frame) */}
-      <div
-        css={{
-          position: 'absolute',
-          top: '-60px',
-          right: '50%',
-          transform: 'translateX(50%)',
-          marginRight: '-120px',
-          width: `${iconSize}px`,
-          height: `${iconSize}px`,
-          background: 'rgba(255, 255, 255, 0.95)',
-          borderRadius: '8px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          cursor: 'pointer',
-          border: '2px solid rgba(0, 0, 0, 0.15)',
-          boxShadow: '0 4px 8px rgba(0, 0, 0, 0.15)',
-          zIndex: 10,
-          fontSize: `${fontSize * 1.5}px`,
-          ':hover': {
-            background: 'rgba(255, 255, 255, 1)',
-            transform: 'translateX(50%) scale(1.1)',
-            boxShadow: '0 6px 12px rgba(0, 0, 0, 0.2)',
-          },
-        }}
         onClick={toggleLock}
       >
         {isLocked ? '🔒' : '🔓'}
       </div>
 
-      {/* Frame Size Display - Bottom Right (Outside Frame) */}
+      {/* Frame Size Display - Bottom Right (Outside Frame) - Hidden for now */}
       <div
         css={{
           position: 'absolute',
@@ -349,6 +382,7 @@ export const SimpleFrameContent: FC<SimpleFrameContentProps> = ({
           boxShadow: '0 2px 6px rgba(0, 0, 0, 0.3)',
           zIndex: 10,
           pointerEvents: 'none',
+          display: 'none', // Hidden for now, can be re-enabled later
         }}
       >
         {Math.round(boxSize.width)} × {Math.round(boxSize.height)}
