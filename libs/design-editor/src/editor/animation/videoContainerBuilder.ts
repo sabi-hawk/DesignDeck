@@ -1,6 +1,6 @@
-import { FrameData, DOMPosition } from './types';
 import { DOMUtils } from './domUtils';
 import { SceneManager } from './sceneManager';
+import { FrameData, DOMPosition } from './types';
 import { VideoEventHandlers } from './videoEventHandlers';
 
 /**
@@ -24,29 +24,17 @@ export class VideoContainerBuilder {
     pages: any[]
   ): HTMLDivElement | null {
     try {
-      console.log(`🎬 Creating video container for frame ${originalFrameId}`);
-
       const { parentContainer, css19b3lheDiv, relativeLeft, relativeTop } = domPosition;
       const { boxSize } = frameData;
 
       // Get the correct frame border color using the frame ID
       const frameBorderColor = DOMUtils.getFrameBorderColorFromElement(domPosition.frameElement);
-      console.log(`🎨 Using frame border color for ${originalFrameId}: ${frameBorderColor}`);
 
       // Get the scene number for this frame
       const sceneNumber = this.sceneManager.getSceneNumberForFrame(originalFrameId);
-      console.log(`🎬 Scene number for frame ${originalFrameId}: ${sceneNumber}`);
 
       // Get the transform property from the original css-19b3lhe div
       const originalTransform = (css19b3lheDiv as HTMLElement).style.transform || '';
-      console.log(`🎬 Original transform from css-19b3lhe div: ${originalTransform}`);
-
-      console.log(`🎬 Creating video container with frame data:`, {
-        size: boxSize,
-        transform: originalTransform,
-        borderColor: frameBorderColor,
-        sceneNumber: sceneNumber
-      });
 
       // Create a new video container div
       const videoContainer = document.createElement('div');
@@ -85,9 +73,6 @@ export class VideoContainerBuilder {
       videoElement.muted = true;
       videoElement.controls = false;
       
-      // Add debugging for video loading
-      console.log(`🎬 Creating video element with URL: ${videoUrl}`);
-      
       // Add error handling for video loading
       videoElement.addEventListener('error', (e) => {
         console.error(`❌ Video loading error for frame ${originalFrameId}:`, e);
@@ -96,23 +81,9 @@ export class VideoContainerBuilder {
         console.error(`❌ Video ready state:`, videoElement.readyState);
       });
 
-      videoElement.addEventListener('loadstart', () => {
-        console.log(`🔄 Video loading started for frame ${originalFrameId}`);
-      });
-
-      videoElement.addEventListener('loadeddata', () => {
-        console.log(`✅ Video data loaded successfully for frame ${originalFrameId}`);
-      });
-
-      videoElement.addEventListener('canplay', () => {
-        console.log(`▶️ Video can play for frame ${originalFrameId}`);
-      });
-
       // Wait for video to be ready before setting up controls
       const setupControlsWhenReady = () => {
         if (videoElement.readyState >= 2) { // HAVE_CURRENT_DATA
-          console.log(`🎬 Video is ready, setting up controls for frame ${originalFrameId}`);
-          
           // Set up video controls and event handlers
           VideoEventHandlers.setupVideoControls(
             videoElement,
@@ -122,8 +93,6 @@ export class VideoContainerBuilder {
             originalFrameId
           );
           
-          console.log(`🎬 Setting up container hover effects for frame ${originalFrameId}...`);
-          
           // Set up container hover effects
           VideoEventHandlers.setupContainerHoverEffects(
             videoContainer,
@@ -132,7 +101,6 @@ export class VideoContainerBuilder {
             originalTransform
           );
         } else {
-          console.log(`⏳ Video not ready yet for frame ${originalFrameId}, waiting...`);
           setTimeout(setupControlsWhenReady, 100);
         }
       };
@@ -423,16 +391,9 @@ export class VideoContainerBuilder {
       // This is the key step that was missing - positioning the video container
       parentContainer.appendChild(videoContainer);
       
-      console.log(`🎬 Setting up video controls for frame ${originalFrameId}...`);
-      
       // Set up video controls and event handlers
       setupControlsWhenReady();
       
-      console.log(`✅ Video container created and positioned successfully for ${originalFrameId}`);
-      console.log(`🎬 Video container size: ${boxSize.width}x${boxSize.height}`);
-      console.log(`🎬 Video container added to parent:`, parentContainer);
-      console.log(`🎬 Play button element:`, playButton);
-      console.log(`🎬 Video element:`, videoElement);
       return videoContainer;
 
     } catch (error) {

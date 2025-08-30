@@ -34,7 +34,6 @@ const AnimationPopup: FC<AnimationPopupProps> = ({
   elementName = 'Selected Element',
   elementId
 }) => {
-  console.log('🎭 AnimationPopup render:', { isVisible, elementId, elementType, elementName });
   
   const [settings, setSettings] = useState<AnimationSettings>({
     sketchingDuration: 5,
@@ -47,22 +46,16 @@ const AnimationPopup: FC<AnimationPopupProps> = ({
 
   // Capture element preview when popup becomes visible
   useEffect(() => {
-    console.log('🔍 AnimationPopup useEffect:', { isVisible, elementId });
     if (isVisible && elementId && elementId.trim() !== '') {
-      console.log('✅ Starting element capture for:', elementId);
       captureElementPreview();
-    } else if (isVisible && (!elementId || elementId.trim() === '')) {
-      console.warn('⚠️ AnimationPopup is visible but elementId is undefined, null, or empty');
     }
   }, [isVisible, elementId]);
 
   const captureElementPreview = async () => {
     if (!elementId || elementId.trim() === '') {
-      console.warn('❌ captureElementPreview called without valid elementId:', elementId);
       return;
     }
     
-    console.log('🎬 Capturing preview for element:', elementId);
     setIsCapturing(true);
     try {
       const preview = await captureElement(elementId, {
@@ -70,7 +63,6 @@ const AnimationPopup: FC<AnimationPopupProps> = ({
         maxWidth: 300,
         maxHeight: 200
       });
-      console.log('📸 Preview captured:', preview ? 'success' : 'failed');
       setElementPreview(preview);
     } catch (error) {
       console.error('❌ Failed to capture element preview:', error);
@@ -81,7 +73,6 @@ const AnimationPopup: FC<AnimationPopupProps> = ({
   };
 
   const handleAnimate = () => {
-    console.log('🎬 Starting animation with settings:', settings);
     onAnimate(settings);
     onClose();
   };

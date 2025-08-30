@@ -69,7 +69,6 @@ const Timeline: FC<TimelineProps> = ({ isVisible, onToggle }) => {
 
     const handleProgressUpdate = (event: CustomEvent) => {
       const { elementId, frameId, progress } = event.detail;
-      console.log(`📊 Progress update for ${elementId}: ${progress}%`);
       
       // Update the frame with the progress
       setCurrentFrames((prev) => 
@@ -437,27 +436,7 @@ const Timeline: FC<TimelineProps> = ({ isVisible, onToggle }) => {
                   const isFirstInGroup = isFirstInParentFrameGroup(segmentIndex);
                   const isLastInGroup = isLastInParentFrameGroup(segmentIndex);
 
-                  // Debug logging for segments 0 and 1
-                  if (segmentIndex === 0 || segmentIndex === 1) {
-                    console.log(`Segment ${segmentIndex}:`, {
-                      hasFrames: !!frame,
-                      frameColor: frame?.parentFrameBorderColor,
-                      parentFrameGroupInfo: parentFrameGroupInfo ? {
-                        parentFrameId: parentFrameGroupInfo.parentFrameId,
-                        groupFrames: parentFrameGroupInfo.groupFrames.map(f => f.frameIndex),
-                        isFirst: parentFrameGroupInfo.isFirst,
-                        isLast: parentFrameGroupInfo.isLast,
-                        isMiddle: parentFrameGroupInfo.isMiddle
-                      } : null,
-                      isFirstInGroup,
-                      isLastInGroup
-                    });
-                  }
 
-                  // Debug all frames to see their colors
-                  if (frame) {
-                    console.log(`Frame ${segmentIndex} (${frame.elementId}): parentFrameBorderColor = "${frame.parentFrameBorderColor}"`);
-                  }
 
                   return (
                     <div
@@ -882,80 +861,7 @@ const Timeline: FC<TimelineProps> = ({ isVisible, onToggle }) => {
               Stop All
             </button>
 
-            {/* Debug Parent Frame Groups */}
-            <button
-              css={{
-                background: 'rgba(255, 0, 0, 0.2)',
-                border: '1px solid rgba(255, 0, 0, 0.4)',
-                borderRadius: '6px',
-                padding: '8px 16px',
-                color: 'white',
-                fontSize: '14px',
-                fontWeight: '500',
-                cursor: 'pointer',
-                ':hover': {
-                  background: 'rgba(255, 0, 0, 0.3)',
-                },
-              }}
-              onClick={() => {
-                const framesByParent = getFramesByParentFrame();
-                console.log('🔍 Parent Frame Groups Debug:');
-                console.log(`Found ${framesByParent.size} parent frame groups`);
-                
-                for (const [parentFrameId, groupFrames] of framesByParent.entries()) {
-                  console.log(`Parent Frame ${parentFrameId}:`);
-                  groupFrames.forEach(({ frameIndex, frame }) => {
-                    console.log(`  - Frame ${frameIndex}: ${frame.elementId} (${frame.isInsideFrame ? 'inside frame' : 'not in frame'})`);
-                  });
-                }
-                
-                // Also show all frames
-                const framesByIndex = getFramesByIndex();
-                console.log('🎯 All Timeline Frames:');
-                for (const [frameIndex, frames] of framesByIndex.entries()) {
-                  if (frames.length > 0) {
-                    const frame = frames[0];
-                    const parentFrameGroupInfo = getParentFrameGroupInfo(frameIndex);
-                    const isFirst = isFirstInParentFrameGroup(frameIndex);
-                    const isLast = isLastInParentFrameGroup(frameIndex);
-                    console.log(`  Frame ${frameIndex}: ${frame.elementId} - Parent: ${parentFrameGroupInfo?.parentFrameId || 'none'} - Inside Frame: ${frame.isInsideFrame || false} - First: ${isFirst} - Last: ${isLast}`);
-                  }
-                }
-                
-                // Test the grouping logic for specific segments
-                console.log('🧪 Testing Grouping Logic:');
-                for (let i = 0; i < 5; i++) {
-                  const groupInfo = getParentFrameGroupInfo(i);
-                  const isFirst = isFirstInParentFrameGroup(i);
-                  const isLast = isLastInParentFrameGroup(i);
-                  console.log(`  Segment ${i}: Group: ${groupInfo ? 'Yes' : 'No'}, First: ${isFirst}, Last: ${isLast}`);
-                }
-              }}
-            >
-              Debug Groups
-            </button>
 
-            {/* Debug SimpleFrame Colors */}
-            <button
-              css={{
-                background: 'rgba(0, 255, 0, 0.2)',
-                border: '1px solid rgba(0, 255, 0, 0.4)',
-                borderRadius: '6px',
-                padding: '8px 16px',
-                color: 'white',
-                fontSize: '14px',
-                fontWeight: '500',
-                cursor: 'pointer',
-                ':hover': {
-                  background: 'rgba(0, 255, 0, 0.3)',
-                },
-              }}
-              onClick={() => {
-                animationService.debugSimpleFrameColors();
-              }}
-            >
-              Debug Colors
-            </button>
 
             {/* Timeline Progress Bar */}
             <div
