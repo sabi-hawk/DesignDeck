@@ -3,6 +3,18 @@ import { SceneManager } from './sceneManager';
 import { FrameData, DOMPosition } from './types';
 import { VideoEventHandlers } from './videoEventHandlers';
 
+// Add CSS.escape polyfill if not available
+declare global {
+  interface Window {
+    CSS: {
+      escape: (ident: string) => string;
+    };
+  }
+}
+
+const CSS_ESCAPE = (typeof window !== 'undefined' && window.CSS && window.CSS.escape) || 
+  ((ident: string) => ident.replace(/[^a-zA-Z0-9-_]/g, '\\$&'));
+
 /**
  * Video container creation and styling utilities extracted from FrameVideoReplacer
  */
@@ -36,36 +48,25 @@ export class VideoContainerBuilder {
       // Get the transform property from the original css-19b3lhe div
       const originalTransform = (css19b3lheDiv as HTMLElement).style.transform || '';
 
-      // Create a new video container div
+      // Create a new video container div - simplified styling
       const videoContainer = document.createElement('div');
       videoContainer.className = `animation-video-standalone-container ${originalFrameId}-video`;
       videoContainer.setAttribute('data-original-frame-id', originalFrameId);
       videoContainer.setAttribute('data-video-url', videoUrl);
       videoContainer.setAttribute('data-frame-data', JSON.stringify(frameData));
 
-      // Apply modern, aesthetic styling to the video container
+      // Apply minimal styling - just positioning and size
       videoContainer.style.cssText = `
         position: absolute;
         width: ${boxSize.width}px;
         height: ${boxSize.height}px;
-        border: 3px solid ${frameBorderColor};
-        border-radius: 16px;
-        overflow: hidden;
-        z-index: 1000;
-        background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05));
-        pointer-events: auto;
         transform: ${originalTransform};
-        box-shadow: 
-          0 8px 32px rgba(0,0,0,0.3),
-          0 4px 16px rgba(0,0,0,0.2),
-          inset 0 1px 0 rgba(255,255,255,0.2);
-        backdrop-filter: blur(10px);
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        pointer-events: auto;
+        z-index: 1000;
+        display: none;
       `;
 
-      // Hover effects will be set up by VideoEventHandlers.setupContainerHoverEffects()
-
-      // Create the video element with enhanced styling
+      // Create the video element with minimal styling
       const videoElement = document.createElement('video');
       videoElement.src = videoUrl;
       videoElement.autoplay = false;
@@ -92,14 +93,6 @@ export class VideoContainerBuilder {
             videoContainer,
             originalFrameId
           );
-          
-          // Set up container hover effects
-          VideoEventHandlers.setupContainerHoverEffects(
-            videoContainer,
-            videoElement,
-            pauseButton,
-            originalTransform
-          );
         } else {
           setTimeout(setupControlsWhenReady, 100);
         }
@@ -116,20 +109,14 @@ export class VideoContainerBuilder {
             videoContainer,
             originalFrameId
           );
-          
-          VideoEventHandlers.setupContainerHoverEffects(
-            videoContainer,
-            videoElement,
-            pauseButton,
-            originalTransform
-          );
         }
       }, 5000); // 5 second timeout
 
-      // Set video attributes (matching old implementation for stability)
+      // Set video attributes
       videoElement.setAttribute('data-animation-video', 'true');
       videoElement.setAttribute('data-original-frame-id', originalFrameId);
 
+      // Minimal video styling
       videoElement.style.cssText = `
         width: 100%;
         height: 100%;
@@ -138,257 +125,140 @@ export class VideoContainerBuilder {
         border: none;
         outline: none;
         background: transparent;
-        border-radius: 13px;
-        transition: all 0.3s ease;
       `;
 
-      // Add a subtle overlay for better text readability
-      const videoOverlay = document.createElement('div');
-      videoOverlay.style.cssText = `
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: linear-gradient(135deg, rgba(0,0,0,0.1) 0%, transparent 50%, rgba(0,0,0,0.05) 100%);
-        pointer-events: none;
-        border-radius: 13px;
-        z-index: 1;
-      `;
-
-      // Create modern, aesthetic play button overlay
+      // Create simple play button overlay - centered
       const playButton = document.createElement('div');
       playButton.className = `video-play-button ${originalFrameId}-play-button`;
       playButton.setAttribute('data-original-frame-id', originalFrameId);
       playButton.innerHTML = `
         <div class="play-button-inner">
-          <div class="play-icon">
-            <svg width="120" height="120" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M8 5V19L19 12L8 5Z" fill="currentColor"/>
-            </svg>
-          </div>
+          <svg width="120" height="120" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M8 5V19L19 12L8 5Z" fill="white"/>
+          </svg>
         </div>
       `;
       playButton.style.cssText = `
         position: absolute;
-        top: 12px;
-        left: 12px;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
         cursor: pointer;
         z-index: 1001;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        transition: all 0.2s ease;
         opacity: 1;
-        filter: drop-shadow(0 2px 8px rgba(0,0,0,0.3));
+        background: rgba(0, 0, 0, 0.6);
+        border-radius: 50%;
+        width: 160px;
+        height: 160px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
       `;
 
-      // Create pause button overlay
+      // Create pause button overlay - centered
       const pauseButton = document.createElement('div');
       pauseButton.className = `video-pause-button ${originalFrameId}-pause-button`;
       pauseButton.setAttribute('data-original-frame-id', originalFrameId);
       pauseButton.innerHTML = `
         <div class="pause-button-inner">
-          <div class="pause-button-inner">
-            <div class="pause-icon">
-              <svg width="120" height="120" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M6 4H10V20H6V4Z" fill="currentColor"/>
-              </svg>
-            </div>
-          </div>
+          <svg width="120" height="120" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M6 4H10V20H6V4Z" fill="white"/>
+            <path d="M14 4H18V20H14V4Z" fill="white"/>
+          </svg>
         </div>
       `;
       pauseButton.style.cssText = `
         position: absolute;
-        top: 12px;
-        left: 12px;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
         cursor: pointer;
         z-index: 1001;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        transition: all 0.2s ease;
         opacity: 0;
         pointer-events: none;
-        filter: drop-shadow(0 2px 8px rgba(0,0,0,0.3));
+        background: rgba(0, 0, 0, 0.6);
+        border-radius: 50%;
+        width: 160px;
+        height: 160px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
       `;
 
-      // Create lock icon in bottom-left corner
-      const lockIcon = document.createElement('div');
-      lockIcon.className = `video-lock-icon ${originalFrameId}-lock-icon`;
-      lockIcon.setAttribute('data-original-frame-id', originalFrameId);
-      lockIcon.innerHTML = `
-        <div class="lock-icon-inner">
-          <svg width="120" height="120" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M19 11H5C3.89543 11 3 11.8954 3 13V20C3 21.1046 3.89543 22 5 22H19C20.1046 22 21 21.1046 21 20V13C21 11.8954 20.1046 11 19 11Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            <path d="M7 11V7C7 5.67392 7.52678 4.40215 8.46447 3.46447C9.40215 2.52678 10.6739 2 12 2C13.3261 2 14.5979 2.52678 15.5355 3.46447C16.4732 4.40215 17 5.67392 17 7V11" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      // Create cross button overlay - top right corner (to stop video)
+      const crossButton = document.createElement('div');
+      crossButton.className = `video-cross-button ${originalFrameId}-cross-button`;
+      crossButton.setAttribute('data-original-frame-id', originalFrameId);
+      crossButton.innerHTML = `
+        <div class="cross-button-inner">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M18 6L6 18" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M6 6L18 18" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
         </div>
       `;
-      lockIcon.style.cssText = `
+      crossButton.style.cssText = `
         position: absolute;
-        bottom: 12px;
-        left: 12px;
+        top: 16px;
+        right: 16px;
+        cursor: pointer;
         z-index: 1001;
-        transition: all 0.3s ease;
-        opacity: 0.8;
-        filter: drop-shadow(0 4px 16px rgba(0,0,0,0.4));
+        transition: all 0.2s ease;
+        opacity: 1;
+        background: rgba(0, 0, 0, 0.7);
+        border-radius: 50%;
+        width: 64px;
+        height: 64px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 2px solid rgba(255, 255, 255, 0.3);
       `;
 
-      // Add CSS for the play button styling
-      const playButtonStyle = document.createElement('style');
-      playButtonStyle.textContent = `
-        .play-button-inner {
-          position: relative;
-          width: 248px;
-          height: 248px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        }
-        
-        .play-icon {
-          width: 248px;
-          height: 248px;
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-          border-radius: 16px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          color: white;
-          box-shadow: 0 8px 32px rgba(102, 126, 234, 0.4);
-          transition: all 0.3s ease;
-          z-index: 2;
-          position: relative;
-          border: 4px solid rgba(255, 255, 255, 0.3);
-        }
-        
-        .play-icon:hover {
-          transform: scale(1.1);
-          box-shadow: 0 12px 40px rgba(102, 126, 234, 0.5);
-        }
-      `;
-      document.head.appendChild(playButtonStyle);
+      // Add hover effects for cross button
+      crossButton.addEventListener('mouseenter', () => {
+        crossButton.style.background = 'rgba(0, 0, 0, 0.9)';
+        crossButton.style.transform = 'scale(1.1)';
+        crossButton.style.borderColor = 'rgba(255, 255, 255, 0.6)';
+      });
 
-      // Add CSS for the pause button styling
-      const pauseButtonStyle = document.createElement('style');
-      pauseButtonStyle.textContent = `
-        .pause-button-inner {
-          position: relative;
-          width: 248px;
-          height: 248px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        }
-        
-        .pause-icon {
-          width: 248px;
-          height: 248px;
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-          border-radius: 16px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          color: white;
-          box-shadow: 0 8px 32px rgba(102, 126, 234, 0.4);
-          transition: all 0.3s ease;
-          z-index: 2;
-          position: relative;
-          border: 4px solid rgba(255, 255, 255, 0.3);
-        }
-        
-        .pause-icon:hover {
-          transform: scale(1.1);
-          box-shadow: 0 12px 40px rgba(102, 126, 234, 0.5);
-        }
-      `;
-      document.head.appendChild(pauseButtonStyle);
+      crossButton.addEventListener('mouseleave', () => {
+        crossButton.style.background = 'rgba(0, 0, 0, 0.7)';
+        crossButton.style.transform = 'scale(1)';
+        crossButton.style.borderColor = 'rgba(255, 255, 255, 0.3)';
+      });
 
-      // Add CSS for the lock icon styling
-      const lockIconStyle = document.createElement('style');
-      lockIconStyle.textContent = `
-        .lock-icon-inner {
-          position: relative;
-          width: 248px;
-          height: 248px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        }
-        
-        .lock-icon-inner svg {
-          width: 248px;
-          height: 248px;
-          background: rgba(0, 0, 0, 0.8);
-          border-radius: 16px;
-          padding: 40px;
-          color: white;
-          box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-          transition: all 0.3s ease;
-          border: 4px solid rgba(255, 255, 255, 0.2);
-        }
-        
-        .lock-icon-inner:hover svg {
-          background: rgba(0, 0, 0, 0.9);
-          transform: scale(1.05);
-          box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
-        }
-      `;
-      document.head.appendChild(lockIconStyle);
+      // Add hover effect for play button
+      playButton.addEventListener('mouseenter', () => {
+        playButton.style.background = 'rgba(0, 0, 0, 0.8)';
+        playButton.style.transform = 'translate(-50%, -50%) scale(1.1)';
+      });
 
-      // Add video, overlay, and buttons to container
+      playButton.addEventListener('mouseleave', () => {
+        playButton.style.background = 'rgba(0, 0, 0, 0.6)';
+        playButton.style.transform = 'translate(-50%, -50%) scale(1)';
+      });
+
+      // Add hover effect for pause button
+      pauseButton.addEventListener('mouseenter', () => {
+        pauseButton.style.background = 'rgba(0, 0, 0, 0.8)';
+        pauseButton.style.transform = 'translate(-50%, -50%) scale(1.1)';
+      });
+
+      pauseButton.addEventListener('mouseleave', () => {
+        pauseButton.style.background = 'rgba(0, 0, 0, 0.6)';
+        pauseButton.style.transform = 'translate(-50%, -50%) scale(1)';
+      });
+
+      // Add video and buttons to container
       videoContainer.appendChild(videoElement);
-      videoContainer.appendChild(videoOverlay);
       videoContainer.appendChild(playButton);
       videoContainer.appendChild(pauseButton);
-      videoContainer.appendChild(lockIcon);
+      videoContainer.appendChild(crossButton);
 
-      // Add scene label to the video container
-      if (sceneNumber > 0) {
-        const sceneLabel = document.createElement('div');
-        sceneLabel.className = `video-scene-label ${originalFrameId}-scene-label`;
-        sceneLabel.setAttribute('data-original-frame-id', originalFrameId);
-        sceneLabel.textContent = `Scene ${sceneNumber}`;
-        sceneLabel.style.cssText = `
-          position: absolute;
-          top: 8px;
-          right: 8px;
-          background: rgba(0, 0, 0, 0.8);
-          color: white;
-          font-size: 70px;
-          font-weight: bold;
-          padding: 6px 10px;
-          border-radius: 6px;
-          white-space: nowrap;
-          z-index: 1002;
-          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-          border: 2px solid ${frameBorderColor};
-          text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
-          backdrop-filter: blur(4px);
-          transition: all 0.3s ease;
-        `;
-
-        // Scene label hover effects
-        sceneLabel.addEventListener('mouseenter', () => {
-          sceneLabel.style.background = 'rgba(0, 0, 0, 0.9)';
-          sceneLabel.style.transform = 'scale(1.05)';
-        });
-
-        sceneLabel.addEventListener('mouseleave', () => {
-          sceneLabel.style.background = 'rgba(0, 0, 0, 0.8)';
-          sceneLabel.style.transform = 'scale(1)';
-        });
-
-        videoContainer.appendChild(sceneLabel);
-      }
-
-      // Add a subtle entrance animation
-      videoContainer.style.opacity = '0';
-      videoContainer.style.transform = `${originalTransform} scale(0.9)`;
-
-      // Trigger entrance animation after a brief delay
-      setTimeout(() => {
-        videoContainer.style.opacity = '1';
-        videoContainer.style.transform = originalTransform;
-      }, 100);
-
-      // IMPORTANT: Add container to the same parent as the original frame
-      // This is the key step that was missing - positioning the video container
+      // Add container to the same parent as the original frame
       parentContainer.appendChild(videoContainer);
       
       // Set up video controls and event handlers
@@ -401,6 +271,194 @@ export class VideoContainerBuilder {
       return null;
     }
   }
+
+  /**
+   * Show the video container
+   */
+  showVideoContainer(videoContainer: HTMLDivElement): void {
+    videoContainer.style.display = 'block';
+  }
+
+  /**
+   * Hide the video container
+   */
+  hideVideoContainer(videoContainer: HTMLDivElement): void {
+    videoContainer.style.display = 'none';
+  }
+
+  /**
+   * Add a play button to the original element
+   */
+  addPlayButtonToElement(
+    elementId: string,
+    videoContainer: HTMLDivElement,
+    originalFrameId: string
+  ): HTMLDivElement | null {
+    try {
+      // Find the original element by its ID using the same logic as findElementByLayerId
+      let originalElement: HTMLElement | null = null;
+      
+      // First, try to find by the new class-based approach (element ID as class)
+      const elementByClass = document.querySelector(`.${CSS_ESCAPE(elementId)}`) as HTMLElement;
+      if (elementByClass) {
+        console.log(`✅ Found animated element ${elementId} by class name`);
+        originalElement = elementByClass;
+      } else {
+        // Fallback: Look for elements with class css-19b3lhe that might contain our layer
+        const elements = document.querySelectorAll('.css-19b3lhe');
+        console.log(`🔍 Fallback: Found ${elements.length} elements with css-19b3lhe class`);
+        
+        // First, try to find by data attributes or IDs
+        for (const element of elements) {
+          if (element.getAttribute('data-layer-id') === elementId || 
+              element.id === elementId ||
+              element.textContent?.includes(elementId)) {
+            console.log(`✅ Found animated element ${elementId} by fallback method`);
+            originalElement = element as HTMLElement;
+            break;
+          }
+        }
+        
+        // If no direct match, try to find by looking at the element's position and content
+        if (!originalElement) {
+          for (const element of elements) {
+            // Check if this element contains text that might indicate it's our target
+            const textContent = element.textContent || '';
+            const hasText = textContent.trim().length > 0;
+            
+            // Check if element has reasonable dimensions (not too small)
+            const rect = element.getBoundingClientRect();
+            const hasSize = rect.width > 50 && rect.height > 50;
+            
+            // If element has content and size, it might be our target
+            if (hasText && hasSize) {
+              console.log(`✅ Found animated element ${elementId} by content/size fallback`);
+              originalElement = element as HTMLElement;
+              break;
+            }
+          }
+        }
+        
+        // Last resort: return the first css-19b3lhe element
+        if (!originalElement) {
+          const fallbackElement = document.querySelector('.css-19b3lhe') as HTMLElement;
+          if (fallbackElement) {
+            console.log(`⚠️ Using fallback element for animated element ${elementId}`);
+            originalElement = fallbackElement;
+          }
+        }
+      }
+
+      if (!originalElement) {
+        console.error(`❌ Could not find animated element with ID: ${elementId}`);
+        return null;
+      }
+
+      // Create play button for the element
+      const elementPlayButton = document.createElement('div');
+      elementPlayButton.className = `element-play-button ${originalFrameId}-element-play`;
+      elementPlayButton.setAttribute('data-original-frame-id', originalFrameId);
+      elementPlayButton.setAttribute('data-video-container-id', videoContainer.className);
+      elementPlayButton.innerHTML = `
+        <svg width="80" height="80" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M8 5V19L19 12L8 5Z" fill="white"/>
+        </svg>
+      `;
+      
+      // Style the play button - top left corner, much larger
+      elementPlayButton.style.cssText = `
+        position: absolute;
+        top: 16px;
+        left: 16px;
+        cursor: pointer;
+        z-index: 1002;
+        transition: all 0.2s ease;
+        opacity: 1;
+        background: rgba(0, 0, 0, 0.7);
+        border-radius: 50%;
+        width: 120px;
+        height: 120px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 3px solid rgba(255, 255, 255, 0.3);
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+      `;
+
+      // Add hover effects
+      elementPlayButton.addEventListener('mouseenter', () => {
+        elementPlayButton.style.background = 'rgba(0, 0, 0, 0.9)';
+        elementPlayButton.style.transform = 'scale(1.1)';
+        elementPlayButton.style.borderColor = 'rgba(255, 255, 255, 0.6)';
+      });
+
+      elementPlayButton.addEventListener('mouseleave', () => {
+        elementPlayButton.style.background = 'rgba(0, 0, 0, 0.7)';
+        elementPlayButton.style.transform = 'scale(1)';
+        elementPlayButton.style.borderColor = 'rgba(255, 255, 255, 0.3)';
+      });
+
+      // Add click handler to show video and hide play button
+      elementPlayButton.addEventListener('click', () => {
+        // Show the video container
+        this.showVideoContainer(videoContainer);
+        
+        // Hide the element play button
+        elementPlayButton.style.display = 'none';
+        
+        // Hide the animated element from the canvas
+        originalElement.style.display = 'none';
+        console.log(`🎬 Hidden animated element from canvas:`, originalElement);
+        
+        // Store reference to the animated element in the video container for later restoration
+        // Use dataset to store the element reference directly
+        (videoContainer as any).animatedElement = originalElement;
+        videoContainer.setAttribute('data-animated-element-id', elementId);
+        console.log(`🎬 Stored animated element reference in video container:`, originalElement);
+        
+        // Start playing the video
+        const videoElement = videoContainer.querySelector('video') as HTMLVideoElement;
+        if (videoElement) {
+          // Ensure video is ready to play
+          if (videoElement.readyState >= 2) { // HAVE_CURRENT_DATA
+            videoElement.play().catch(error => {
+              console.error(`❌ Error playing video:`, error);
+            });
+          } else {
+            // Wait for video to be ready, then play
+            videoElement.addEventListener('canplay', () => {
+              videoElement.play().catch(error => {
+                console.error(`❌ Error playing video:`, error);
+              });
+            }, { once: true });
+          }
+        }
+
+        // Set up cross button functionality
+        const crossButton = videoContainer.querySelector('.video-cross-button') as HTMLDivElement;
+        if (crossButton) {
+          crossButton.addEventListener('click', () => {
+            if (videoElement) {
+              // Stop video and return to element
+              VideoEventHandlers.stopVideoAndReturnToElement(
+                videoElement,
+                videoContainer,
+                elementPlayButton
+              );
+            }
+          });
+        }
+      });
+
+      // Add the play button to the original element
+      originalElement.appendChild(elementPlayButton);
+      
+      console.log(`✅ Successfully added play button to animated element ${elementId}`);
+      return elementPlayButton;
+
+    } catch (error) {
+      console.error(`❌ Error adding play button to animated element ${elementId}:`, error);
+      return null;
+    }
+  }
 }
-
-

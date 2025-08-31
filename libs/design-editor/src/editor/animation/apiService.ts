@@ -1,6 +1,12 @@
 import { AnimationFrame, AnimationSettings, ElementCoordinates } from './types';
 import { dataURLToFile } from './utils';
 
+// Mock mode flag - set to true to bypass actual API calls for testing
+const MOCK_MODE = true;
+
+// Mock video URL for testing
+const MOCK_VIDEO_URL = 'https://speedpaint.co/sketchly/test@example.com/outputs/49e4cb79178cd6dc5f2279d725622210.webm';
+
 /**
  * Submit a frame to the API for processing
  */
@@ -11,6 +17,20 @@ export const submitFrameToAPI = async (
   settings: AnimationSettings
 ): Promise<string | null> => {
   try {
+    // Mock mode: return fake file ID immediately
+    if (MOCK_MODE) {
+      console.log(`🧪 Mock mode: Simulating API submission for frame ${frame.id}`);
+      
+      // Simulate a small delay to mimic real API behavior
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      // Return a mock file ID
+      const mockFileId = `mock_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      console.log(`🧪 Mock mode: Generated file ID: ${mockFileId}`);
+      
+      return mockFileId;
+    }
+
     console.log(`🚀 Submitting frame ${frame.id} to API for processing...`);
 
     // Convert image data URL to file
@@ -66,6 +86,25 @@ export const pollForResult = (
   onProgress: (progress: number) => void,
   onFailure: () => void
 ): void => {
+  // Mock mode: return mock video URL immediately
+  if (MOCK_MODE) {
+    console.log(`🧪 Mock mode: Simulating immediate success for file ${fileId}`);
+    
+    // Simulate progress updates quickly
+    setTimeout(() => onProgress(25), 100);
+    setTimeout(() => onProgress(50), 200);
+    setTimeout(() => onProgress(75), 300);
+    setTimeout(() => onProgress(100), 400);
+    
+    // Return success after a brief delay
+    setTimeout(() => {
+      console.log(`🧪 Mock mode: Returning mock video URL: ${MOCK_VIDEO_URL}`);
+      onSuccess(MOCK_VIDEO_URL);
+    }, 500);
+    
+    return;
+  }
+
   const maxAttempts = 60; // 10 minutes max (60 * 10 seconds)
   let attempts = 0;
   

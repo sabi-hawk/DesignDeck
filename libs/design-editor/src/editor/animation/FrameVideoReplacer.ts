@@ -4,6 +4,7 @@ import { SceneManager } from './sceneManager';
 import { StateManager } from './stateManager';
 import { FrameData, DOMPosition } from './types';
 import { VideoContainerBuilder } from './videoContainerBuilder';
+import { VideoEventHandlers } from './videoEventHandlers';
 
 /**
  * FrameVideoReplacer - Main service for replacing frames with video containers
@@ -58,6 +59,9 @@ class FrameVideoReplacer {
       }
 
       console.log(`✅ Video URL validation passed: ${videoUrl}`);
+
+      // Store the original animated element ID (this is the picture/image element that was captured)
+      const originalAnimatedElementId = elementId;
 
       // Check if this is a SimpleFrame or a child element
       const elementType = this.frameManager.getElementType(elementId);
@@ -114,21 +118,43 @@ class FrameVideoReplacer {
       // Store the container
       this.videoContainers.set(targetElementId, videoContainer);
 
+      // Add a play button to the ORIGINAL animated element (not the frame)
+      // This is the picture/image element that was captured in captureFrame
+      const elementPlayButton = this.videoContainerBuilder.addPlayButtonToElement(
+        originalAnimatedElementId, // Use the original animated element ID
+        videoContainer,
+        targetElementId // Pass frame ID for reference
+      );
+
+      if (!elementPlayButton) {
+        console.warn(`⚠️ Could not add play button to animated element ${originalAnimatedElementId}`);
+      }
+
+      // Set up video ended event to hide video and show play button again
+      const videoElement = videoContainer.querySelector('video') as HTMLVideoElement;
+      if (videoElement) {
+        VideoEventHandlers.setupVideoEndedHandler(
+          videoElement,
+          videoContainer,
+          elementPlayButton
+        );
+      }
+
       // Remove all child elements from the editor state
-      const childElementIds = this.frameManager.getChildElementIds(targetElementId);
-      StateManager.removeChildElementsFromState(targetElementId, childElementIds);
+      // const childElementIds = this.frameManager.getChildElementIds(targetElementId);
+      // StateManager.removeChildElementsFromState(targetElementId, childElementIds);
 
       // IMPORTANT: Remove the frame itself from the editor state AFTER adding video container
       // This order prevents crashes by ensuring the video is visible before removing the frame
-      StateManager.removeFrameFromState(targetElementId);
+      // StateManager.removeFrameFromState(targetElementId);
 
-      console.log(`🎬 Successfully replaced frame ${targetElementId} with video container`);
+      console.log(`🎬 Successfully replaced frame ${targetElementId} with hidden video container and play button on element ${originalAnimatedElementId}`);
 
       // Dispatch a custom event to notify other components
       StateManager.dispatchVideoReplacedEvent(
         targetElementId, 
         videoUrl, 
-        elementId, 
+        originalAnimatedElementId, // Pass the original animated element ID
         frameData, 
         domPosition
       );

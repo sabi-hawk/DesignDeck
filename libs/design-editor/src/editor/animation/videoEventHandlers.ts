@@ -39,13 +39,13 @@ export class VideoEventHandlers {
       pauseButton.style.opacity = '1';
       pauseButton.style.pointerEvents = 'auto';
 
-      // Auto-hide pause button after 2 seconds
+      // Auto-hide pause button after 4 seconds
       setTimeout(() => {
         if (!videoElement.paused && !videoElement.ended) {
           pauseButton.style.opacity = '0';
           pauseButton.style.pointerEvents = 'none';
         }
-      }, 2000);
+      }, 4000);
     });
 
     // Pause button click handler
@@ -65,13 +65,13 @@ export class VideoEventHandlers {
       pauseButton.style.opacity = '1';
       pauseButton.style.pointerEvents = 'auto';
 
-      // Auto-hide pause button after 2 seconds
+      // Auto-hide pause button after 4 seconds
       setTimeout(() => {
         if (!videoElement.paused && !videoElement.ended) {
           pauseButton.style.opacity = '0';
           pauseButton.style.pointerEvents = 'none';
         }
-      }, 2000);
+      }, 4000);
     });
 
     videoElement.addEventListener('pause', () => {
@@ -137,5 +137,75 @@ export class VideoEventHandlers {
         inset 0 1px 0 rgba(255,255,255,0.2)
       `;
     });
+  }
+
+  /**
+   * Set up video ended handler to hide video and show element play button
+   */
+  static setupVideoEndedHandler(
+    videoElement: HTMLVideoElement,
+    videoContainer: HTMLDivElement,
+    elementPlayButton: HTMLDivElement | null
+  ): void {
+    videoElement.addEventListener('ended', () => {
+      // Hide the video container
+      videoContainer.style.display = 'none';
+      
+      // Get the animated element reference directly from the video container
+      const animatedElement = (videoContainer as any).animatedElement as HTMLElement;
+      console.log(`🎬 Looking for animated element in video container:`, animatedElement);
+      if (animatedElement) {
+        // Show the animated element again
+        animatedElement.style.display = '';
+        console.log(`🎬 Video ended, restored animated element to canvas:`, animatedElement);
+      } else {
+        console.warn(`⚠️ No animated element reference found in video container`);
+      }
+      
+      // Show the play button on the element again (if it exists)
+      if (elementPlayButton) {
+        elementPlayButton.style.display = 'flex';
+        console.log(`🎬 Video ended for frame, hiding video and showing play button`);
+      } else {
+        console.log(`🎬 Video ended for frame, hiding video (no element play button found)`);
+      }
+    });
+  }
+
+  /**
+   * Stop video and return to element play button
+   */
+  static stopVideoAndReturnToElement(
+    videoElement: HTMLVideoElement,
+    videoContainer: HTMLDivElement,
+    elementPlayButton: HTMLDivElement | null
+  ): void {
+    // Pause the video
+    videoElement.pause();
+    
+    // Reset video to beginning
+    videoElement.currentTime = 0;
+    
+    // Hide the video container
+    videoContainer.style.display = 'none';
+    
+    // Get the animated element reference directly from the video container
+    const animatedElement = (videoContainer as any).animatedElement as HTMLElement;
+    console.log(`⏹️ Looking for animated element in video container:`, animatedElement);
+    if (animatedElement) {
+      // Show the animated element again
+      animatedElement.style.display = '';
+      console.log(`🎬 Restored animated element to canvas:`, animatedElement);
+    } else {
+      console.warn(`⚠️ No animated element reference found in video container`);
+    }
+    
+    // Show the play button on the element again (if it exists)
+    if (elementPlayButton) {
+      elementPlayButton.style.display = 'flex';
+      console.log(`⏹️ Video stopped, hiding video and showing element play button`);
+    } else {
+      console.log(`⏹️ Video stopped, hiding video (no element play button found)`);
+    }
   }
 }
