@@ -93,11 +93,11 @@ class AnimationService {
     }
 
     // Check if this element is inside a SimpleFrame - if so, animate the entire frame instead
-    const parentFrameId = findParentSimpleFrame(this.pages, elementId);
-    if (parentFrameId) {
-      console.log(`🎬 Element ${elementId} is inside SimpleFrame ${parentFrameId}, animating entire frame instead`);
-      return this.startAnimationForSimpleFrame(parentFrameId, settings);
-    }
+    // const parentFrameId = findParentSimpleFrame(this.pages, elementId);
+    // if (parentFrameId) {
+    //   console.log(`🎬 Element ${elementId} is inside SimpleFrame ${parentFrameId}, animating entire frame instead`);
+    //   return this.startAnimationForSimpleFrame(parentFrameId, settings);
+    // }
 
     // Regular animation for non-SimpleFrame elements
     return this.startAnimationForElement(elementId, settings);
@@ -133,6 +133,8 @@ class AnimationService {
   private startAnimationForElement(elementId: string, settings: AnimationSettings): boolean {
     try {
       const frameIndex = this.nextFrameIndex++;
+      
+      console.log(`🎬 Starting animation for element ${elementId} at frame ${frameIndex}, isCapturing: ${this.isCapturing}`);
       
       // Create animated element entry
       const animatedElement: AnimatedElement = {
@@ -247,7 +249,7 @@ class AnimationService {
   debugSimpleFrameColors(): void {
     console.log('🎨 Debugging SimpleFrame colors:');
     
-    for (const [elementId, animatedElement] of this.animatedElements.entries()) {
+    for (const [elementId] of this.animatedElements.entries()) {
       const elementType = getElementType(this.pages, elementId);
       if (elementType === 'SimpleFrame') {
         const color = generateFrameColor(elementId);
@@ -264,11 +266,6 @@ class AnimationService {
     frameIndex: number, 
     settings: AnimationSettings
   ): void {
-    if (this.isCapturing) {
-      console.warn('⚠️ Animation capture already in progress');
-      return;
-    }
-
     console.log(`🎬 Starting animation capture for element ${elementId} at frame ${frameIndex}`);
 
     // Find parent SimpleFrame if this element is inside one
@@ -285,11 +282,17 @@ class AnimationService {
     };
 
     this.animatedElements.set(elementId, animatedElement);
+    
+    // Set capturing flag for this specific element
     this.isCapturing = true;
 
     // IMPORTANT: Only capture one frame immediately, don't set up continuous interval
     // This matches the old implementation behavior
-    this.captureFrame(elementId);
+    this.captureFrame(elementId).finally(() => {
+      // Reset capturing flag after frame capture is complete
+      this.isCapturing = false;
+      console.log(`✅ Frame capture completed for element ${elementId}, reset capturing flag`);
+    });
     
     // Note: The old implementation had the interval commented out:
     // // Start capturing frames every 10 minutes
@@ -472,6 +475,8 @@ class AnimationService {
 
     } catch (error) {
       console.error(`❌ Error capturing frame for ${elementId}:`, error);
+    } finally {
+      console.log(`🏁 Frame capture process completed for ${elementId}`);
     }
   }
 
