@@ -2,10 +2,10 @@ import { AnimationFrame, AnimationSettings, ElementCoordinates } from './types';
 import { dataURLToFile } from './utils';
 
 // Mock mode flag - set to true to bypass actual API calls for testing
-const MOCK_MODE = false;
+const MOCK_MODE = true;
 
 // Mock video URL for testing
-const MOCK_VIDEO_URL = 'https://speedpaint.co/sketchly/test@example.com/outputs/430c24143f65beb31b21b8d390a5843d.webm';
+const MOCK_VIDEO_URL = 'https://speedpaint.co/sketchly/test@example.com/outputs/336ec6cd3c2c13e49ae8ca9672eca662.webm';
 
 /**
  * Submit a frame to the API for processing

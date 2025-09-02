@@ -1,7 +1,6 @@
 import { DOMUtils } from './domUtils';
 import { SceneManager } from './sceneManager';
 import { FrameData, DOMPosition } from './types';
-import { VideoEventHandlers } from './videoEventHandlers';
 
 // Add CSS.escape polyfill if not available
 declare global {
@@ -82,35 +81,8 @@ export class VideoContainerBuilder {
         console.error(`❌ Video ready state:`, videoElement.readyState);
       });
 
-      // Wait for video to be ready before setting up controls
-      const setupControlsWhenReady = () => {
-        if (videoElement.readyState >= 2) { // HAVE_CURRENT_DATA
-          // Set up video controls and event handlers
-          VideoEventHandlers.setupVideoControls(
-            videoElement,
-            playButton,
-            pauseButton,
-            videoContainer,
-            originalFrameId
-          );
-        } else {
-          setTimeout(setupControlsWhenReady, 100);
-        }
-      };
-
-      // Set a timeout to ensure controls are set up even if video fails to load
-      setTimeout(() => {
-        if (videoElement.readyState < 2) {
-          console.log(`⚠️ Video loading timeout for frame ${originalFrameId}, setting up controls anyway`);
-          VideoEventHandlers.setupVideoControls(
-            videoElement,
-            playButton,
-            pauseButton,
-            videoContainer,
-            originalFrameId
-          );
-        }
-      }, 5000); // 5 second timeout
+      // No need to set up video controls since we're using element buttons
+      console.log(`🎬 Video container created without built-in controls - using element buttons instead`);
 
       // Set video attributes
       videoElement.setAttribute('data-animation-video', 'true');
@@ -127,142 +99,13 @@ export class VideoContainerBuilder {
         background: transparent;
       `;
 
-      // Create simple play button overlay - centered
-      const playButton = document.createElement('div');
-      playButton.className = `video-play-button ${originalFrameId}-play-button`;
-      playButton.setAttribute('data-original-frame-id', originalFrameId);
-      playButton.innerHTML = `
-        <div class="play-button-inner">
-          <svg width="120" height="120" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M8 5V19L19 12L8 5Z" fill="white"/>
-          </svg>
-        </div>
-      `;
-      playButton.style.cssText = `
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        cursor: pointer;
-        z-index: 1001;
-        transition: all 0.2s ease;
-        opacity: 1;
-        background: rgba(0, 0, 0, 0.6);
-        border-radius: 50%;
-        width: 160px;
-        height: 160px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-      `;
-
-      // Create pause button overlay - centered
-      const pauseButton = document.createElement('div');
-      pauseButton.className = `video-pause-button ${originalFrameId}-pause-button`;
-      pauseButton.setAttribute('data-original-frame-id', originalFrameId);
-      pauseButton.innerHTML = `
-        <div class="pause-button-inner">
-          <svg width="120" height="120" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M6 4H10V20H6V4Z" fill="white"/>
-            <path d="M14 4H18V20H14V4Z" fill="white"/>
-          </svg>
-        </div>
-      `;
-      pauseButton.style.cssText = `
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        cursor: pointer;
-        z-index: 1001;
-        transition: all 0.2s ease;
-        opacity: 0;
-        pointer-events: none;
-        background: rgba(0, 0, 0, 0.6);
-        border-radius: 50%;
-        width: 160px;
-        height: 160px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-      `;
-
-      // Create cross button overlay - top right corner (to stop video)
-      const crossButton = document.createElement('div');
-      crossButton.className = `video-cross-button ${originalFrameId}-cross-button`;
-      crossButton.setAttribute('data-original-frame-id', originalFrameId);
-      crossButton.innerHTML = `
-        <div class="cross-button-inner">
-          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M18 6L6 18" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-            <path d="M6 6L18 18" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-        </div>
-      `;
-      crossButton.style.cssText = `
-        position: absolute;
-        top: 16px;
-        right: 16px;
-        cursor: pointer;
-        z-index: 1001;
-        transition: all 0.2s ease;
-        opacity: 1;
-        background: rgba(0, 0, 0, 0.7);
-        border-radius: 50%;
-        width: 64px;
-        height: 64px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border: 2px solid rgba(255, 255, 255, 0.3);
-      `;
-
-      // Add hover effects for cross button
-      crossButton.addEventListener('mouseenter', () => {
-        crossButton.style.background = 'rgba(0, 0, 0, 0.9)';
-        crossButton.style.transform = 'scale(1.1)';
-        crossButton.style.borderColor = 'rgba(255, 255, 255, 0.6)';
-      });
-
-      crossButton.addEventListener('mouseleave', () => {
-        crossButton.style.background = 'rgba(0, 0, 0, 0.7)';
-        crossButton.style.transform = 'scale(1)';
-        crossButton.style.borderColor = 'rgba(255, 255, 255, 0.3)';
-      });
-
-      // Add hover effect for play button
-      playButton.addEventListener('mouseenter', () => {
-        playButton.style.background = 'rgba(0, 0, 0, 0.8)';
-        playButton.style.transform = 'translate(-50%, -50%) scale(1.1)';
-      });
-
-      playButton.addEventListener('mouseleave', () => {
-        playButton.style.background = 'rgba(0, 0, 0, 0.6)';
-        playButton.style.transform = 'translate(-50%, -50%) scale(1)';
-      });
-
-      // Add hover effect for pause button
-      pauseButton.addEventListener('mouseenter', () => {
-        pauseButton.style.background = 'rgba(0, 0, 0, 0.8)';
-        pauseButton.style.transform = 'translate(-50%, -50%) scale(1.1)';
-      });
-
-      pauseButton.addEventListener('mouseleave', () => {
-        pauseButton.style.background = 'rgba(0, 0, 0, 0.6)';
-        pauseButton.style.transform = 'translate(-50%, -50%) scale(1)';
-      });
-
-      // Add video and buttons to container
+      // No need for video container buttons - we'll use the element's own buttons
+      
+      // Add only the video element to container
       videoContainer.appendChild(videoElement);
-      videoContainer.appendChild(playButton);
-      videoContainer.appendChild(pauseButton);
-      videoContainer.appendChild(crossButton);
 
       // Add container to the same parent as the original frame
       parentContainer.appendChild(videoContainer);
-      
-      // Set up video controls and event handlers
-      setupControlsWhenReady();
       
       return videoContainer;
 
@@ -365,11 +208,12 @@ export class VideoContainerBuilder {
         </svg>
       `;
       
-      // Style the play button - top left corner, much larger
+      // Style the play button - centered on the element
       elementPlayButton.style.cssText = `
         position: absolute;
-        top: 16px;
-        left: 16px;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
         cursor: pointer;
         z-index: 1002;
         transition: all 0.2s ease;
@@ -385,70 +229,105 @@ export class VideoContainerBuilder {
         box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
       `;
 
-      // Add hover effects
-      elementPlayButton.addEventListener('mouseenter', () => {
-        elementPlayButton.style.background = 'rgba(0, 0, 0, 0.9)';
-        elementPlayButton.style.transform = 'scale(1.1)';
-        elementPlayButton.style.borderColor = 'rgba(255, 255, 255, 0.6)';
-      });
+             // Add hover effects
+       elementPlayButton.addEventListener('mouseenter', () => {
+         elementPlayButton.style.background = 'rgba(0, 0, 0, 0.9)';
+         elementPlayButton.style.transform = 'translate(-50%, -50%) scale(1.1)';
+         elementPlayButton.style.borderColor = 'rgba(255, 255, 255, 0.6)';
+       });
 
-      elementPlayButton.addEventListener('mouseleave', () => {
-        elementPlayButton.style.background = 'rgba(0, 0, 0, 0.7)';
-        elementPlayButton.style.transform = 'scale(1)';
-        elementPlayButton.style.borderColor = 'rgba(255, 255, 255, 0.3)';
-      });
+       elementPlayButton.addEventListener('mouseleave', () => {
+         elementPlayButton.style.background = 'rgba(0, 0, 0, 0.7)';
+         elementPlayButton.style.transform = 'translate(-50%, -50%) scale(1)';
+         elementPlayButton.style.borderColor = 'rgba(255, 255, 255, 0.3)';
+       });
 
-      // Add click handler to show video and hide play button
-      elementPlayButton.addEventListener('click', () => {
-        // Show the video container
-        this.showVideoContainer(videoContainer);
-        
-        // Hide the element play button
-        elementPlayButton.style.display = 'none';
-        
-        // Hide the animated element from the canvas
-        originalElement.style.display = 'none';
-        console.log(`🎬 Hidden animated element from canvas:`, originalElement);
-        
-        // Store reference to the animated element in the video container for later restoration
-        // Use dataset to store the element reference directly
-        (videoContainer as any).animatedElement = originalElement;
-        videoContainer.setAttribute('data-animated-element-id', elementId);
-        console.log(`🎬 Stored animated element reference in video container:`, originalElement);
-        
-        // Start playing the video
-        const videoElement = videoContainer.querySelector('video') as HTMLVideoElement;
-        if (videoElement) {
-          // Ensure video is ready to play
-          if (videoElement.readyState >= 2) { // HAVE_CURRENT_DATA
-            videoElement.play().catch(error => {
-              console.error(`❌ Error playing video:`, error);
-            });
-          } else {
-            // Wait for video to be ready, then play
-            videoElement.addEventListener('canplay', () => {
+             // Add click handler to show video and hide play button
+       elementPlayButton.addEventListener('click', () => {
+         // Show the video container
+         this.showVideoContainer(videoContainer);
+         
+                   // Create a pause button in the same position as the play button
+          const pauseButton = document.createElement('div');
+          pauseButton.className = `element-pause-button ${originalFrameId}-element-pause`;
+          pauseButton.setAttribute('data-original-frame-id', originalFrameId);
+          pauseButton.innerHTML = `
+            <svg width="80" height="80" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M6 4H10V20H6V4Z" fill="white"/>
+              <path d="M14 4H18V20H14V4Z" fill="white"/>
+            </svg>
+          `;
+          
+          // Style the pause button exactly like the play button, but with higher z-index
+          pauseButton.style.cssText = elementPlayButton.style.cssText;
+          pauseButton.style.zIndex = '1003'; // Higher than video container (1000) and play button (1002)
+          
+          // Hide the play button and show the pause button
+          elementPlayButton.style.display = 'none';
+          pauseButton.style.display = 'flex';
+          
+          // Add the pause button to the original element
+          originalElement.appendChild(pauseButton);
+          
+          // Set up pause button click handler
+          pauseButton.addEventListener('click', () => {
+            // Pause the video
+            const videoElement = videoContainer.querySelector('video') as HTMLVideoElement;
+            if (videoElement) {
+              videoElement.pause();
+            }
+            
+            // Hide the video container
+            videoContainer.style.display = 'none';
+            
+            // Hide pause button and show play button again
+            pauseButton.style.display = 'none';
+            elementPlayButton.style.display = 'flex';
+            
+            // Remove the pause button from DOM
+            pauseButton.remove();
+            
+            console.log(`🎬 Video paused, hidden video container and restored play button`);
+          });
+          
+          // Store reference to the animated element in the video container for later restoration
+          (videoContainer as any).animatedElement = originalElement;
+          videoContainer.setAttribute('data-animated-element-id', elementId);
+          console.log(`🎬 Stored animated element reference in video container:`, originalElement);
+         
+                   // Start playing the video
+          const videoElement = videoContainer.querySelector('video') as HTMLVideoElement;
+          if (videoElement) {
+            // Ensure video is ready to play
+            if (videoElement.readyState >= 2) { // HAVE_CURRENT_DATA
               videoElement.play().catch(error => {
                 console.error(`❌ Error playing video:`, error);
               });
-            }, { once: true });
-          }
-        }
-
-        // Set up cross button functionality
-        const crossButton = videoContainer.querySelector('.video-cross-button') as HTMLDivElement;
-        if (crossButton) {
-          crossButton.addEventListener('click', () => {
-            if (videoElement) {
-              // Stop video and return to element
-              VideoEventHandlers.stopVideoAndReturnToElement(
-                videoElement,
-                videoContainer,
-                elementPlayButton
-              );
+            } else {
+              // Wait for video to be ready, then play
+              videoElement.addEventListener('canplay', () => {
+                videoElement.play().catch(error => {
+                  console.error(`❌ Error playing video:`, error);
+                });
+              }, { once: true });
             }
-          });
-        }
-      });
+            
+            // Set up video ended event to show play button again
+            videoElement.addEventListener('ended', () => {
+              // Hide pause button and show play button again
+              pauseButton.style.display = 'none';
+              elementPlayButton.style.display = 'flex';
+              
+              // Remove the pause button from DOM
+              pauseButton.remove();
+              
+              // Hide the video container
+              videoContainer.style.display = 'none';
+              
+              console.log(`🎬 Video ended, restored play button`);
+            });
+          }
+       });
 
       // Add the play button to the original element
       originalElement.appendChild(elementPlayButton);
