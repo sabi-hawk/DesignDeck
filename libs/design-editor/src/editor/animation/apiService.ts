@@ -5,7 +5,7 @@ import { dataURLToFile } from './utils';
 const MOCK_MODE = true;
 
 // Mock video URL for testing
-const MOCK_VIDEO_URL = 'https://speedpaint.co/sketchly/test@example.com/outputs/336ec6cd3c2c13e49ae8ca9672eca662.webm';
+const MOCK_VIDEO_URL = 'https://speedpaint.co/sketchly/test@example.com/outputs/9595cf11b9279d64e65ff3fb18773d1e.webm';
 
 /**
  * Submit a frame to the API for processing

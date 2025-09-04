@@ -32,17 +32,20 @@ export class VideoContainerBuilder {
     domPosition: DOMPosition,
     videoUrl: string,
     originalFrameId: string,
-    pages: any[]
+    pages: unknown[]
   ): HTMLDivElement | null {
     try {
-      const { parentContainer, css19b3lheDiv, relativeLeft, relativeTop } = domPosition;
+      const { parentContainer, css19b3lheDiv } = domPosition;
       const { boxSize } = frameData;
 
-      // Get the correct frame border color using the frame ID
+      // Get the correct frame border color using the frame ID (for potential future use)
       const frameBorderColor = DOMUtils.getFrameBorderColorFromElement(domPosition.frameElement);
 
-      // Get the scene number for this frame
+      // Get the scene number for this frame (for potential future use)  
       const sceneNumber = this.sceneManager.getSceneNumberForFrame(originalFrameId);
+      
+      // These variables are kept for potential future use
+      console.log(`🎬 Frame border color: ${frameBorderColor}, Scene number: ${sceneNumber}`);
 
       // Get the transform property from the original css-19b3lhe div
       const originalTransform = (css19b3lheDiv as HTMLElement).style.transform || '';
@@ -60,8 +63,8 @@ export class VideoContainerBuilder {
         width: ${boxSize.width}px;
         height: ${boxSize.height}px;
         transform: ${originalTransform};
-        pointer-events: auto;
-        z-index: 1000;
+        pointer-events: none;
+        z-index: 999;
         display: none;
       `;
 
@@ -97,6 +100,7 @@ export class VideoContainerBuilder {
         border: none;
         outline: none;
         background: transparent;
+        pointer-events: none;
       `;
 
       // No need for video container buttons - we'll use the element's own buttons
@@ -227,6 +231,7 @@ export class VideoContainerBuilder {
         justify-content: center;
         border: 3px solid rgba(255, 255, 255, 0.3);
         box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+        pointer-events: auto;
       `;
 
              // Add hover effects
@@ -243,11 +248,53 @@ export class VideoContainerBuilder {
        });
 
              // Add click handler to show video and hide play button
-       elementPlayButton.addEventListener('click', () => {
+       elementPlayButton.addEventListener('click', (e) => {
+         console.log(`🎬 Play button clicked for frame ${originalFrameId}`);
+         e.preventDefault();
+         e.stopPropagation();
+         
          // Show the video container
          this.showVideoContainer(videoContainer);
          
-                   // Create a pause button in the same position as the play button
+         // Hide the original content (first child) of the element
+         const firstChild = originalElement.firstElementChild as HTMLElement;
+         if (firstChild) {
+           firstChild.style.display = 'none';
+           console.log(`🎬 Hidden original content (first child) of element ${elementId}`);
+         } else {
+           console.warn(`⚠️ No first child found in element ${elementId} to hide`);
+         }
+         
+                   // Create a pause button with backdrop for enhanced visibility
+          const pauseButtonContainer = document.createElement('div');
+          pauseButtonContainer.className = `pause-button-container ${originalFrameId}-pause-container`;
+          pauseButtonContainer.style.cssText = `
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 9999;
+            pointer-events: none;
+            isolation: isolate;
+          `;
+          
+          // Create backdrop circle for extra visibility
+          const pauseBackdrop = document.createElement('div');
+          pauseBackdrop.className = 'pause-button-backdrop';
+          pauseBackdrop.style.cssText = `
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 160px;
+            height: 160px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(0, 0, 0, 0.9) 0%, rgba(0, 0, 0, 0.6) 60%, rgba(0, 0, 0, 0.3) 80%, transparent 100%);
+            z-index: 9998;
+            pointer-events: none;
+            isolation: isolate;
+          `;
+          
           const pauseButton = document.createElement('div');
           pauseButton.className = `element-pause-button ${originalFrameId}-element-pause`;
           pauseButton.setAttribute('data-original-frame-id', originalFrameId);
@@ -258,40 +305,104 @@ export class VideoContainerBuilder {
             </svg>
           `;
           
-          // Style the pause button exactly like the play button, but with higher z-index
-          pauseButton.style.cssText = elementPlayButton.style.cssText;
-          pauseButton.style.zIndex = '1003'; // Higher than video container (1000) and play button (1002)
+          // Style the pause button with maximum visibility to stay above video content
+          pauseButton.style.cssText = `
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            cursor: pointer;
+            z-index: 10000;
+            transition: all 0.2s ease;
+            opacity: 1;
+            background: rgba(0, 0, 0, 0.95);
+            border-radius: 50%;
+            width: 120px;
+            height: 120px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 5px solid rgba(255, 255, 255, 0.95);
+            box-shadow: 0 12px 48px rgba(0, 0, 0, 0.9), 0 0 0 3px rgba(255, 255, 255, 0.3), inset 0 0 0 2px rgba(255, 255, 255, 0.1);
+            pointer-events: auto;
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            isolation: isolate;
+          `;
           
-          // Hide the play button and show the pause button
+          // Assemble the pause button structure
+          pauseButtonContainer.appendChild(pauseBackdrop);
+          pauseButtonContainer.appendChild(pauseButton);
+          
+          // Hide the play button and show the pause button container
           elementPlayButton.style.display = 'none';
-          pauseButton.style.display = 'flex';
+          pauseButtonContainer.style.display = 'block';
           
-          // Add the pause button to the original element
-          originalElement.appendChild(pauseButton);
+          // Set maximum z-index on the parent element to ensure buttons are above video container
+          originalElement.style.zIndex = '10001'; // Higher than pause button (10000) and video container (999)
+          originalElement.style.position = 'relative'; // Ensure z-index takes effect
+          originalElement.style.isolation = 'isolate'; // Create new stacking context
+          
+          // Add hover effects for pause button with maximum visibility
+          pauseButton.addEventListener('mouseenter', () => {
+            pauseButton.style.background = 'rgba(0, 0, 0, 0.98)';
+            pauseButton.style.transform = 'translate(-50%, -50%) scale(1.1)';
+            pauseButton.style.borderColor = 'rgba(255, 255, 255, 1)';
+            pauseButton.style.boxShadow = '0 16px 64px rgba(0, 0, 0, 0.95), 0 0 0 4px rgba(255, 255, 255, 0.4), inset 0 0 0 3px rgba(255, 255, 255, 0.2)';
+          });
+
+          pauseButton.addEventListener('mouseleave', () => {
+            pauseButton.style.background = 'rgba(0, 0, 0, 0.95)';
+            pauseButton.style.transform = 'translate(-50%, -50%) scale(1)';
+            pauseButton.style.borderColor = 'rgba(255, 255, 255, 0.95)';
+            pauseButton.style.boxShadow = '0 12px 48px rgba(0, 0, 0, 0.9), 0 0 0 3px rgba(255, 255, 255, 0.3), inset 0 0 0 2px rgba(255, 255, 255, 0.1)';
+          });
+          
+          // Add the pause button container to the original element
+          originalElement.appendChild(pauseButtonContainer);
           
           // Set up pause button click handler
-          pauseButton.addEventListener('click', () => {
+          pauseButton.addEventListener('click', (e) => {
+            console.log(`🎬 Pause button clicked for frame ${originalFrameId}`);
+            e.preventDefault();
+            e.stopPropagation();
+            
             // Pause the video
             const videoElement = videoContainer.querySelector('video') as HTMLVideoElement;
             if (videoElement) {
               videoElement.pause();
+              console.log(`🎬 Video paused successfully`);
             }
             
             // Hide the video container
             videoContainer.style.display = 'none';
             
-            // Hide pause button and show play button again
-            pauseButton.style.display = 'none';
+            // Show the original content (first child) of the element again
+            const firstChild = originalElement.firstElementChild as HTMLElement;
+            if (firstChild) {
+              firstChild.style.display = '';
+              console.log(`🎬 Restored original content (first child) of element ${elementId}`);
+            } else {
+              console.warn(`⚠️ No first child found in element ${elementId} to restore`);
+            }
+            
+            // Reset the parent element's properties to original values
+            originalElement.style.zIndex = '';
+            originalElement.style.position = '';
+            originalElement.style.isolation = '';
+            
+            // Hide pause button container and show play button again
+            pauseButtonContainer.style.display = 'none';
             elementPlayButton.style.display = 'flex';
             
-            // Remove the pause button from DOM
-            pauseButton.remove();
+            // Remove the pause button container from DOM
+            pauseButtonContainer.remove();
             
             console.log(`🎬 Video paused, hidden video container and restored play button`);
           });
           
           // Store reference to the animated element in the video container for later restoration
-          (videoContainer as any).animatedElement = originalElement;
+          (videoContainer as HTMLDivElement & { animatedElement: HTMLElement }).animatedElement = originalElement;
           videoContainer.setAttribute('data-animated-element-id', elementId);
           console.log(`🎬 Stored animated element reference in video container:`, originalElement);
          
@@ -314,12 +425,24 @@ export class VideoContainerBuilder {
             
             // Set up video ended event to show play button again
             videoElement.addEventListener('ended', () => {
-              // Hide pause button and show play button again
-              pauseButton.style.display = 'none';
+              // Show the original content (first child) of the element again
+              const firstChild = originalElement.firstElementChild as HTMLElement;
+              if (firstChild) {
+                firstChild.style.display = '';
+                console.log(`🎬 Restored original content (first child) after video ended`);
+              }
+              
+              // Reset the parent element's properties to original values
+              originalElement.style.zIndex = '';
+              originalElement.style.position = '';
+              originalElement.style.isolation = '';
+              
+              // Hide pause button container and show play button again
+              pauseButtonContainer.style.display = 'none';
               elementPlayButton.style.display = 'flex';
               
-              // Remove the pause button from DOM
-              pauseButton.remove();
+              // Remove the pause button container from DOM
+              pauseButtonContainer.remove();
               
               // Hide the video container
               videoContainer.style.display = 'none';
