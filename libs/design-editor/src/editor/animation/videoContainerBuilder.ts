@@ -265,97 +265,75 @@ export class VideoContainerBuilder {
            console.warn(`⚠️ No first child found in element ${elementId} to hide`);
          }
          
-                   // Create a pause button with backdrop for enhanced visibility
+                   // Create a pause button positioned at top center, outside element boundary
           const pauseButtonContainer = document.createElement('div');
           pauseButtonContainer.className = `pause-button-container ${originalFrameId}-pause-container`;
           pauseButtonContainer.style.cssText = `
             position: absolute;
-            top: 50%;
+            top: -85px;
             left: 50%;
-            transform: translate(-50%, -50%);
-            z-index: 9999;
+            transform: translateX(-50%);
+            z-index: 1003;
             pointer-events: none;
-            isolation: isolate;
-          `;
-          
-          // Create backdrop circle for extra visibility
-          const pauseBackdrop = document.createElement('div');
-          pauseBackdrop.className = 'pause-button-backdrop';
-          pauseBackdrop.style.cssText = `
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 160px;
-            height: 160px;
-            border-radius: 50%;
-            background: radial-gradient(circle, rgba(0, 0, 0, 0.9) 0%, rgba(0, 0, 0, 0.6) 60%, rgba(0, 0, 0, 0.3) 80%, transparent 100%);
-            z-index: 9998;
-            pointer-events: none;
-            isolation: isolate;
+            display: block;
+            visibility: visible;
           `;
           
           const pauseButton = document.createElement('div');
           pauseButton.className = `element-pause-button ${originalFrameId}-element-pause`;
           pauseButton.setAttribute('data-original-frame-id', originalFrameId);
           pauseButton.innerHTML = `
-            <svg width="80" height="80" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M6 4H10V20H6V4Z" fill="white"/>
               <path d="M14 4H18V20H14V4Z" fill="white"/>
             </svg>
           `;
           
-          // Style the pause button with maximum visibility to stay above video content
+          // Style the pause button as a visible rectangular button for top positioning
           pauseButton.style.cssText = `
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
+            position: relative;
             cursor: pointer;
-            z-index: 10000;
+            z-index: 1004;
             transition: all 0.2s ease;
             opacity: 1;
             background: rgba(0, 0, 0, 0.95);
-            border-radius: 50%;
+            border-radius: 12px;
             width: 120px;
-            height: 120px;
+            height: 70px;
             display: flex;
             align-items: center;
             justify-content: center;
-            border: 5px solid rgba(255, 255, 255, 0.95);
-            box-shadow: 0 12px 48px rgba(0, 0, 0, 0.9), 0 0 0 3px rgba(255, 255, 255, 0.3), inset 0 0 0 2px rgba(255, 255, 255, 0.1);
+            border: 3px solid rgba(255, 255, 255, 0.95);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.9);
             pointer-events: auto;
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
-            isolation: isolate;
+            visibility: visible;
           `;
           
-          // Assemble the pause button structure
-          pauseButtonContainer.appendChild(pauseBackdrop);
+          // Add the pause button to the container
           pauseButtonContainer.appendChild(pauseButton);
           
           // Hide the play button and show the pause button container
           elementPlayButton.style.display = 'none';
           pauseButtonContainer.style.display = 'block';
           
-          // Set maximum z-index on the parent element to ensure buttons are above video container
-          originalElement.style.zIndex = '10001'; // Higher than pause button (10000) and video container (999)
+          // Set z-index on the parent element to ensure buttons are above video container
+          originalElement.style.zIndex = '1001'; // Higher than video container (999)
           originalElement.style.position = 'relative'; // Ensure z-index takes effect
-          originalElement.style.isolation = 'isolate'; // Create new stacking context
+          originalElement.style.overflow = 'visible'; // Allow button to appear outside element boundaries
           
-          // Add hover effects for pause button with maximum visibility
+          // Add hover effects for the rectangular pause button
           pauseButton.addEventListener('mouseenter', () => {
-            pauseButton.style.background = 'rgba(0, 0, 0, 0.98)';
-            pauseButton.style.transform = 'translate(-50%, -50%) scale(1.1)';
+            pauseButton.style.background = 'rgba(0, 0, 0, 0.95)';
+            pauseButton.style.transform = 'scale(1.05)';
             pauseButton.style.borderColor = 'rgba(255, 255, 255, 1)';
-            pauseButton.style.boxShadow = '0 16px 64px rgba(0, 0, 0, 0.95), 0 0 0 4px rgba(255, 255, 255, 0.4), inset 0 0 0 3px rgba(255, 255, 255, 0.2)';
+            pauseButton.style.boxShadow = '0 6px 20px rgba(0, 0, 0, 0.9)';
           });
 
           pauseButton.addEventListener('mouseleave', () => {
-            pauseButton.style.background = 'rgba(0, 0, 0, 0.95)';
-            pauseButton.style.transform = 'translate(-50%, -50%) scale(1)';
-            pauseButton.style.borderColor = 'rgba(255, 255, 255, 0.95)';
-            pauseButton.style.boxShadow = '0 12px 48px rgba(0, 0, 0, 0.9), 0 0 0 3px rgba(255, 255, 255, 0.3), inset 0 0 0 2px rgba(255, 255, 255, 0.1)';
+            pauseButton.style.background = 'rgba(0, 0, 0, 0.9)';
+            pauseButton.style.transform = 'scale(1)';
+            pauseButton.style.borderColor = 'rgba(255, 255, 255, 0.9)';
+            pauseButton.style.boxShadow = '0 4px 16px rgba(0, 0, 0, 0.8)';
           });
           
           // Add the pause button container to the original element
@@ -389,7 +367,7 @@ export class VideoContainerBuilder {
             // Reset the parent element's properties to original values
             originalElement.style.zIndex = '';
             originalElement.style.position = '';
-            originalElement.style.isolation = '';
+            originalElement.style.overflow = '';
             
             // Hide pause button container and show play button again
             pauseButtonContainer.style.display = 'none';
@@ -435,7 +413,7 @@ export class VideoContainerBuilder {
               // Reset the parent element's properties to original values
               originalElement.style.zIndex = '';
               originalElement.style.position = '';
-              originalElement.style.isolation = '';
+              originalElement.style.overflow = '';
               
               // Hide pause button container and show play button again
               pauseButtonContainer.style.display = 'none';
