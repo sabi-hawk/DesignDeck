@@ -116,6 +116,17 @@ class AnimationService {
 
     console.log(`🎬 Starting animation for SimpleFrame ${frameId} with ${childElementIds.length} child elements:`, childElementIds);
     
+    // Dispatch animationStart event for the frame itself
+    console.log(`🔒 Dispatching animationStart event for SimpleFrame ${frameId}`);
+    const animationStartEvent = new CustomEvent('animationStart', {
+      detail: {
+        frameId: frameId,
+        elementId: frameId, // Frame is animating itself
+        frameIndex: this.nextFrameIndex
+      }
+    });
+    document.dispatchEvent(animationStartEvent);
+    
     // Start animation for each child element
     let successCount = 0;
     for (const childId of childElementIds) {
@@ -156,6 +167,19 @@ class AnimationService {
         this.onElementAnimationStarted(elementId, frameIndex);
       }
 
+      // Dispatch custom event to notify SimpleFrameContent to lock the frame if element is inside one
+      if (animatedElement.parentFrameId) {
+        console.log(`🔒 Dispatching animationStart event for frame ${animatedElement.parentFrameId} due to element ${elementId} animation`);
+        const animationStartEvent = new CustomEvent('animationStart', {
+          detail: {
+            frameId: animatedElement.parentFrameId,
+            elementId: elementId,
+            frameIndex: frameIndex
+          }
+        });
+        document.dispatchEvent(animationStartEvent);
+      }
+
       console.log(`✅ Animation started for element ${elementId} at frame ${frameIndex}`);
       return true;
 
@@ -171,6 +195,9 @@ class AnimationService {
   stopAnimation(elementId: string): boolean {
     try {
       if (this.animatedElements.has(elementId)) {
+        const animatedElement = this.animatedElements.get(elementId);
+        const parentFrameId = animatedElement?.parentFrameId;
+        
         this.animatedElements.delete(elementId);
         
         // Remove all frames for this element
@@ -183,6 +210,18 @@ class AnimationService {
         // Notify callback
         if (this.onElementAnimationStopped) {
           this.onElementAnimationStopped(elementId);
+        }
+        
+        // Dispatch custom event to notify SimpleFrameContent to unlock the frame if element was inside one
+        if (parentFrameId) {
+          console.log(`🔓 Dispatching animationStop event for frame ${parentFrameId} due to element ${elementId} animation stopping`);
+          const animationStopEvent = new CustomEvent('animationStop', {
+            detail: {
+              frameId: parentFrameId,
+              elementId: elementId
+            }
+          });
+          document.dispatchEvent(animationStopEvent);
         }
         
         console.log(`🛑 Animation stopped for element ${elementId}`);
