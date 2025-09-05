@@ -1,6 +1,7 @@
 import { DOMUtils } from './domUtils';
 import { SceneManager } from './sceneManager';
 import { FrameData, DOMPosition } from './types';
+import { getElementType } from './utils';
 
 // Add CSS.escape polyfill if not available
 declare global {
@@ -19,9 +20,17 @@ const CSS_ESCAPE = (typeof window !== 'undefined' && window.CSS && window.CSS.es
  */
 export class VideoContainerBuilder {
   private sceneManager: SceneManager;
+  private pages: unknown[] = [];
 
   constructor(sceneManager: SceneManager) {
     this.sceneManager = sceneManager;
+  }
+
+  /**
+   * Update pages data for element type checking
+   */
+  updatePagesData(pages: unknown[]): void {
+    this.pages = pages;
   }
 
   /**
@@ -35,6 +44,9 @@ export class VideoContainerBuilder {
     pages: unknown[]
   ): HTMLDivElement | null {
     try {
+      // Store pages data for element type checking
+      this.pages = pages;
+      
       const { parentContainer, css19b3lheDiv } = domPosition;
       const { boxSize } = frameData;
 
@@ -201,6 +213,12 @@ export class VideoContainerBuilder {
         return null;
       }
 
+      // Check if this element is an image type to determine positioning
+      const elementType = getElementType(this.pages, elementId);
+      const isImageElement = elementType === 'ImageLayer' || elementType === 'Image';
+      
+      console.log(`🎬 Element ${elementId} type: ${elementType}, isImageElement: ${isImageElement}`);
+
       // Create play button for the element
       const elementPlayButton = document.createElement('div');
       elementPlayButton.className = `element-play-button ${originalFrameId}-element-play`;
@@ -212,38 +230,70 @@ export class VideoContainerBuilder {
         </svg>
       `;
       
-      // Style the play button - centered on the element
-      elementPlayButton.style.cssText = `
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        cursor: pointer;
-        z-index: 1002;
-        transition: all 0.2s ease;
-        opacity: 1;
-        background: rgba(0, 0, 0, 0.7);
-        border-radius: 50%;
-        width: 120px;
-        height: 120px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border: 3px solid rgba(255, 255, 255, 0.3);
-        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
-        pointer-events: auto;
-      `;
+      // Style the play button - position based on element type
+      const playButtonStyles = isImageElement ? 
+        // Top-left positioning for image elements
+        `
+          position: absolute;
+          top: 20px;
+          left: 20px;
+          cursor: pointer;
+          z-index: 1002;
+          transition: all 0.2s ease;
+          opacity: 1;
+          background: rgba(0, 0, 0, 0.7);
+          border-radius: 50%;
+          width: 120px;
+          height: 120px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border: 3px solid rgba(255, 255, 255, 0.3);
+          box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+          pointer-events: auto;
+        ` :
+        // Center positioning for all other elements
+        `
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          cursor: pointer;
+          z-index: 1002;
+          transition: all 0.2s ease;
+          opacity: 1;
+          background: rgba(0, 0, 0, 0.7);
+          border-radius: 50%;
+          width: 120px;
+          height: 120px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border: 3px solid rgba(255, 255, 255, 0.3);
+          box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+          pointer-events: auto;
+        `;
+      
+      elementPlayButton.style.cssText = playButtonStyles;
 
-             // Add hover effects
+             // Add hover effects - adjust transform based on element type
        elementPlayButton.addEventListener('mouseenter', () => {
          elementPlayButton.style.background = 'rgba(0, 0, 0, 0.9)';
-         elementPlayButton.style.transform = 'translate(-50%, -50%) scale(1.1)';
+         if (isImageElement) {
+           elementPlayButton.style.transform = 'scale(1.1)';
+         } else {
+           elementPlayButton.style.transform = 'translate(-50%, -50%) scale(1.1)';
+         }
          elementPlayButton.style.borderColor = 'rgba(255, 255, 255, 0.6)';
        });
 
        elementPlayButton.addEventListener('mouseleave', () => {
          elementPlayButton.style.background = 'rgba(0, 0, 0, 0.7)';
-         elementPlayButton.style.transform = 'translate(-50%, -50%) scale(1)';
+         if (isImageElement) {
+           elementPlayButton.style.transform = 'scale(1)';
+         } else {
+           elementPlayButton.style.transform = 'translate(-50%, -50%) scale(1)';
+         }
          elementPlayButton.style.borderColor = 'rgba(255, 255, 255, 0.3)';
        });
 

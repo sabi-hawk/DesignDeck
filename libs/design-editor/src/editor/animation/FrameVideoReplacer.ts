@@ -36,6 +36,7 @@ class FrameVideoReplacer {
   updatePagesData(pages: any[]): void {
     this.frameManager.updatePagesData(pages);
     this.sceneManager.updatePagesData(pages);
+    this.videoContainerBuilder.updatePagesData(pages);
   }
 
   /**
