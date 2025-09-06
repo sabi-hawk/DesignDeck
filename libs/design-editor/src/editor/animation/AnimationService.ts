@@ -167,17 +167,17 @@ class AnimationService {
         this.onElementAnimationStarted(elementId, frameIndex);
       }
 
-      // Dispatch custom event to notify SimpleFrameContent to lock the frame if element is inside one
+      // Dispatch custom event to notify SimpleFrameContent to lock only this specific element with the frame
       if (animatedElement.parentFrameId) {
-        console.log(`🔒 Dispatching animationStart event for frame ${animatedElement.parentFrameId} due to element ${elementId} animation`);
-        const animationStartEvent = new CustomEvent('animationStart', {
+        console.log(`🔒 Dispatching elementAnimationStart event for frame ${animatedElement.parentFrameId} due to element ${elementId} animation`);
+        const elementAnimationStartEvent = new CustomEvent('elementAnimationStart', {
           detail: {
             frameId: animatedElement.parentFrameId,
             elementId: elementId,
             frameIndex: frameIndex
           }
         });
-        document.dispatchEvent(animationStartEvent);
+        document.dispatchEvent(elementAnimationStartEvent);
       }
 
       console.log(`✅ Animation started for element ${elementId} at frame ${frameIndex}`);
@@ -212,16 +212,16 @@ class AnimationService {
           this.onElementAnimationStopped(elementId);
         }
         
-        // Dispatch custom event to notify SimpleFrameContent to unlock the frame if element was inside one
+        // Dispatch custom event to notify SimpleFrameContent to unlock only this specific element from the frame
         if (parentFrameId) {
-          console.log(`🔓 Dispatching animationStop event for frame ${parentFrameId} due to element ${elementId} animation stopping`);
-          const animationStopEvent = new CustomEvent('animationStop', {
+          console.log(`🔓 Dispatching elementAnimationStop event for frame ${parentFrameId} due to element ${elementId} animation stopping`);
+          const elementAnimationStopEvent = new CustomEvent('elementAnimationStop', {
             detail: {
               frameId: parentFrameId,
               elementId: elementId
             }
           });
-          document.dispatchEvent(animationStopEvent);
+          document.dispatchEvent(elementAnimationStopEvent);
         }
         
         console.log(`🛑 Animation stopped for element ${elementId}`);

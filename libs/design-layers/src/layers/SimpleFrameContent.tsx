@@ -1,7 +1,7 @@
 import { LayerComponentProps } from '@lidojs/design-core';
 // eslint-disable-next-line @nx/enforce-module-boundaries
 import { useEditor, useSelectedLayers } from '@lidojs/design-editor';
-import React, { FC, useState, useEffect } from 'react';
+import React, { FC, useState, useEffect, useCallback } from 'react';
 
 export interface SimpleFrameContentProps extends LayerComponentProps {
   scale: number;
@@ -32,13 +32,12 @@ export const SimpleFrameContent: FC<SimpleFrameContentProps> = ({
   layerId,
 }) => {
   const [isLocked, setIsLocked] = useState(false);
+  const [animatedElementIds, setAnimatedElementIds] = useState<Set<string>>(new Set());
   const { actions, query } = useEditor();
   const { selectedLayerIds } = useSelectedLayers();
 
   // Generate unique color for this frame
   const frameColor = generateUniqueColor(layerId);
-  // Get direct access to editor state for more reliable selection checking
-  const editorState = useEditor((state) => state);
 
   // Get scene number for this frame
   const getSceneNumber = (): number => {
@@ -80,6 +79,97 @@ export const SimpleFrameContent: FC<SimpleFrameContentProps> = ({
 
   const sceneNumber = getSceneNumber();
 
+  // Define callback functions for frame selection logic
+  const lockFrameAndContents = useCallback(() => {
+    try {
+      // Get all layers on the current page
+      const allLayers = query.getLayers(0); // Assuming page 0
+      if (!allLayers) return;
+
+      const frameLayers: string[] = [];
+
+      // Get the frame's position (should be 0,0 relative to itself, but let's check)
+      const frameLayer = allLayers[layerId];
+      if (!frameLayer) return;
+
+      const framePos = frameLayer.data.props.position;
+      const frameLeft = framePos.x;
+      const frameTop = framePos.y;
+      const frameRight = frameLeft + boxSize.width;
+      const frameBottom = frameTop + boxSize.height;
+
+      // Find layers that are inside this frame's boundaries
+      Object.entries(allLayers).forEach(([id, layer]) => {
+        if (id === layerId || id === 'ROOT') return; // Skip frame itself and root
+
+        const layerPos = layer.data.props.position;
+        const layerSize = layer.data.props.boxSize;
+
+        // Check if layer is inside the frame boundaries
+        const layerLeft = layerPos.x;
+        const layerTop = layerPos.y;
+        const layerRight = layerLeft + layerSize.width;
+        const layerBottom = layerTop + layerSize.height;
+
+        // Check if layer is completely or partially inside the frame
+        if (
+          layerLeft < frameRight &&
+          layerRight > frameLeft &&
+          layerTop < frameBottom &&
+          layerBottom > frameTop
+        ) {
+          frameLayers.push(id);
+        }
+      });
+
+      // Select the frame and all contents
+      const layersToSelect = [layerId, ...frameLayers];
+
+      // Check if we're already selecting the right combination
+      const currentSelected = selectedLayerIds.sort();
+      const targetSelected = layersToSelect.sort();
+
+      if (JSON.stringify(currentSelected) !== JSON.stringify(targetSelected)) {
+        actions.selectLayers(0, layersToSelect);
+      }
+    } catch (error) {
+      console.log('Error selecting frame contents:', error);
+    }
+  }, [layerId, boxSize.width, boxSize.height, query, selectedLayerIds, actions]);
+
+  const lockFrameWithAnimatedElements = useCallback((animatedElements: Set<string>) => {
+    try {
+      // If no animated elements, just select the frame
+      if (animatedElements.size === 0) {
+        actions.selectLayers(0, [layerId]);
+        return;
+      }
+
+      // Select the frame and only the animated elements
+      const layersToSelect = [layerId, ...Array.from(animatedElements)];
+
+      // Check if we're already selecting the right combination
+      const currentSelected = selectedLayerIds.sort();
+      const targetSelected = layersToSelect.sort();
+
+      if (JSON.stringify(currentSelected) !== JSON.stringify(targetSelected)) {
+        console.log(`🔒 Selecting frame ${layerId} with animated elements:`, Array.from(animatedElements));
+        actions.selectLayers(0, layersToSelect);
+      }
+    } catch (error) {
+      console.log('Error selecting frame with animated elements:', error);
+    }
+  }, [layerId, selectedLayerIds, actions]);
+
+  const unlockFrameAndContents = useCallback(() => {
+    try {
+      // Select only the frame itself
+      actions.selectLayers(0, [layerId]);
+    } catch (error) {
+      console.log('Error selecting frame only:', error);
+    }
+  }, [layerId, actions]);
+
   // Store the color in the DOM element's data attribute when component mounts
   useEffect(() => {
     try {
@@ -94,35 +184,83 @@ export const SimpleFrameContent: FC<SimpleFrameContentProps> = ({
     }
   }, [layerId, frameColor]);
 
-  // Listen for animation start events to auto-lock the frame
+  // Store frame lock state and animated elements in DOM data attributes for useDragLayer access
   useEffect(() => {
-    const handleAnimationStart = (event: CustomEvent) => {
+    try {
+      const element = document.querySelector(`.${layerId}`);
+      if (element) {
+        // Store lock state
+        element.setAttribute('data-frame-locked', isLocked.toString());
+        // Store animated element IDs as comma-separated string
+        element.setAttribute('data-animated-elements', Array.from(animatedElementIds).join(','));
+        console.log(`🔒 Updated frame ${layerId} drag state: locked=${isLocked}, animatedElements=[${Array.from(animatedElementIds).join(',')}]`);
+      }
+    } catch (error) {
+      console.log('Error storing frame drag state:', error);
+    }
+  }, [layerId, isLocked, animatedElementIds]);
+
+  // Listen for animation events
+  useEffect(() => {
+    // Handle full frame animation (when entire SimpleFrame is animated)
+    const handleFrameAnimationStart = (event: CustomEvent) => {
       if (event.detail.frameId === layerId) {
-        console.log(`🔒 Auto-locking frame ${layerId} due to animation start`);
+        console.log(`🔒 Auto-locking entire frame ${layerId} due to full frame animation start`);
         setIsLocked(true);
-        // Also trigger the lock behavior to select frame and contents
+        // Lock all contents when entire frame is animated
         lockFrameAndContents();
       }
     };
 
-    const handleAnimationStop = (event: CustomEvent) => {
+    const handleFrameAnimationStop = (event: CustomEvent) => {
       if (event.detail.frameId === layerId) {
-        console.log(`🔓 Auto-unlocking frame ${layerId} due to animation stop`);
+        console.log(`🔓 Auto-unlocking entire frame ${layerId} due to full frame animation stop`);
         setIsLocked(false);
-        // Also trigger the unlock behavior to select only frame
+        // Clear all animated elements
+        setAnimatedElementIds(new Set());
+        // Select only frame
         unlockFrameAndContents();
       }
     };
 
-    // Listen for custom animation events
-    document.addEventListener('animationStart', handleAnimationStart as EventListener);
-    document.addEventListener('animationStop', handleAnimationStop as EventListener);
+    // Handle individual element animation (when specific elements inside frame are animated)
+    const handleElementAnimationStart = (event: CustomEvent) => {
+      if (event.detail.frameId === layerId) {
+        const elementId = event.detail.elementId;
+        console.log(`🔒 Adding element ${elementId} to animated elements in frame ${layerId}`);
+        setAnimatedElementIds(prev => new Set([...prev, elementId]));
+        // Select frame + animated elements (but don't change lock button state)
+        lockFrameWithAnimatedElements(new Set([...animatedElementIds, elementId]));
+      }
+    };
+
+    const handleElementAnimationStop = (event: CustomEvent) => {
+      if (event.detail.frameId === layerId) {
+        const elementId = event.detail.elementId;
+        console.log(`🔓 Removing element ${elementId} from animated elements in frame ${layerId}`);
+        setAnimatedElementIds(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(elementId);
+          // Update selection to only include remaining animated elements
+          lockFrameWithAnimatedElements(newSet);
+          return newSet;
+        });
+      }
+    };
+
+    // Listen for animation events
+    document.addEventListener('animationStart', handleFrameAnimationStart as EventListener);
+    document.addEventListener('animationStop', handleFrameAnimationStop as EventListener);
+    document.addEventListener('elementAnimationStart', handleElementAnimationStart as EventListener);
+    document.addEventListener('elementAnimationStop', handleElementAnimationStop as EventListener);
     
     return () => {
-      document.removeEventListener('animationStart', handleAnimationStart as EventListener);
-      document.removeEventListener('animationStop', handleAnimationStop as EventListener);
+      document.removeEventListener('animationStart', handleFrameAnimationStart as EventListener);
+      document.removeEventListener('animationStop', handleFrameAnimationStop as EventListener);
+      document.removeEventListener('elementAnimationStart', handleElementAnimationStart as EventListener);
+      document.removeEventListener('elementAnimationStop', handleElementAnimationStop as EventListener);
     };
-  }, [layerId]);
+  }, [layerId, animatedElementIds, lockFrameAndContents, lockFrameWithAnimatedElements, unlockFrameAndContents]);
 
   // Listen for removeElementsFromState events to remove child elements from editor state
   useEffect(() => {
@@ -198,92 +336,38 @@ export const SimpleFrameContent: FC<SimpleFrameContentProps> = ({
       selectedLayerIds.includes(layerId) &&
       selectedLayerIds.length === 1
     ) {
-      // If frame is locked and only the frame is selected, automatically select contents too
+      // If frame is manually locked and only the frame is selected, automatically select all contents
       lockFrameAndContents();
+    } else if (
+      !isLocked &&
+      animatedElementIds.size > 0 &&
+      selectedLayerIds.includes(layerId) &&
+      selectedLayerIds.length === 1
+    ) {
+      // If frame has animated elements but is not manually locked, select frame + animated elements
+      lockFrameWithAnimatedElements(animatedElementIds);
     }
-  }, [selectedLayerIds, layerId, isLocked]);
+  }, [selectedLayerIds, layerId, isLocked, animatedElementIds, lockFrameAndContents, lockFrameWithAnimatedElements]);
 
-  // Handle click on frame to ensure contents are selected when locked
+  // Handle click on frame to ensure proper selection
   const handleFrameClick = (e: React.MouseEvent) => {
     if (isLocked) {
-      // If frame is locked, ensure contents are selected when clicked
-      // Don't stop propagation - let the selection system work
+      // If frame is manually locked, ensure all contents are selected when clicked
       lockFrameAndContents();
+    } else if (animatedElementIds.size > 0) {
+      // If frame has animated elements but is not manually locked, select frame + animated elements
+      lockFrameWithAnimatedElements(animatedElementIds);
     }
   };
 
-  // Handle mouse down to ensure contents are selected before drag starts
+  // Handle mouse down to ensure proper selection before drag starts
   const handleMouseDown = (e: React.MouseEvent) => {
     if (isLocked) {
-      // If frame is locked, ensure contents are selected before any drag operation
-      // Make selection happen immediately in the same event cycle
+      // If frame is manually locked, ensure all contents are selected before any drag operation
       lockFrameAndContents();
-    }
-  };
-
-  const lockFrameAndContents = () => {
-    try {
-      // Get all layers on the current page
-      const allLayers = query.getLayers(0); // Assuming page 0
-      if (!allLayers) return;
-
-      const frameLayers: string[] = [];
-
-      // Get the frame's position (should be 0,0 relative to itself, but let's check)
-      const frameLayer = allLayers[layerId];
-      if (!frameLayer) return;
-
-      const framePos = frameLayer.data.props.position;
-      const frameLeft = framePos.x;
-      const frameTop = framePos.y;
-      const frameRight = frameLeft + boxSize.width;
-      const frameBottom = frameTop + boxSize.height;
-
-      // Find layers that are inside this frame's boundaries
-      Object.entries(allLayers).forEach(([id, layer]) => {
-        if (id === layerId || id === 'ROOT') return; // Skip frame itself and root
-
-        const layerPos = layer.data.props.position;
-        const layerSize = layer.data.props.boxSize;
-
-        // Check if layer is inside the frame boundaries
-        const layerLeft = layerPos.x;
-        const layerTop = layerPos.y;
-        const layerRight = layerLeft + layerSize.width;
-        const layerBottom = layerTop + layerSize.height;
-
-        // Check if layer is completely or partially inside the frame
-        if (
-          layerLeft < frameRight &&
-          layerRight > frameLeft &&
-          layerTop < frameBottom &&
-          layerBottom > frameTop
-        ) {
-          frameLayers.push(id);
-        }
-      });
-
-      // Select the frame and all contents
-      const layersToSelect = [layerId, ...frameLayers];
-
-      // Check if we're already selecting the right combination
-      const currentSelected = selectedLayerIds.sort();
-      const targetSelected = layersToSelect.sort();
-
-      if (JSON.stringify(currentSelected) !== JSON.stringify(targetSelected)) {
-        actions.selectLayers(0, layersToSelect);
-      }
-    } catch (error) {
-      console.log('Error selecting frame contents:', error);
-    }
-  };
-
-  const unlockFrameAndContents = () => {
-    try {
-      // Select only the frame itself
-      actions.selectLayers(0, [layerId]);
-    } catch (error) {
-      console.log('Error selecting frame only:', error);
+    } else if (animatedElementIds.size > 0) {
+      // If frame has animated elements but is not manually locked, select frame + animated elements
+      lockFrameWithAnimatedElements(animatedElementIds);
     }
   };
 
