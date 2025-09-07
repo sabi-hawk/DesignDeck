@@ -532,7 +532,7 @@ export const useDragLayer = ({
         type: hoveredLayer.data.type,
       });
       
-      // Check if this is a SimpleFrame and conditionally include its child elements
+      // Check if this is a SimpleFrame and take complete control of drag behavior
       if (isSimpleFrameLayer(hoveredLayer)) {
         // Check frame's lock state and animated elements from DOM data attributes
         const frameElement = document.querySelector(`.${CSS.escape(hoveredLayer.id)}`);
@@ -540,65 +540,75 @@ export const useDragLayer = ({
         const animatedElementsStr = frameElement?.getAttribute('data-animated-elements') || '';
         const animatedElementIds = animatedElementsStr ? animatedElementsStr.split(',').filter(id => id.length > 0) : [];
         
-        console.log(`🔍 Frame ${hoveredLayer.id} drag check: locked=${isFrameLocked}, animatedElements=[${animatedElementIds.join(',')}]`);
+        console.log(`🔍 Frame ${hoveredLayer.id} drag check: locked=${isFrameLocked}, animatedElements=[${animatedElementIds.join(',')}], currentSelection=[${selectedLayerIds.join(',')}]`);
         
-        // Only include child elements if frame is manually locked OR has animated elements
+        // CRITICAL: Clear all existing drag data and rebuild it based on frame state
+        // This ensures SimpleFrame logic has complete control
+        Object.keys(data).forEach(key => delete data[key]);
+        
+        // Always include the frame itself
+        data[hoveredLayer.id] = cloneDeep({
+          position,
+          boxSize,
+          rotate,
+          scale,
+          type: hoveredLayer.data.type,
+        });
+        
+        // Get all layers to find child elements inside this frame
+        const allLayers = state.pages[hoveredPage].layers;
+        const frameLeft = position.x;
+        const frameTop = position.y;
+        const frameRight = frameLeft + boxSize.width;
+        const frameBottom = frameTop + boxSize.height;
+        
+        const childElementsInFrame: string[] = [];
+        
+        // Find all elements inside the frame boundaries
+        Object.entries(allLayers).forEach(([id, layer]) => {
+          if (id === hoveredLayer.id || id === 'ROOT') return; // Skip frame itself and root
+          
+          const layerPos = layer.data.props.position;
+          const layerSize = layer.data.props.boxSize;
+          
+          const layerLeft = layerPos.x;
+          const layerTop = layerPos.y;
+          const layerRight = layerLeft + layerSize.width;
+          const layerBottom = layerTop + layerSize.height;
+          
+          // Check if layer is inside the frame boundaries
+          if (
+            layerLeft < frameRight &&
+            layerRight > frameLeft &&
+            layerTop < frameBottom &&
+            layerBottom > frameTop
+          ) {
+            childElementsInFrame.push(id);
+          }
+        });
+
+        // Decide what to include in drag based on frame state
         if (isFrameLocked || animatedElementIds.length > 0) {
-          // Get all layers to find child elements
-          const allLayers = state.pages[hoveredPage].layers;
-          const frameLeft = position.x;
-          const frameTop = position.y;
-          const frameRight = frameLeft + boxSize.width;
-          const frameBottom = frameTop + boxSize.height;
-          
-          const childElementsToInclude: string[] = [];
-          
-          // Find all elements inside the frame boundaries
-          Object.entries(allLayers).forEach(([id, layer]) => {
-            if (id === hoveredLayer.id || id === 'ROOT') return; // Skip frame itself and root
+          // Frame is locked or has animated elements - include appropriate children
+          childElementsInFrame.forEach(id => {
+            const shouldIncludeElement = isFrameLocked || animatedElementIds.includes(id);
             
-            const layerPos = layer.data.props.position;
-            const layerSize = layer.data.props.boxSize;
-            
-            const layerLeft = layerPos.x;
-            const layerTop = layerPos.y;
-            const layerRight = layerLeft + layerSize.width;
-            const layerBottom = layerTop + layerSize.height;
-            
-            // Check if layer is inside the frame boundaries
-            if (
-              layerLeft < frameRight &&
-              layerRight > frameLeft &&
-              layerTop < frameBottom &&
-              layerBottom > frameTop
-            ) {
-              // If frame is manually locked, include all child elements
-              // If frame has animated elements, only include those specific elements
-              const shouldIncludeElement = isFrameLocked || animatedElementIds.includes(id);
-              
-              if (shouldIncludeElement) {
-                console.log(`🔒 Including element ${id} in drag: frameLocked=${isFrameLocked}, isAnimated=${animatedElementIds.includes(id)}`);
-                data[id] = cloneDeep({
-                  position: layerPos,
-                  boxSize: layerSize,
-                  rotate: layer.data.props.rotate,
-                  scale: layer.data.props.scale,
-                  type: layer.data.type,
-                });
-                childElementsToInclude.push(id);
-              } else {
-                console.log(`🔓 Skipping element ${id} in drag: not locked and not animated`);
-              }
+            if (shouldIncludeElement) {
+              console.log(`🔒 Including element ${id} in drag: frameLocked=${isFrameLocked}, isAnimated=${animatedElementIds.includes(id)}`);
+              const layer = allLayers[id];
+              data[id] = cloneDeep({
+                position: layer.data.props.position,
+                boxSize: layer.data.props.boxSize,
+                rotate: layer.data.props.rotate,
+                scale: layer.data.props.scale,
+                type: layer.data.type,
+              });
+            } else {
+              console.log(`🔓 Skipping element ${id} in drag: not locked and not animated`);
             }
           });
           
-          // CRITICAL FIX: Update the editor selection to match what we're about to drag
-          // This ensures the selection state is in sync with the drag data
-          if (childElementsToInclude.length > 0) {
-            const layersToSelect = [hoveredLayer.id, ...childElementsToInclude];
-            console.log(`🔄 Syncing selection for drag: selecting frame + children:`, layersToSelect);
-            actions.selectLayers(hoveredPage, layersToSelect);
-          }
+          console.log(`🔒 Frame ${hoveredLayer.id} locked/animated - included ${Object.keys(data).length - 1} child elements`);
         } else {
           console.log(`🔓 Frame ${hoveredLayer.id} not locked and has no animated elements - dragging frame only`);
         }

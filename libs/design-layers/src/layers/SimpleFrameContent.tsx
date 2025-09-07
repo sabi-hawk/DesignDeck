@@ -317,13 +317,28 @@ export const SimpleFrameContent: FC<SimpleFrameContentProps> = ({
   const toggleLock = () => {
     if (!viewOnly) {
       const newLockState = !isLocked;
+      console.log(`🔄 Frame ${layerId} lock toggle: ${isLocked} → ${newLockState}, currentSelection=[${selectedLayerIds.join(',')}], animatedElements=[${Array.from(animatedElementIds).join(',')}]`);
+      
       setIsLocked(newLockState);
+
+      // Immediately update DOM attributes to ensure drag behavior is correct
+      try {
+        const element = document.querySelector(`.${layerId}`);
+        if (element) {
+          element.setAttribute('data-frame-locked', newLockState.toString());
+          console.log(`🔄 Immediately updated frame ${layerId} lock state in DOM: ${newLockState}`);
+        }
+      } catch (error) {
+        console.log('Error immediately updating frame lock state:', error);
+      }
 
       if (newLockState) {
         // When locking: Select the frame and all contents
+        console.log(`🔒 Locking frame ${layerId} - selecting all contents`);
         lockFrameAndContents();
       } else {
         // When unlocking: Select only the frame
+        console.log(`🔓 Unlocking frame ${layerId} - selecting only frame`);
         unlockFrameAndContents();
       }
     }
@@ -331,12 +346,15 @@ export const SimpleFrameContent: FC<SimpleFrameContentProps> = ({
 
   // Add effect to maintain lock behavior when frame is selected
   useEffect(() => {
+    console.log(`🔍 Frame ${layerId} selection effect: locked=${isLocked}, animatedElements=[${Array.from(animatedElementIds).join(',')}], selectedLayers=[${selectedLayerIds.join(',')}]`);
+    
     if (
       isLocked &&
       selectedLayerIds.includes(layerId) &&
       selectedLayerIds.length === 1
     ) {
       // If frame is manually locked and only the frame is selected, automatically select all contents
+      console.log(`🔒 Auto-selecting all contents for locked frame ${layerId}`);
       lockFrameAndContents();
     } else if (
       !isLocked &&
@@ -345,9 +363,19 @@ export const SimpleFrameContent: FC<SimpleFrameContentProps> = ({
       selectedLayerIds.length === 1
     ) {
       // If frame has animated elements but is not manually locked, select frame + animated elements
+      console.log(`🎬 Auto-selecting animated elements for unlocked frame ${layerId}:`, Array.from(animatedElementIds));
       lockFrameWithAnimatedElements(animatedElementIds);
+    } else if (
+      !isLocked &&
+      animatedElementIds.size === 0 &&
+      selectedLayerIds.includes(layerId) &&
+      selectedLayerIds.length > 1
+    ) {
+      // If frame is unlocked with no animated elements but multiple things are selected, select only the frame
+      console.log(`🔓 Frame ${layerId} is unlocked with no animations but multiple items selected - selecting only frame`);
+      actions.selectLayers(0, [layerId]);
     }
-  }, [selectedLayerIds, layerId, isLocked, animatedElementIds, lockFrameAndContents, lockFrameWithAnimatedElements]);
+  }, [selectedLayerIds, layerId, isLocked, animatedElementIds, lockFrameAndContents, lockFrameWithAnimatedElements, actions]);
 
   // Handle click on frame to ensure proper selection
   const handleFrameClick = (e: React.MouseEvent) => {
