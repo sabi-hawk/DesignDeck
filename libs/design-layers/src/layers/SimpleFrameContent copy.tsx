@@ -1,3 +1,4 @@
+//unlock fix
 import { LayerComponentProps } from '@lidojs/design-core';
 // eslint-disable-next-line @nx/enforce-module-boundaries
 import { useEditor, useSelectedLayers } from '@lidojs/design-editor';
@@ -13,15 +14,15 @@ const generateUniqueColor = (layerId: string): string => {
   let hash = 0;
   for (let i = 0; i < layerId.length; i++) {
     const char = layerId.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
+    hash = (hash << 5) - hash + char;
     hash = hash & hash; // Convert to 32-bit integer
   }
-  
+
   // Generate hue, saturation, and lightness values
   const hue = Math.abs(hash) % 360; // 0-359 degrees
   const saturation = 60 + (Math.abs(hash) % 40); // 60-99%
   const lightness = 45 + (Math.abs(hash) % 20); // 45-64%
-  
+
   return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
 };
 
@@ -32,7 +33,9 @@ export const SimpleFrameContent: FC<SimpleFrameContentProps> = ({
   layerId,
 }) => {
   const [isLocked, setIsLocked] = useState(false);
-  const [animatedElementIds, setAnimatedElementIds] = useState<Set<string>>(new Set());
+  const [animatedElementIds, setAnimatedElementIds] = useState<Set<string>>(
+    new Set()
+  );
   const { actions, query } = useEditor();
   const { selectedLayerIds } = useSelectedLayers();
 
@@ -45,7 +48,10 @@ export const SimpleFrameContent: FC<SimpleFrameContentProps> = ({
       const allLayers = query.getLayers(0);
       if (!allLayers) return 1;
 
-      const simpleFrames: { frameId: string; position: { x: number; y: number } }[] = [];
+      const simpleFrames: {
+        frameId: string;
+        position: { x: number; y: number };
+      }[] = [];
 
       // Find all SimpleFrames
       Object.entries(allLayers).forEach(([id, layer]) => {
@@ -54,7 +60,7 @@ export const SimpleFrameContent: FC<SimpleFrameContentProps> = ({
           if (frameProps.position) {
             simpleFrames.push({
               frameId: id,
-              position: frameProps.position
+              position: frameProps.position,
             });
           }
         }
@@ -69,7 +75,9 @@ export const SimpleFrameContent: FC<SimpleFrameContentProps> = ({
       });
 
       // Find the index of current frame
-      const frameIndex = simpleFrames.findIndex(frame => frame.frameId === layerId);
+      const frameIndex = simpleFrames.findIndex(
+        (frame) => frame.frameId === layerId
+      );
       return frameIndex >= 0 ? frameIndex + 1 : 1;
     } catch (error) {
       console.log('Error getting scene number:', error);
@@ -135,31 +143,46 @@ export const SimpleFrameContent: FC<SimpleFrameContentProps> = ({
     } catch (error) {
       console.log('Error selecting frame contents:', error);
     }
-  }, [layerId, boxSize.width, boxSize.height, query, selectedLayerIds, actions]);
+  }, [
+    layerId,
+    boxSize.width,
+    boxSize.height,
+    query,
+    selectedLayerIds,
+    actions,
+  ]);
 
-  const lockFrameWithAnimatedElements = useCallback((animatedElements: Set<string>) => {
-    try {
-      // If no animated elements, just select the frame
-      if (animatedElements.size === 0) {
-        actions.selectLayers(0, [layerId]);
-        return;
+  const lockFrameWithAnimatedElements = useCallback(
+    (animatedElements: Set<string>) => {
+      try {
+        // If no animated elements, just select the frame
+        if (animatedElements.size === 0) {
+          actions.selectLayers(0, [layerId]);
+          return;
+        }
+
+        // Select the frame and only the animated elements
+        const layersToSelect = [layerId, ...Array.from(animatedElements)];
+
+        // Check if we're already selecting the right combination
+        const currentSelected = selectedLayerIds.sort();
+        const targetSelected = layersToSelect.sort();
+
+        if (
+          JSON.stringify(currentSelected) !== JSON.stringify(targetSelected)
+        ) {
+          console.log(
+            `🔒 Selecting frame ${layerId} with animated elements:`,
+            Array.from(animatedElements)
+          );
+          actions.selectLayers(0, layersToSelect);
+        }
+      } catch (error) {
+        console.log('Error selecting frame with animated elements:', error);
       }
-
-      // Select the frame and only the animated elements
-      const layersToSelect = [layerId, ...Array.from(animatedElements)];
-
-      // Check if we're already selecting the right combination
-      const currentSelected = selectedLayerIds.sort();
-      const targetSelected = layersToSelect.sort();
-
-      if (JSON.stringify(currentSelected) !== JSON.stringify(targetSelected)) {
-        console.log(`🔒 Selecting frame ${layerId} with animated elements:`, Array.from(animatedElements));
-        actions.selectLayers(0, layersToSelect);
-      }
-    } catch (error) {
-      console.log('Error selecting frame with animated elements:', error);
-    }
-  }, [layerId, selectedLayerIds, actions]);
+    },
+    [layerId, selectedLayerIds, actions]
+  );
 
   const unlockFrameAndContents = useCallback(() => {
     try {
@@ -192,8 +215,15 @@ export const SimpleFrameContent: FC<SimpleFrameContentProps> = ({
         // Store lock state
         element.setAttribute('data-frame-locked', isLocked.toString());
         // Store animated element IDs as comma-separated string
-        element.setAttribute('data-animated-elements', Array.from(animatedElementIds).join(','));
-        console.log(`🔒 Updated frame ${layerId} drag state: locked=${isLocked}, animatedElements=[${Array.from(animatedElementIds).join(',')}]`);
+        element.setAttribute(
+          'data-animated-elements',
+          Array.from(animatedElementIds).join(',')
+        );
+        console.log(
+          `🔒 Updated frame ${layerId} drag state: locked=${isLocked}, animatedElements=[${Array.from(
+            animatedElementIds
+          ).join(',')}]`
+        );
       }
     } catch (error) {
       console.log('Error storing frame drag state:', error);
@@ -205,7 +235,9 @@ export const SimpleFrameContent: FC<SimpleFrameContentProps> = ({
     // Handle full frame animation (when entire SimpleFrame is animated)
     const handleFrameAnimationStart = (event: CustomEvent) => {
       if (event.detail.frameId === layerId) {
-        console.log(`🔒 Auto-locking entire frame ${layerId} due to full frame animation start`);
+        console.log(
+          `🔒 Auto-locking entire frame ${layerId} due to full frame animation start`
+        );
         setIsLocked(true);
         // Lock all contents when entire frame is animated
         lockFrameAndContents();
@@ -214,7 +246,9 @@ export const SimpleFrameContent: FC<SimpleFrameContentProps> = ({
 
     const handleFrameAnimationStop = (event: CustomEvent) => {
       if (event.detail.frameId === layerId) {
-        console.log(`🔓 Auto-unlocking entire frame ${layerId} due to full frame animation stop`);
+        console.log(
+          `🔓 Auto-unlocking entire frame ${layerId} due to full frame animation stop`
+        );
         setIsLocked(false);
         // Clear all animated elements
         setAnimatedElementIds(new Set());
@@ -227,18 +261,24 @@ export const SimpleFrameContent: FC<SimpleFrameContentProps> = ({
     const handleElementAnimationStart = (event: CustomEvent) => {
       if (event.detail.frameId === layerId) {
         const elementId = event.detail.elementId;
-        console.log(`🔒 Adding element ${elementId} to animated elements in frame ${layerId}`);
-        setAnimatedElementIds(prev => new Set([...prev, elementId]));
+        console.log(
+          `🔒 Adding element ${elementId} to animated elements in frame ${layerId}`
+        );
+        setAnimatedElementIds((prev) => new Set([...prev, elementId]));
         // Select frame + animated elements (but don't change lock button state)
-        lockFrameWithAnimatedElements(new Set([...animatedElementIds, elementId]));
+        lockFrameWithAnimatedElements(
+          new Set([...animatedElementIds, elementId])
+        );
       }
     };
 
     const handleElementAnimationStop = (event: CustomEvent) => {
       if (event.detail.frameId === layerId) {
         const elementId = event.detail.elementId;
-        console.log(`🔓 Removing element ${elementId} from animated elements in frame ${layerId}`);
-        setAnimatedElementIds(prev => {
+        console.log(
+          `🔓 Removing element ${elementId} from animated elements in frame ${layerId}`
+        );
+        setAnimatedElementIds((prev) => {
           const newSet = new Set(prev);
           newSet.delete(elementId);
           // Update selection to only include remaining animated elements
@@ -249,44 +289,88 @@ export const SimpleFrameContent: FC<SimpleFrameContentProps> = ({
     };
 
     // Listen for animation events
-    document.addEventListener('animationStart', handleFrameAnimationStart as EventListener);
-    document.addEventListener('animationStop', handleFrameAnimationStop as EventListener);
-    document.addEventListener('elementAnimationStart', handleElementAnimationStart as EventListener);
-    document.addEventListener('elementAnimationStop', handleElementAnimationStop as EventListener);
-    
+    document.addEventListener(
+      'animationStart',
+      handleFrameAnimationStart as EventListener
+    );
+    document.addEventListener(
+      'animationStop',
+      handleFrameAnimationStop as EventListener
+    );
+    document.addEventListener(
+      'elementAnimationStart',
+      handleElementAnimationStart as EventListener
+    );
+    document.addEventListener(
+      'elementAnimationStop',
+      handleElementAnimationStop as EventListener
+    );
+
     return () => {
-      document.removeEventListener('animationStart', handleFrameAnimationStart as EventListener);
-      document.removeEventListener('animationStop', handleFrameAnimationStop as EventListener);
-      document.removeEventListener('elementAnimationStart', handleElementAnimationStart as EventListener);
-      document.removeEventListener('elementAnimationStop', handleElementAnimationStop as EventListener);
+      document.removeEventListener(
+        'animationStart',
+        handleFrameAnimationStart as EventListener
+      );
+      document.removeEventListener(
+        'animationStop',
+        handleFrameAnimationStop as EventListener
+      );
+      document.removeEventListener(
+        'elementAnimationStart',
+        handleElementAnimationStart as EventListener
+      );
+      document.removeEventListener(
+        'elementAnimationStop',
+        handleElementAnimationStop as EventListener
+      );
     };
-  }, [layerId, animatedElementIds, lockFrameAndContents, lockFrameWithAnimatedElements, unlockFrameAndContents]);
+  }, [
+    layerId,
+    animatedElementIds,
+    lockFrameAndContents,
+    lockFrameWithAnimatedElements,
+    unlockFrameAndContents,
+  ]);
 
   // Listen for removeElementsFromState events to remove child elements from editor state
   useEffect(() => {
     const handleRemoveElementsFromState = (event: CustomEvent) => {
       if (event.detail.frameId === layerId) {
-        console.log(`🗑️ Removing ${event.detail.elementIds.length} child elements from state for frame ${layerId}:`, event.detail.elementIds);
-        
+        console.log(
+          `🗑️ Removing ${event.detail.elementIds.length} child elements from state for frame ${layerId}:`,
+          event.detail.elementIds
+        );
+
         try {
           // Remove each child element from the editor state
           event.detail.elementIds.forEach((elementId: string) => {
             console.log(`🗑️ Removing element ${elementId} from editor state`);
             actions.deleteLayer(0, elementId);
           });
-          
-          console.log(`✅ Successfully removed ${event.detail.elementIds.length} child elements from editor state`);
+
+          console.log(
+            `✅ Successfully removed ${event.detail.elementIds.length} child elements from editor state`
+          );
         } catch (error) {
-          console.error(`❌ Error removing child elements from editor state:`, error);
+          console.error(
+            `❌ Error removing child elements from editor state:`,
+            error
+          );
         }
       }
     };
 
     // Listen for removeElementsFromState events
-    document.addEventListener('removeElementsFromState', handleRemoveElementsFromState as EventListener);
-    
+    document.addEventListener(
+      'removeElementsFromState',
+      handleRemoveElementsFromState as EventListener
+    );
+
     return () => {
-      document.removeEventListener('removeElementsFromState', handleRemoveElementsFromState as EventListener);
+      document.removeEventListener(
+        'removeElementsFromState',
+        handleRemoveElementsFromState as EventListener
+      );
     };
   }, [layerId, actions]);
 
@@ -297,17 +381,25 @@ export const SimpleFrameContent: FC<SimpleFrameContentProps> = ({
         console.log(`🗑️ Removing frame ${layerId} from editor state`);
         try {
           actions.deleteLayer(0, layerId);
-          console.log(`✅ Successfully removed frame ${layerId} from editor state`);
+          console.log(
+            `✅ Successfully removed frame ${layerId} from editor state`
+          );
         } catch (error) {
           console.error(`❌ Error removing frame from editor state:`, error);
         }
       }
     };
 
-    document.addEventListener('removeFrameFromState', handleRemoveFrameFromState as EventListener);
-    
+    document.addEventListener(
+      'removeFrameFromState',
+      handleRemoveFrameFromState as EventListener
+    );
+
     return () => {
-      document.removeEventListener('removeFrameFromState', handleRemoveFrameFromState as EventListener);
+      document.removeEventListener(
+        'removeFrameFromState',
+        handleRemoveFrameFromState as EventListener
+      );
     };
   }, [layerId, actions]);
 
@@ -317,6 +409,12 @@ export const SimpleFrameContent: FC<SimpleFrameContentProps> = ({
   const toggleLock = () => {
     if (!viewOnly) {
       const newLockState = !isLocked;
+      console.log(
+        `🔄 Frame ${layerId} lock toggle: ${isLocked} → ${newLockState}, currentSelection=[${selectedLayerIds.join(
+          ','
+        )}], animatedElements=[${Array.from(animatedElementIds).join(',')}]`
+      );
+
       setIsLocked(newLockState);
 
       // Immediately update DOM attributes to ensure drag behavior is correct
@@ -324,7 +422,9 @@ export const SimpleFrameContent: FC<SimpleFrameContentProps> = ({
         const element = document.querySelector(`.${layerId}`);
         if (element) {
           element.setAttribute('data-frame-locked', newLockState.toString());
-          console.log(`🔄 Immediately updated frame ${layerId} lock state in DOM: ${newLockState}`);
+          console.log(
+            `🔄 Immediately updated frame ${layerId} lock state in DOM: ${newLockState}`
+          );
         }
       } catch (error) {
         console.log('Error immediately updating frame lock state:', error);
@@ -332,9 +432,11 @@ export const SimpleFrameContent: FC<SimpleFrameContentProps> = ({
 
       if (newLockState) {
         // When locking: Select the frame and all contents
+        console.log(`🔒 Locking frame ${layerId} - selecting all contents`);
         lockFrameAndContents();
       } else {
         // When unlocking: Select only the frame
+        console.log(`🔓 Unlocking frame ${layerId} - selecting only frame`);
         unlockFrameAndContents();
       }
     }
@@ -342,12 +444,19 @@ export const SimpleFrameContent: FC<SimpleFrameContentProps> = ({
 
   // Add effect to maintain lock behavior when frame is selected
   useEffect(() => {
+    console.log(
+      `🔍 Frame ${layerId} selection effect: locked=${isLocked}, animatedElements=[${Array.from(
+        animatedElementIds
+      ).join(',')}], selectedLayers=[${selectedLayerIds.join(',')}]`
+    );
+
     if (
       isLocked &&
       selectedLayerIds.includes(layerId) &&
       selectedLayerIds.length === 1
     ) {
       // If frame is manually locked and only the frame is selected, automatically select all contents
+      console.log(`🔒 Auto-selecting all contents for locked frame ${layerId}`);
       lockFrameAndContents();
     } else if (
       !isLocked &&
@@ -356,21 +465,32 @@ export const SimpleFrameContent: FC<SimpleFrameContentProps> = ({
       selectedLayerIds.length === 1
     ) {
       // If frame has animated elements but is not manually locked, select frame + animated elements
+      console.log(
+        `🎬 Auto-selecting animated elements for unlocked frame ${layerId}:`,
+        Array.from(animatedElementIds)
+      );
       lockFrameWithAnimatedElements(animatedElementIds);
-    } 
-    // else if (
-    //   !isLocked &&
-    //   animatedElementIds.size === 0 &&
-    //   selectedLayerIds.includes(layerId) &&
-    //   selectedLayerIds.length > 1
-    // ) {
-    //   // If frame is unlocked with no animated elements but multiple things are selected, select only the frame
-    //   console.log(
-    //     `🔓 Frame ${layerId} is unlocked with no animations but multiple items selected - selecting only frame`
-    //   );
-    //   actions.selectLayers(0, [layerId]);
-    // }
-  }, [selectedLayerIds, layerId, isLocked, animatedElementIds, lockFrameAndContents, lockFrameWithAnimatedElements]);
+    } else if (
+      !isLocked &&
+      animatedElementIds.size === 0 &&
+      selectedLayerIds.includes(layerId) &&
+      selectedLayerIds.length > 1
+    ) {
+      // If frame is unlocked with no animated elements but multiple things are selected, select only the frame
+      console.log(
+        `🔓 Frame ${layerId} is unlocked with no animations but multiple items selected - selecting only frame`
+      );
+      actions.selectLayers(0, [layerId]);
+    }
+  }, [
+    selectedLayerIds,
+    layerId,
+    isLocked,
+    animatedElementIds,
+    lockFrameAndContents,
+    lockFrameWithAnimatedElements,
+    actions,
+  ]);
 
   // Handle click on frame to ensure proper selection
   const handleFrameClick = (e: React.MouseEvent) => {
