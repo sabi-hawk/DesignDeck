@@ -18,6 +18,23 @@ const useShortcut = (frameEle: RefObject<HTMLElement | null>) => {
     })
   );
   const { selectedLayerIds } = useSelectedLayers();
+
+  // Helper function for consistent zoom parameters
+  const getZoomParams = () => {
+    const frameWidth = 1920;
+    const frameHeight = 1080;
+    const padding = 200;
+    const targetWidth = frameWidth + padding * 2;
+    const targetHeight = frameHeight + padding * 2;
+    const referenceViewportWidth = 1400;
+    const referenceViewportHeight = 900;
+    const maxScale = Math.min(
+      referenceViewportWidth / targetWidth,
+      referenceViewportHeight / targetHeight
+    );
+    const minScale = 0.01;
+    return { minScale, maxScale };
+  };
   const handlePaste = useCallback(async () => {
     await paste({ actions });
     actions.hideContextMenu();
@@ -68,53 +85,31 @@ const useShortcut = (frameEle: RefObject<HTMLElement | null>) => {
     }
   }, [actions, activePage, backwardDisabled, selectedLayerIds]);
   const handleZoomIn = useCallback(() => {
-    if (scale >= 4) {
-      actions.setScale(5);
-    } else if (scale >= 3) {
-      actions.setScale(4);
-    } else if (scale >= 2) {
-      actions.setScale(3);
-    } else if (scale >= 1.5) {
-      actions.setScale(2);
-    } else if (scale >= 1.25) {
-      actions.setScale(1.5);
-    } else if (scale >= 1) {
-      actions.setScale(1.25);
-    } else if (scale >= 0.75) {
-      actions.setScale(1);
-    } else if (scale >= 0.5) {
-      actions.setScale(0.75);
-    } else if (scale >= 0.25) {
-      actions.setScale(0.5);
-    } else {
-      actions.setScale(0.25);
-    }
+    const { minScale, maxScale } = getZoomParams();
+
+    // Convert current scale to percentage, add 10%, convert back
+    const currentPercentage =
+      ((scale - minScale) / (maxScale - minScale)) * 100;
+    const newPercentage = Math.min(currentPercentage + 10, 100);
+    const newScale = minScale + (newPercentage / 100) * (maxScale - minScale);
+
+    actions.setScale(newScale);
   }, [actions, scale]);
   const handleZoomOut = useCallback(() => {
-    if (scale <= 0.25) {
-      actions.setScale(0.1);
-    } else if (scale <= 0.5) {
-      actions.setScale(0.25);
-    } else if (scale <= 0.75) {
-      actions.setScale(0.5);
-    } else if (scale <= 1) {
-      actions.setScale(0.75);
-    } else if (scale <= 1.25) {
-      actions.setScale(1);
-    } else if (scale <= 1.5) {
-      actions.setScale(1.25);
-    } else if (scale <= 2) {
-      actions.setScale(1.5);
-    } else if (scale <= 3) {
-      actions.setScale(2);
-    } else if (scale <= 4) {
-      actions.setScale(3);
-    } else {
-      actions.setScale(4);
-    }
+    const { minScale, maxScale } = getZoomParams();
+
+    // Convert current scale to percentage, subtract 10%, convert back
+    const currentPercentage =
+      ((scale - minScale) / (maxScale - minScale)) * 100;
+    const newPercentage = Math.max(currentPercentage - 10, 0);
+    const newScale = minScale + (newPercentage / 100) * (maxScale - minScale);
+
+    actions.setScale(newScale);
   }, [actions, scale]);
   const handleZoomReset = useCallback(() => {
-    actions.setScale(1);
+    // Reset to 100% in new system (which shows frame area with padding)
+    const { maxScale } = getZoomParams();
+    actions.setScale(maxScale);
   }, [actions]);
   const handleKeydown = useCallback(
     async (e: KeyboardEvent) => {
@@ -220,7 +215,10 @@ const useShortcut = (frameEle: RefObject<HTMLElement | null>) => {
     const handleZoomDesktop = (e: WheelEvent) => {
       if (e.ctrlKey) {
         const s = Math.exp(-e.deltaY / 600);
-        const newScale = Math.min(Math.max(scale * s, 0.1), 5);
+        const { minScale, maxScale } = getZoomParams();
+
+        // Apply zoom with new limits
+        const newScale = Math.min(Math.max(scale * s, minScale), maxScale);
         actions.setScale(newScale);
         e.preventDefault();
         e.stopPropagation();
