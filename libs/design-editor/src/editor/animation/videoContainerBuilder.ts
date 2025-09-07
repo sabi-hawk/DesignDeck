@@ -215,9 +215,29 @@ export class VideoContainerBuilder {
 
       // Check if this element is an image type to determine positioning
       const elementType = getElementType(this.pages, elementId);
-      const isImageElement = elementType === 'ImageLayer' || elementType === 'Image';
+      // Enhanced image detection
+      const isImageElement = elementType === 'ImageLayer' || 
+                            elementType === 'Image' || 
+                            elementType === 'image' ||
+                            elementType === 'ImageElement' ||
+                            (originalElement.tagName === 'IMG') ||
+                            (originalElement.querySelector('img') !== null);
       
       console.log(`🎬 Element ${elementId} type: ${elementType}, isImageElement: ${isImageElement}`);
+      
+      // Get element dimensions for adaptive sizing
+      const elementRect = originalElement.getBoundingClientRect();
+      const elementHeight = elementRect.height;
+      const elementWidth = elementRect.width;
+      
+      console.log(`🎬 Element ${elementId} dimensions: ${elementWidth}x${elementHeight}`);
+      
+      // Determine sizing based on element type and dimensions
+      const isTextElement = !isImageElement; // If not an image, treat as text
+      const buttonSize = isTextElement ? Math.max(elementHeight * 0.95, 40) : 120; // 95% of height for text, min 40px
+      const buttonSVGSize = isTextElement ? Math.max(buttonSize * 0.6, 24) : 80; // Scale SVG proportionally
+      
+      console.log(`🎬 Using button size: ${buttonSize}px, SVG size: ${buttonSVGSize}px`);
 
       // Create play button for the element
       const elementPlayButton = document.createElement('div');
@@ -225,7 +245,7 @@ export class VideoContainerBuilder {
       elementPlayButton.setAttribute('data-original-frame-id', originalFrameId);
       elementPlayButton.setAttribute('data-video-container-id', videoContainer.className);
       elementPlayButton.innerHTML = `
-        <svg width="80" height="80" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <svg width="${buttonSVGSize}" height="${buttonSVGSize}" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
           <path d="M8 5V19L19 12L8 5Z" fill="white"/>
         </svg>
       `;
@@ -243,8 +263,8 @@ export class VideoContainerBuilder {
           opacity: 1;
           background: rgba(0, 0, 0, 0.7);
           border-radius: 50%;
-          width: 120px;
-          height: 120px;
+          width: ${buttonSize}px;
+          height: ${buttonSize}px;
           display: flex;
           align-items: center;
           justify-content: center;
@@ -264,8 +284,8 @@ export class VideoContainerBuilder {
           opacity: 1;
           background: rgba(0, 0, 0, 0.7);
           border-radius: 50%;
-          width: 120px;
-          height: 120px;
+          width: ${buttonSize}px;
+          height: ${buttonSize}px;
           display: flex;
           align-items: center;
           justify-content: center;

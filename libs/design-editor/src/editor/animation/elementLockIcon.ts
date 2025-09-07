@@ -1,9 +1,9 @@
-import { findElementByLayerId } from './utils';
+import { findElementByLayerId, getElementType } from './utils';
 
 /**
  * Add a lock icon to an animated element to indicate it's locked to the frame
  */
-export const addLockIconToElement = (elementId: string): void => {
+export const addLockIconToElement = (elementId: string, pages: unknown[] = []): void => {
   try {
     // Find the element using the same logic as other animation functions
     const element = findElementByLayerId(elementId);
@@ -19,37 +19,115 @@ export const addLockIconToElement = (elementId: string): void => {
       return;
     }
 
-    // Create lock icon container
+    // Check if this element is an image type to determine positioning
+    const elementType = getElementType(pages as unknown[], elementId);
+    // Check for various image-related types
+    const isImageElement = elementType === 'ImageLayer' || 
+                          elementType === 'Image' || 
+                          elementType === 'image' ||
+                          elementType === 'ImageElement' ||
+                          (element.tagName === 'IMG') ||
+                          (element.querySelector('img') !== null);
+    
+    console.log(`🔒 Element ${elementId} type: ${elementType}, isImageElement: ${isImageElement}`);
+    console.log(`🔒 Element tag: ${element.tagName}, has img child: ${element.querySelector('img') !== null}`);
+    console.log(`🔒 Available element types in pages:`, pages.length > 0 ? 'Pages data available' : 'No pages data');
+    
+    // Get element dimensions for adaptive sizing
+    const elementRect = element.getBoundingClientRect();
+    const elementHeight = elementRect.height;
+    const elementWidth = elementRect.width;
+    
+    console.log(`🔒 Element ${elementId} dimensions: ${elementWidth}x${elementHeight}`);
+    
+    // Determine sizing based on element type and dimensions
+    const isTextElement = !isImageElement; // If not an image, treat as text
+    const iconSize = isTextElement ? Math.max(elementHeight * 0.8, 40) : 120; // 80% of height for text, min 40px
+    const iconSVGSize = isTextElement ? Math.max(iconSize * 0.6, 24) : 80; // Scale SVG proportionally
+    
+    console.log(`🔒 Using icon size: ${iconSize}px, SVG size: ${iconSVGSize}px`);
+
+    // Create lock icon container with play button styling
     const lockIconContainer = document.createElement('div');
     lockIconContainer.className = 'element-lock-icon';
     lockIconContainer.setAttribute('data-element-id', elementId);
-    lockIconContainer.style.cssText = `
-      position: absolute;
-      top: 50%;
-      left: -20px;
-      transform: translateY(-50%);
-      width: 24px;
-      height: 24px;
-      background: rgba(0, 0, 0, 0.8);
-      border: 2px solid #ff6b6b;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 1000;
-      pointer-events: none;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-    `;
+    
+    // Style the lock icon based on element type - matching play button design
+    const lockIconStyles = isImageElement ? 
+      // Bottom-left positioning for image elements (inside the element)
+      `
+        position: absolute;
+        bottom: 20px;
+        left: 20px;
+        cursor: pointer;
+        z-index: 1002;
+        transition: all 0.2s ease;
+        opacity: 1;
+        background: rgba(0, 0, 0, 0.7);
+        border-radius: 50%;
+        width: ${iconSize}px;
+        height: ${iconSize}px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 3px solid rgba(255, 107, 107, 0.3);
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+        pointer-events: none;
+      ` :
+      // Middle-left positioning for all other elements (inside the element)
+      `
+        position: absolute;
+        top: 50%;
+        left: 20px;
+        transform: translateY(-50%);
+        cursor: pointer;
+        z-index: 1002;
+        transition: all 0.2s ease;
+        opacity: 1;
+        background: rgba(0, 0, 0, 0.7);
+        border-radius: 50%;
+        width: ${iconSize}px;
+        height: ${iconSize}px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 3px solid rgba(255, 107, 107, 0.3);
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+        pointer-events: none;
+      `;
+    
+    lockIconContainer.style.cssText = lockIconStyles;
 
-    // Create lock icon SVG
+    // Create lock icon SVG with adaptive size
     const lockIcon = document.createElement('div');
     lockIcon.innerHTML = `
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <svg width="${iconSVGSize}" height="${iconSVGSize}" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
         <path d="M18 8H17V6C17 3.24 14.76 1 12 1S7 3.24 7 6V8H6C4.9 8 4 8.9 4 10V20C4 21.1 4.9 22 6 22H18C19.1 22 20 21.1 20 20V10C20 8.9 19.1 8 18 8ZM12 17C10.9 17 10 16.1 10 15S10.9 13 12 13S14 13.9 14 15S13.1 17 12 17ZM15.1 8H8.9V6C8.9 4.29 10.29 2.9 12 2.9S15.1 4.29 15.1 6V8Z" fill="#ff6b6b"/>
       </svg>
     `;
 
     lockIconContainer.appendChild(lockIcon);
+
+    // Add hover effects - adjust transform based on element type
+    lockIconContainer.addEventListener('mouseenter', () => {
+      lockIconContainer.style.background = 'rgba(0, 0, 0, 0.9)';
+      if (isImageElement) {
+        lockIconContainer.style.transform = 'scale(1.1)';
+      } else {
+        lockIconContainer.style.transform = 'translateY(-50%) scale(1.1)';
+      }
+      lockIconContainer.style.borderColor = 'rgba(255, 107, 107, 0.6)';
+    });
+
+    lockIconContainer.addEventListener('mouseleave', () => {
+      lockIconContainer.style.background = 'rgba(0, 0, 0, 0.7)';
+      if (isImageElement) {
+        lockIconContainer.style.transform = 'scale(1)';
+      } else {
+        lockIconContainer.style.transform = 'translateY(-50%) scale(1)';
+      }
+      lockIconContainer.style.borderColor = 'rgba(255, 107, 107, 0.3)';
+    });
 
     // Make sure the parent element has relative positioning
     const elementStyle = window.getComputedStyle(element);
@@ -69,7 +147,7 @@ export const addLockIconToElement = (elementId: string): void => {
 /**
  * Remove lock icon from an element
  */
-export const removeLockIconFromElement = (elementId: string): void => {
+export const removeLockIconFromElement = (elementId: string, pages: unknown[] = []): void => {
   try {
     const element = findElementByLayerId(elementId);
     if (!element) {
@@ -90,7 +168,7 @@ export const removeLockIconFromElement = (elementId: string): void => {
 /**
  * Check if an element has a lock icon
  */
-export const hasLockIcon = (elementId: string): boolean => {
+export const hasLockIcon = (elementId: string, pages: unknown[] = []): boolean => {
   try {
     const element = findElementByLayerId(elementId);
     if (!element) return false;
