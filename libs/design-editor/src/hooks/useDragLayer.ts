@@ -551,6 +551,8 @@ export const useDragLayer = ({
           const frameRight = frameLeft + boxSize.width;
           const frameBottom = frameTop + boxSize.height;
           
+          const childElementsToInclude: string[] = [];
+          
           // Find all elements inside the frame boundaries
           Object.entries(allLayers).forEach(([id, layer]) => {
             if (id === hoveredLayer.id || id === 'ROOT') return; // Skip frame itself and root
@@ -583,11 +585,20 @@ export const useDragLayer = ({
                   scale: layer.data.props.scale,
                   type: layer.data.type,
                 });
+                childElementsToInclude.push(id);
               } else {
                 console.log(`🔓 Skipping element ${id} in drag: not locked and not animated`);
               }
             }
           });
+          
+          // CRITICAL FIX: Update the editor selection to match what we're about to drag
+          // This ensures the selection state is in sync with the drag data
+          if (childElementsToInclude.length > 0) {
+            const layersToSelect = [hoveredLayer.id, ...childElementsToInclude];
+            console.log(`🔄 Syncing selection for drag: selecting frame + children:`, layersToSelect);
+            actions.selectLayers(hoveredPage, layersToSelect);
+          }
         } else {
           console.log(`🔓 Frame ${hoveredLayer.id} not locked and has no animated elements - dragging frame only`);
         }
