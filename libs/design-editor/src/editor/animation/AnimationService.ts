@@ -451,8 +451,29 @@ class AnimationService {
         return;
       }
 
+      // Find the first child element to capture (excluding lock icon)
+      // This ensures we don't capture the lock icon that was added to the parent
+      let elementToCapture = element as HTMLElement;
+      const firstChild = element.firstElementChild;
+      
+      if (firstChild && !firstChild.classList.contains('element-lock-icon')) {
+        // Use first child if it exists and is not the lock icon
+        elementToCapture = firstChild as HTMLElement;
+        console.log(`📸 Capturing first child of element ${elementId} to avoid lock icon`);
+      } else if (element.children.length > 1) {
+        // If first child is lock icon, find the first non-lock-icon child
+        for (let i = 0; i < element.children.length; i++) {
+          const child = element.children[i];
+          if (!child.classList.contains('element-lock-icon')) {
+            elementToCapture = child as HTMLElement;
+            console.log(`📸 Capturing child ${i} of element ${elementId} to avoid lock icon`);
+            break;
+          }
+        }
+      }
+
       // Capture the element as an image
-      const imageDataUrl = await toPng(element as HTMLElement, {
+      const imageDataUrl = await toPng(elementToCapture, {
         style: {
           transform: 'none',
         },
