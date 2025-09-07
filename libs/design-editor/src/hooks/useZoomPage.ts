@@ -178,8 +178,8 @@ export const useZoomPage = (
         const padding = 200;
         const targetWidth = frameWidth + padding * 2;
         const targetHeight = frameHeight + padding * 2;
-        const referenceViewportWidth = 1400;
-        const referenceViewportHeight = 900;
+        const referenceViewportWidth = 1400 * 0.75; // 1050 - consistent with new zoom level
+        const referenceViewportHeight = 900 * 0.75; // 675 - consistent with new zoom level
         const maxScale = Math.min(
           referenceViewportWidth / targetWidth,
           referenceViewportHeight / targetHeight
@@ -420,8 +420,9 @@ export const useZoomPage = (
         const targetHeight = frameHeight + padding * 2; // 1480
 
         // Use same reference viewport as PageControl for consistency
-        const referenceViewportWidth = 1400;
-        const referenceViewportHeight = 900;
+        // Adjusted to make current 75% zoom level become the new 100%
+        const referenceViewportWidth = 1400 * 0.75; // 1050 - makes zoom more zoomed out
+        const referenceViewportHeight = 900 * 0.75; // 675 - makes zoom more zoomed out
 
         const defaultScale = Math.min(
           referenceViewportWidth / targetWidth,

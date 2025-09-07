@@ -25,8 +25,9 @@ const PageControl = () => {
 
     // Define 100% zoom as the scale that fits the frame area in a standard viewport
     // Using a reference viewport size to make 100% consistent
-    const referenceViewportWidth = 1400; // Standard desktop width for frame area
-    const referenceViewportHeight = 900; // Standard desktop height for frame area
+    // Adjusted to make current 75% zoom level become the new 100%
+    const referenceViewportWidth = 1400 * 0.75; // 1050 - makes zoom more zoomed out
+    const referenceViewportHeight = 900 * 0.75; // 675 - makes zoom more zoomed out
 
     const maxScale = Math.min(
       referenceViewportWidth / targetWidth,
