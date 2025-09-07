@@ -1,5 +1,6 @@
 import { toPng } from 'html-to-image';
 import { submitFrameToAPI, pollForResult } from './apiService';
+import { addLockIconToElement, removeLockIconFromElement } from './elementLockIcon';
 import FrameVideoReplacer from './FrameVideoReplacer';
 import { 
   AnimationSettings, 
@@ -162,6 +163,9 @@ class AnimationService {
       // Start capturing frames
       this.startCapturing(elementId, frameIndex, settings);
       
+      // Add lock icon to the element immediately when animation starts
+      addLockIconToElement(elementId);
+
       // Notify callback
       if (this.onElementAnimationStarted) {
         this.onElementAnimationStarted(elementId, frameIndex);
@@ -206,6 +210,9 @@ class AnimationService {
             this.animationFrames.delete(frameId);
           }
         }
+        
+        // Remove lock icon from the element
+        removeLockIconFromElement(elementId);
         
         // Notify callback
         if (this.onElementAnimationStopped) {

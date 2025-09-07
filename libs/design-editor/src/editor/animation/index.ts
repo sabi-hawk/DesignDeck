@@ -31,3 +31,6 @@ export * from './types';
 
 // Utilities
 export * from './utils';
+
+// Element Lock Icon
+export { addLockIconToElement, removeLockIconFromElement, hasLockIcon } from './elementLockIcon';
