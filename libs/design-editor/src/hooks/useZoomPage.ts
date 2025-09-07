@@ -172,7 +172,23 @@ export const useZoomPage = (
           });
         }
         setPageTransform({ scale: 1, x: newX, y: newY });
-        actions.setScale(Math.max(scale * zoom));
+        // Use consistent zoom parameters
+        const frameWidth = 1920;
+        const frameHeight = 1080;
+        const padding = 200;
+        const targetWidth = frameWidth + padding * 2;
+        const targetHeight = frameHeight + padding * 2;
+        const referenceViewportWidth = 1400;
+        const referenceViewportHeight = 900;
+        const maxScale = Math.min(
+          referenceViewportWidth / targetWidth,
+          referenceViewportHeight / targetHeight
+        );
+        const minScale = 0.01;
+
+        // Apply new zoom limits
+        const newScale = Math.min(Math.max(scale * zoom, minScale), maxScale);
+        actions.setScale(newScale);
       }
     },
     [
@@ -396,23 +412,59 @@ export const useZoomPage = (
   useEffect(() => {
     const updateSize = () => {
       if (frameRef.current) {
-        const ratio = pageSize.width / pageSize.height;
-        const margin = window.innerWidth <= 900 ? 16 : 56;
-        const w = frameRef.current.clientWidth - margin * 2;
-        const size = {
-          width: w,
-          height: w * ratio,
-        };
-        const scale = Math.min(1, size.width / pageSize.width);
-        actions.setScale(scale);
+        // Define fixed 100% zoom level (same as in PageControl)
+        const frameWidth = 1920;
+        const frameHeight = 1080;
+        const padding = 200;
+        const targetWidth = frameWidth + padding * 2; // 2320
+        const targetHeight = frameHeight + padding * 2; // 1480
+
+        // Use same reference viewport as PageControl for consistency
+        const referenceViewportWidth = 1400;
+        const referenceViewportHeight = 900;
+
+        const defaultScale = Math.min(
+          referenceViewportWidth / targetWidth,
+          referenceViewportHeight / targetHeight
+        ); // This is our 100% zoom level
+
+        // Set default zoom to exactly 100%
+        actions.setScale(defaultScale);
+
+        // Center the viewport on the frame area (center of 10,000x10,000 canvas)
+        // The center of the canvas is at (5000, 5000)
+        // We want to scroll so that this center area is visible
+        if (frameRef.current && !isMobile) {
+          setTimeout(() => {
+            const canvasCenter = {
+              x: pageSize.width / 2, // 5000
+              y: pageSize.height / 2, // 5000
+            };
+
+            // Calculate scroll position to center the frame area
+            if (frameRef.current) {
+              const scrollX =
+                canvasCenter.x * defaultScale -
+                frameRef.current.clientWidth / 2;
+              const scrollY =
+                canvasCenter.y * defaultScale -
+                frameRef.current.clientHeight / 2;
+
+              frameRef.current.scrollLeft = Math.max(0, scrollX);
+              frameRef.current.scrollTop = Math.max(0, scrollY);
+            }
+          }, 100); // Small delay to ensure DOM is ready
+        }
+
         if (isMobile) {
-          const x = (window.innerWidth - pageSize.width * scale - 16 * 2) / 2;
+          const x =
+            (window.innerWidth - pageSize.width * defaultScale - 16 * 2) / 2;
           const headerHeight = 70;
           const footerHeight = 72;
           const offsetTop = 16;
           const y =
             (window.innerHeight -
-              pageSize.height * scale -
+              pageSize.height * defaultScale -
               headerHeight -
               footerHeight -
               offsetTop) /
