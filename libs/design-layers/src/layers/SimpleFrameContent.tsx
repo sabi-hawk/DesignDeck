@@ -330,13 +330,16 @@ export const SimpleFrameContent: FC<SimpleFrameContentProps> = ({
         console.log('Error immediately updating frame lock state:', error);
       }
 
-      if (newLockState) {
-        // When locking: Select the frame and all contents
-        lockFrameAndContents();
-      } else {
-        // When unlocking: Select only the frame
-        unlockFrameAndContents();
-      }
+      // Use setTimeout to ensure the state update is processed before selection
+      setTimeout(() => {
+        if (newLockState) {
+          // When locking: Select the frame and all contents
+          lockFrameAndContents();
+        } else {
+          // When unlocking: Select only the frame
+          unlockFrameAndContents();
+        }
+      }, 50);
     }
   };
 
@@ -357,21 +360,21 @@ export const SimpleFrameContent: FC<SimpleFrameContentProps> = ({
     ) {
       // If frame has animated elements but is not manually locked, select frame + animated elements
       lockFrameWithAnimatedElements(animatedElementIds);
-    } 
-    // else if (
-    //   !isLocked &&
-    //   animatedElementIds.size === 0 &&
-    //   selectedLayerIds.includes(layerId) &&
-    //   selectedLayerIds.length > 1
-    // ) {
-    //   // If frame is unlocked with no animated elements but multiple things are selected, select only the frame
-    //   console.log(
-    //     `🔓 Frame ${layerId} is unlocked with no animations but multiple items selected - selecting only frame`
-    //   );
-    //   actions.selectLayers(0, [layerId]);
-    // }
-  }, [selectedLayerIds, layerId, isLocked, animatedElementIds, lockFrameAndContents, lockFrameWithAnimatedElements]);
+    } else if (
+      !isLocked &&
+      animatedElementIds.size === 0 &&
+      selectedLayerIds.includes(layerId) &&
+      selectedLayerIds.length > 1
+    ) {
+      // If frame is unlocked with no animated elements but multiple things are selected, select only the frame
+      console.log(
+        `🔓 Frame ${layerId} is unlocked with no animations but multiple items selected - selecting only frame`
+      );
+      actions.selectLayers(0, [layerId]);
+    }
+  }, [selectedLayerIds, layerId, isLocked, animatedElementIds, lockFrameAndContents, lockFrameWithAnimatedElements, actions]);
 
+  
   // Handle click on frame to ensure proper selection
   const handleFrameClick = (e: React.MouseEvent) => {
     if (isLocked) {
@@ -380,6 +383,9 @@ export const SimpleFrameContent: FC<SimpleFrameContentProps> = ({
     } else if (animatedElementIds.size > 0) {
       // If frame has animated elements but is not manually locked, select frame + animated elements
       lockFrameWithAnimatedElements(animatedElementIds);
+    } else {
+      // If frame is unlocked with no animated elements, select only the frame
+      actions.selectLayers(0, [layerId]);
     }
   };
 
@@ -391,6 +397,9 @@ export const SimpleFrameContent: FC<SimpleFrameContentProps> = ({
     } else if (animatedElementIds.size > 0) {
       // If frame has animated elements but is not manually locked, select frame + animated elements
       lockFrameWithAnimatedElements(animatedElementIds);
+    } else {
+      // If frame is unlocked with no animated elements, select only the frame
+      actions.selectLayers(0, [layerId]);
     }
   };
 
