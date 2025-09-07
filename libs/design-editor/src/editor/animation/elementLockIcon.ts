@@ -42,10 +42,21 @@ export const addLockIconToElement = (elementId: string, pages: unknown[] = []): 
     
     // Determine sizing based on element type and dimensions
     const isTextElement = !isImageElement; // If not an image, treat as text
-    const iconSize = isTextElement ? Math.max(elementHeight * 0.8, 40) : 120; // 80% of height for text, min 40px
-    const iconSVGSize = isTextElement ? Math.max(iconSize * 0.6, 24) : 80; // Scale SVG proportionally
     
-    console.log(`🔒 Using icon size: ${iconSize}px, SVG size: ${iconSVGSize}px`);
+    // For text elements, use 95% of height with a reasonable minimum
+    // For very small text, ensure minimum readable size
+    let iconSize: number;
+    if (isTextElement) {
+      const calculatedSize = elementHeight * 0.95;
+      iconSize = Math.max(calculatedSize, 50); // Increased minimum to 50px for better visibility
+      console.log(`🔒 Text element: calculated size = ${calculatedSize}px, using ${iconSize}px`);
+    } else {
+      iconSize = 120; // Keep 120px for image elements
+    }
+    
+    const iconSVGSize = isTextElement ? Math.max(iconSize * 0.7, 35) : 80; // Increased SVG ratio to 70% for text
+    
+    console.log(`🔒 Final sizing - Icon: ${iconSize}px, SVG: ${iconSVGSize}px, isTextElement: ${isTextElement}`);
 
     // Create lock icon container with play button styling
     const lockIconContainer = document.createElement('div');

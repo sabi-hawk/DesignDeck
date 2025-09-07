@@ -234,10 +234,21 @@ export class VideoContainerBuilder {
       
       // Determine sizing based on element type and dimensions
       const isTextElement = !isImageElement; // If not an image, treat as text
-      const buttonSize = isTextElement ? Math.max(elementHeight * 0.95, 40) : 120; // 95% of height for text, min 40px
-      const buttonSVGSize = isTextElement ? Math.max(buttonSize * 0.6, 24) : 80; // Scale SVG proportionally
       
-      console.log(`🎬 Using button size: ${buttonSize}px, SVG size: ${buttonSVGSize}px`);
+      // For text elements, use 95% of height with a reasonable minimum
+      // For very small text, ensure minimum readable size
+      let buttonSize: number;
+      if (isTextElement) {
+        const calculatedSize = elementHeight * 0.95;
+        buttonSize = Math.max(calculatedSize, 50); // Increased minimum to 50px for better visibility
+        console.log(`🎬 Text element: calculated size = ${calculatedSize}px, using ${buttonSize}px`);
+      } else {
+        buttonSize = 120; // Keep 120px for image elements
+      }
+      
+      const buttonSVGSize = isTextElement ? Math.max(buttonSize * 0.7, 35) : 80; // Increased SVG ratio to 70% for text
+      
+      console.log(`🎬 Final sizing - Button: ${buttonSize}px, SVG: ${buttonSVGSize}px, isTextElement: ${isTextElement}`);
 
       // Create play button for the element
       const elementPlayButton = document.createElement('div');
