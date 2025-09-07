@@ -84,7 +84,9 @@ const LayerContextMenu: ForwardRefRenderFunction<HTMLDivElement> = (_, ref) => {
   };
   const handleSetAsBackground = () => {
     if (imageLayer) {
-      const ratio = pageSize.width / pageSize.height;
+      // Use virtual page size instead of full canvas size for reasonable dimensions
+      const virtualPageSize = { width: 2000, height: 1000 }; // Reasonable frame area
+      const ratio = virtualPageSize.width / virtualPageSize.height;
       const image = (imageLayer.data.props as ImageLayerProps).image;
       const imageRatio = image.boxSize.width / image.boxSize.height;
       const background = { ...cloneDeep(image), rotate: 0 };
@@ -115,14 +117,16 @@ const LayerContextMenu: ForwardRefRenderFunction<HTMLDivElement> = (_, ref) => {
       const rootProps = rootLayer.data.props as RootLayerProps;
       const image = rootProps.image;
       if (image) {
-        const ratio = pageSize.width / pageSize.height;
+        // Use virtual page size instead of full canvas size for reasonable dimensions
+        const virtualPageSize = { width: 2000, height: 1000 }; // Reasonable frame area
+        const ratio = virtualPageSize.width / virtualPageSize.height;
         const imageRatio = image.boxSize.width / image.boxSize.height;
         const imageSize = { boxSize: { width: 0, height: 0 } };
         if (ratio < imageRatio) {
-          imageSize.boxSize.width = pageSize.width * 0.8;
+          imageSize.boxSize.width = virtualPageSize.width * 0.8;
           imageSize.boxSize.height = imageSize.boxSize.width / imageRatio;
         } else {
-          imageSize.boxSize.height = pageSize.height * 0.8;
+          imageSize.boxSize.height = virtualPageSize.height * 0.8;
           imageSize.boxSize.width = imageSize.boxSize.height * imageRatio;
         }
         actions.addImageLayer(
@@ -139,7 +143,9 @@ const LayerContextMenu: ForwardRefRenderFunction<HTMLDivElement> = (_, ref) => {
 
   const handleSetAsBackgroundVideo = () => {
     if (videoLayer) {
-      const ratio = pageSize.width / pageSize.height;
+      // Use virtual page size instead of full canvas size for reasonable dimensions
+      const virtualPageSize = { width: 2000, height: 1000 }; // Reasonable frame area
+      const ratio = virtualPageSize.width / virtualPageSize.height;
       const video = (videoLayer.data.props as VideoLayerProps).video;
       const videoRatio = video.boxSize.width / video.boxSize.height;
       const background = { ...cloneDeep(video), rotate: 0 };
@@ -170,14 +176,16 @@ const LayerContextMenu: ForwardRefRenderFunction<HTMLDivElement> = (_, ref) => {
       const rootProps = rootLayer.data.props as RootLayerProps;
       const video = rootProps.video;
       if (video) {
-        const ratio = pageSize.width / pageSize.height;
+        // Use virtual page size instead of full canvas size for reasonable dimensions
+        const virtualPageSize = { width: 2000, height: 1000 }; // Reasonable frame area
+        const ratio = virtualPageSize.width / virtualPageSize.height;
         const videoRatio = video.boxSize.width / video.boxSize.height;
         const videoSize = { boxSize: { width: 0, height: 0 } };
         if (ratio < videoRatio) {
-          videoSize.boxSize.width = pageSize.width * 0.8;
+          videoSize.boxSize.width = virtualPageSize.width * 0.8;
           videoSize.boxSize.height = videoSize.boxSize.width / videoRatio;
         } else {
-          videoSize.boxSize.height = pageSize.height * 0.8;
+          videoSize.boxSize.height = virtualPageSize.height * 0.8;
           videoSize.boxSize.width = videoSize.boxSize.height * videoRatio;
         }
         actions.addVideoLayer({ url: video.url }, videoSize.boxSize);
@@ -194,14 +202,16 @@ const LayerContextMenu: ForwardRefRenderFunction<HTMLDivElement> = (_, ref) => {
       const props = selectedLayers[0].data.props;
       const image = props.image;
       if (image) {
-        const ratio = pageSize.width / pageSize.height;
+        // Use virtual page size instead of full canvas size for reasonable dimensions
+        const virtualPageSize = { width: 2000, height: 1000 }; // Reasonable frame area
+        const ratio = virtualPageSize.width / virtualPageSize.height;
         const imageRatio = image.boxSize.width / image.boxSize.height;
         const imageSize = { boxSize: { width: 0, height: 0 } };
         if (ratio < imageRatio) {
-          imageSize.boxSize.width = pageSize.width * 0.8;
+          imageSize.boxSize.width = virtualPageSize.width * 0.8;
           imageSize.boxSize.height = imageSize.boxSize.width / imageRatio;
         } else {
-          imageSize.boxSize.height = pageSize.height * 0.8;
+          imageSize.boxSize.height = virtualPageSize.height * 0.8;
           imageSize.boxSize.width = imageSize.boxSize.height * imageRatio;
         }
         if (sidebar === 'IMAGE_MANIPULATION') {

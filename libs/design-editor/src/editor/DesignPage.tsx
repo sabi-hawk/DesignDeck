@@ -52,7 +52,12 @@ import LayerBorderBox from '../layers/core/LayerBorderBox';
 import PageElement from '../layers/core/PageElement';
 import { useDisabledFeatures } from '../layers/hooks/useDisabledFeatures';
 import { LayerDataRef } from '../types';
-import { getRandomId, isImageLayer, isSimpleFrameLayer, isTextLayer } from '../ultils/layer/layers';
+import {
+  getRandomId,
+  isImageLayer,
+  isSimpleFrameLayer,
+  isTextLayer,
+} from '../ultils/layer/layers';
 import { EditorContext } from './EditorContext';
 
 export interface PageProps {
@@ -348,7 +353,7 @@ const DesignPage: ForwardRefRenderFunction<HTMLDivElement, PageProps> = (
     lockAspect: (data) => {
       const isSelectedImage =
         selectedLayers.length === 1 && isImageLayer(selectedLayers[0]);
-      
+
       const isSelectedSimpleFrame =
         selectedLayers.length === 1 && isSimpleFrameLayer(selectedLayers[0]);
 
@@ -526,14 +531,15 @@ const DesignPage: ForwardRefRenderFunction<HTMLDivElement, PageProps> = (
           const img = new Image();
           img.onload = () => {
             const id = getRandomId();
-            const pageSize = query.getPageSize();
-            const ratio = pageSize.width / pageSize.height;
+            // Use virtual page size instead of full canvas size for reasonable image dimensions
+            const virtualPageSize = { width: 2000, height: 1000 }; // Reasonable frame area
+            const ratio = virtualPageSize.width / virtualPageSize.height;
             const imgRatio = img.naturalWidth / img.naturalHeight;
             const rect = pageRef.current.getBoundingClientRect();
             const w =
               ratio < imgRatio
-                ? pageSize.width * 0.8
-                : pageSize.height * imgRatio * 0.8;
+                ? virtualPageSize.width * 0.8
+                : virtualPageSize.height * imgRatio * 0.8;
             const h = w / imgRatio;
             const x = (clientX - rect.x) / scale - w / 2;
             const y = (clientY - rect.y) / scale - h / 2;

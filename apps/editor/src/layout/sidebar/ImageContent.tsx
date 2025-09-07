@@ -128,13 +128,14 @@ const ImageContent: FC<{ onClose: () => void }> = ({ onClose }) => {
     }
   ) => {
     const { clientX, clientY } = event;
-    const pageSize = query.getPageSize();
-    const ratio = pageSize.width / pageSize.height;
+    // Use virtual page size instead of full canvas size for reasonable image dimensions
+    const virtualPageSize = { width: 2000, height: 1000 }; // Reasonable frame area
+    const ratio = virtualPageSize.width / virtualPageSize.height;
     const imgRatio = item.width / item.height;
     const w =
       ratio < imgRatio
-        ? pageSize.width * 0.8
-        : pageSize.height * imgRatio * 0.8;
+        ? virtualPageSize.width * 0.8
+        : virtualPageSize.height * imgRatio * 0.8;
     const h = w / imgRatio;
     const data: {
       layer: LayerType;

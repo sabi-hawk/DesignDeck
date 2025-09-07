@@ -131,8 +131,8 @@ export const ActionMethods = (state: EditorState, query: CoreEditorQuery) => {
     if (!state.animatedLayers[pageIndex]) {
       state.animatedLayers[pageIndex] = [];
     }
-    
-    layerIds.forEach(layerId => {
+
+    layerIds.forEach((layerId) => {
       if (!state.animatedLayers[pageIndex].includes(layerId)) {
         state.animatedLayers[pageIndex].push(layerId);
       }
@@ -142,7 +142,7 @@ export const ActionMethods = (state: EditorState, query: CoreEditorQuery) => {
   const unmarkLayerAsAnimated = (pageIndex: number, layerIds: LayerId[]) => {
     if (state.animatedLayers[pageIndex]) {
       state.animatedLayers[pageIndex] = state.animatedLayers[pageIndex].filter(
-        id => !layerIds.includes(id)
+        (id) => !layerIds.includes(id)
       );
     }
   };
@@ -1056,13 +1056,14 @@ export const ActionMethods = (state: EditorState, query: CoreEditorQuery) => {
       parentId: LayerId = 'ROOT'
     ) {
       const layerId = getRandomId();
-      const pageSize = query.getPageSize();
-      const ratio = pageSize.width / pageSize.height;
+      // Use virtual page size instead of full canvas size for reasonable image dimensions
+      const virtualPageSize = { width: 2000, height: 1000 }; // Reasonable frame area
+      const ratio = virtualPageSize.width / virtualPageSize.height;
       const imgRatio = boxSize.width / boxSize.height;
       const w =
         ratio < imgRatio
-          ? pageSize.width * 0.8
-          : pageSize.height * imgRatio * 0.8;
+          ? virtualPageSize.width * 0.8
+          : virtualPageSize.height * imgRatio * 0.8;
       const h = w / imgRatio;
       const dl = deserializeLayer({
         type: {
@@ -1209,36 +1210,34 @@ export const ActionMethods = (state: EditorState, query: CoreEditorQuery) => {
       state.pages[state.activePage].layers[parentId].data.child.push(layerId);
       this.selectLayers(state.activePage, layerId);
     },
-    addSimpleFrameLayer(
-      parentId: LayerId = 'ROOT'
-    ) {
+    addSimpleFrameLayer(parentId: LayerId = 'ROOT') {
       const layerId = getRandomId();
-      
+
       // Create a simple frame with exact 16:9 aspect ratio (1920x1080)
       const frameWidth = 1920;
       const frameHeight = 1080;
-      
-             const dl = deserializeLayer({
-         type: {
-           resolvedName: 'SimpleFrameLayer',
-         },
-         props: {
-           position: {
-             x: 0,
-             y: 0,
-           },
-           boxSize: {
-             width: frameWidth,
-             height: frameHeight,
-           },
-           rotate: 0,
-           scale: 1,
-         },
-                   locked: false, // Keep unlocked for moving, but we'll prevent resizing through other means
-         parent: parentId,
-         child: [],
-       });
-      
+
+      const dl = deserializeLayer({
+        type: {
+          resolvedName: 'SimpleFrameLayer',
+        },
+        props: {
+          position: {
+            x: 0,
+            y: 0,
+          },
+          boxSize: {
+            width: frameWidth,
+            height: frameHeight,
+          },
+          rotate: 0,
+          scale: 1,
+        },
+        locked: false, // Keep unlocked for moving, but we'll prevent resizing through other means
+        parent: parentId,
+        child: [],
+      });
+
       state.pages[state.activePage].layers[layerId] = {
         id: layerId,
         data: mergeWithoutArray(dl, {
