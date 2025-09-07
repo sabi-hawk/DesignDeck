@@ -397,6 +397,13 @@ export class VideoContainerBuilder {
           elementPlayButton.style.display = 'none';
           pauseButtonContainer.style.display = 'block';
           
+          // Hide the lock icon while video is playing
+          const lockIcon = originalElement.querySelector('.element-lock-icon') as HTMLElement;
+          if (lockIcon) {
+            lockIcon.style.display = 'none';
+            console.log(`🔒 Hidden lock icon while video plays for element ${elementId}`);
+          }
+          
           // Set z-index on the parent element to ensure buttons are above video container
           originalElement.style.zIndex = '1001'; // Higher than video container (999)
           originalElement.style.position = 'relative'; // Ensure z-index takes effect
@@ -454,6 +461,13 @@ export class VideoContainerBuilder {
             pauseButtonContainer.style.display = 'none';
             elementPlayButton.style.display = 'flex';
             
+             // Show the lock icon again when video is paused
+             const lockIcon = originalElement.querySelector('.element-lock-icon') as HTMLElement;
+             if (lockIcon) {
+               lockIcon.style.display = 'flex';
+               console.log(`🔒 Shown lock icon again after video paused for element ${elementId}`);
+             }
+            
             // Remove the pause button container from DOM
             pauseButtonContainer.remove();
             
@@ -499,6 +513,13 @@ export class VideoContainerBuilder {
               // Hide pause button container and show play button again
               pauseButtonContainer.style.display = 'none';
               elementPlayButton.style.display = 'flex';
+              
+               // Show the lock icon again when video ends
+               const lockIcon = originalElement.querySelector('.element-lock-icon') as HTMLElement;
+               if (lockIcon) {
+                 lockIcon.style.display = 'flex';
+                 console.log(`🔒 Shown lock icon again after video ended for element ${elementId}`);
+               }
               
               // Remove the pause button container from DOM
               pauseButtonContainer.remove();
