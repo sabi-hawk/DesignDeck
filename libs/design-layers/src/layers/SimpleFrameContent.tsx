@@ -39,12 +39,23 @@ export const SimpleFrameContent: FC<SimpleFrameContentProps> = ({
   // Generate unique color for this frame
   const frameColor = generateUniqueColor(layerId);
 
-  // Get scene number for this frame
+  // Get scene number for this frame - use stored scene number or fallback to position-based calculation
   const getSceneNumber = (): number => {
     try {
       const allLayers = query.getLayers(0);
       if (!allLayers) return 1;
 
+      const currentLayer = allLayers[layerId];
+      if (!currentLayer) return 1;
+
+      // First try to get the stored scene number
+      const storedSceneNumber = (currentLayer.data.props as any)?.sceneNumber;
+      if (typeof storedSceneNumber === 'number' && storedSceneNumber > 0) {
+        console.log(`🎬 Using stored scene number ${storedSceneNumber} for frame ${layerId}`);
+        return storedSceneNumber;
+      }
+
+      // Fallback to position-based calculation for existing frames without stored scene numbers
       const simpleFrames: { frameId: string; position: { x: number; y: number } }[] = [];
 
       // Find all SimpleFrames
@@ -70,7 +81,9 @@ export const SimpleFrameContent: FC<SimpleFrameContentProps> = ({
 
       // Find the index of current frame
       const frameIndex = simpleFrames.findIndex(frame => frame.frameId === layerId);
-      return frameIndex >= 0 ? frameIndex + 1 : 1;
+      const fallbackSceneNumber = frameIndex >= 0 ? frameIndex + 1 : 1;
+      console.log(`🎬 Using fallback position-based scene number ${fallbackSceneNumber} for frame ${layerId}`);
+      return fallbackSceneNumber;
     } catch (error) {
       console.log('Error getting scene number:', error);
       return 1;
@@ -78,6 +91,20 @@ export const SimpleFrameContent: FC<SimpleFrameContentProps> = ({
   };
 
   const sceneNumber = getSceneNumber();
+
+  // Migrate existing frames to have stable scene numbers on first load
+  useEffect(() => {
+    // Only run migration once per page load
+    if (typeof window !== 'undefined' && !(window as any).simpleFramesMigrated) {
+      try {
+        (actions as any).migrateSimpleFrameSceneNumbers?.();
+        (window as any).simpleFramesMigrated = true;
+        console.log('🎬 SimpleFrame scene number migration completed');
+      } catch (error) {
+        console.log('Error running SimpleFrame migration:', error);
+      }
+    }
+  }, [actions]);
 
   // Define callback functions for frame selection logic
   const lockFrameAndContents = useCallback(() => {

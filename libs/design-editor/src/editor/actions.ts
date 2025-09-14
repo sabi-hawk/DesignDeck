@@ -1213,6 +1213,12 @@ export const ActionMethods = (state: EditorState, query: CoreEditorQuery) => {
     addSimpleFrameLayer(parentId: LayerId = 'ROOT') {
       const layerId = getRandomId();
 
+      // Calculate the next stable scene number by counting existing SimpleFrames
+      const existingFrames = Object.values(state.pages[state.activePage].layers).filter(
+        (layer) => layer.data.type === 'SimpleFrame'
+      );
+      const nextSceneNumber = existingFrames.length + 1;
+
       // Create a simple frame with exact 16:9 aspect ratio (1920x1080)
       const frameWidth = 1920;
       const frameHeight = 1080;
@@ -1232,6 +1238,8 @@ export const ActionMethods = (state: EditorState, query: CoreEditorQuery) => {
           },
           rotate: 0,
           scale: 1,
+          // Add stable scene number as a property
+          sceneNumber: nextSceneNumber,
         },
         locked: false, // Keep unlocked for moving, but we'll prevent resizing through other means
         parent: parentId,
@@ -1250,6 +1258,45 @@ export const ActionMethods = (state: EditorState, query: CoreEditorQuery) => {
       };
       state.pages[state.activePage].layers[parentId].data.child.push(layerId);
       this.selectLayers(state.activePage, layerId);
+    },
+    // Migrate existing SimpleFrames to have stable scene numbers
+    migrateSimpleFrameSceneNumbers() {
+      const layers = state.pages[state.activePage].layers;
+      const simpleFrames: { id: string; layer: any; position: { x: number; y: number } }[] = [];
+
+      // Find all SimpleFrames that don't have scene numbers
+      Object.entries(layers).forEach(([id, layer]) => {
+        if (layer.data.type === 'SimpleFrame' && id !== 'ROOT') {
+          const sceneNumber = (layer.data.props as any)?.sceneNumber;
+          if (typeof sceneNumber !== 'number') {
+            simpleFrames.push({
+              id,
+              layer,
+              position: layer.data.props.position
+            });
+          }
+        }
+      });
+
+      if (simpleFrames.length === 0) return;
+
+      // Sort frames by position (top to bottom, left to right)
+      simpleFrames.sort((a, b) => {
+        if (Math.abs(a.position.y - b.position.y) > 50) {
+          return a.position.y - b.position.y;
+        }
+        return a.position.x - b.position.x;
+      });
+
+      // Assign scene numbers based on position order
+      simpleFrames.forEach(({ id }, index) => {
+        const sceneNumber = index + 1;
+        layers[id].data.props = {
+          ...layers[id].data.props,
+          sceneNumber
+        };
+        console.log(`🎬 Migrated frame ${id} to scene number ${sceneNumber}`);
+      });
     },
     addVideoLayer(
       { url }: { url: string },

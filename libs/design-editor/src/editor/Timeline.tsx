@@ -199,11 +199,27 @@ const Timeline: FC<TimelineProps> = ({ isVisible, onToggle }) => {
     return mapping.get(segmentIndex) || null;
   };
 
-  // Get scene number for a parent frame group
+  // Get scene number for a parent frame group - use stored scene number
   const getSceneNumber = (parentFrameId: string): number => {
-    const framesByParent = getFramesByParentFrame();
-    const parentFrameIds = Array.from(framesByParent.keys()).sort();
-    return parentFrameIds.indexOf(parentFrameId) + 1;
+    try {
+      // Try to get the stored scene number from the frame's properties
+      const currentPage = pages[0];
+      if (currentPage?.layers?.[parentFrameId]) {
+        const frameLayer = currentPage.layers[parentFrameId];
+        const storedSceneNumber = (frameLayer.data.props as any)?.sceneNumber;
+        if (typeof storedSceneNumber === 'number' && storedSceneNumber > 0) {
+          return storedSceneNumber;
+        }
+      }
+
+      // Fallback to the original position-based calculation
+      const framesByParent = getFramesByParentFrame();
+      const parentFrameIds = Array.from(framesByParent.keys()).sort();
+      return parentFrameIds.indexOf(parentFrameId) + 1;
+    } catch (error) {
+      console.error('Error getting scene number for timeline:', error);
+      return 1;
+    }
   };
 
   // Check if this segment is the first in its parent frame group
@@ -304,14 +320,14 @@ const Timeline: FC<TimelineProps> = ({ isVisible, onToggle }) => {
       <div
         css={{
           position: 'fixed',
-          bottom: isVisible ? 0 : '-180px', // Slide down when visible, up when hidden
+          bottom: isVisible ? 0 : '-220px', // Slide down when visible, up when hidden
           left: '433px', // Start from the very left edge
           right: '0', // End exactly at the right sidebar boundary
           background: '#1a202c',
           borderTop: '2px solid #667eea',
           boxShadow: '0 -4px 20px rgba(0, 0, 0, 0.3)',
           zIndex: 1000,
-          height: '180px',
+          height: '220px', // Increased height to accommodate scene labels
           transition: 'bottom 0.3s ease',
           // Ensure it aligns perfectly with the canvas
           margin: '0 auto',
@@ -375,30 +391,30 @@ const Timeline: FC<TimelineProps> = ({ isVisible, onToggle }) => {
         {/* Timeline Content */}
         <div
           css={{
-            padding: '16px',
-            height: '148px',
+            padding: '8px 16px 8px 16px',
+            // paddingTop: '16px', // Reset padding top
+            height: '188px', // Increased height to match container
           }}
         >
           {/* Timeline Ruler with Thumbnails */}
           <div
             css={{
-              height: '110px',
+              height: '130px', // Increased height to accommodate scene labels
               // background: 'rgba(255, 255, 255, 0.05)',
               // border: '1px solid rgba(255, 255, 255, 0.2)',
               borderRadius: '8px',
               position: 'relative',
-              overflow: 'hidden',
+              overflow: 'visible', // Changed from 'hidden' to 'visible' to show scene labels
               marginBottom: '20px',
+              paddingTop: '30px', // Add padding at top for scene labels
             }}
           >
-
-
             {/* Alternative: Native Scrollbar with Better Styling */}
             <div
               css={{
                 width: '100%',
                 height: '100%',
-                overflow: 'auto',
+                // overflow: 'auto',
                 position: 'relative',
                 scrollbarWidth: 'thin',
                 scrollbarColor: 'rgba(255, 255, 255, 0.3) transparent',
@@ -432,11 +448,11 @@ const Timeline: FC<TimelineProps> = ({ isVisible, onToggle }) => {
                 {animatedSegments.map(({ segmentIndex, frame }) => {
                   const startTime = segmentIndex * timelineScale;
                   const endTime = startTime + timelineScale;
-                  const parentFrameGroupInfo = getParentFrameGroupInfo(segmentIndex);
-                  const isFirstInGroup = isFirstInParentFrameGroup(segmentIndex);
+                  const parentFrameGroupInfo =
+                    getParentFrameGroupInfo(segmentIndex);
+                  const isFirstInGroup =
+                    isFirstInParentFrameGroup(segmentIndex);
                   const isLastInGroup = isLastInParentFrameGroup(segmentIndex);
-
-
 
                   return (
                     <div
@@ -454,11 +470,30 @@ const Timeline: FC<TimelineProps> = ({ isVisible, onToggle }) => {
                         // Add red border styling for parent frame groups
                         ...(parentFrameGroupInfo && {
                           border: 'none', // Remove default border
-                          borderLeft: isFirstInGroup ? `2px solid ${frame?.parentFrameBorderColor || '#ff0000'}` : 'none', // Only left border for first element
-                          borderTop: `2px solid ${frame?.parentFrameBorderColor || '#ff0000'}`, // Top border for all elements in group
-                          borderBottom: `2px solid ${frame?.parentFrameBorderColor || '#ff0000'}`, // Bottom border for all elements in group
-                          borderRight: isLastInGroup ? `2px solid ${frame?.parentFrameBorderColor || '#ff0000'}` : 'none', // Only right border for last element
-                          borderRadius: isFirstInGroup && isLastInGroup ? '8px' : isFirstInGroup ? '8px 0 0 8px' : isLastInGroup ? '0 8px 8px 0' : '0',
+                          borderLeft: isFirstInGroup
+                            ? `2px solid ${
+                                frame?.parentFrameBorderColor || '#ff0000'
+                              }`
+                            : 'none', // Only left border for first element
+                          borderTop: `2px solid ${
+                            frame?.parentFrameBorderColor || '#ff0000'
+                          }`, // Top border for all elements in group
+                          borderBottom: `2px solid ${
+                            frame?.parentFrameBorderColor || '#ff0000'
+                          }`, // Bottom border for all elements in group
+                          borderRight: isLastInGroup
+                            ? `2px solid ${
+                                frame?.parentFrameBorderColor || '#ff0000'
+                              }`
+                            : 'none', // Only right border for last element
+                          borderRadius:
+                            isFirstInGroup && isLastInGroup
+                              ? '8px'
+                              : isFirstInGroup
+                              ? '8px 0 0 8px'
+                              : isLastInGroup
+                              ? '0 8px 8px 0'
+                              : '0',
                           marginLeft: isFirstInGroup ? '2px' : '0',
                           marginRight: isLastInGroup ? '2px' : '0',
                           marginTop: '2px', // Add top margin for symmetry
@@ -468,60 +503,66 @@ const Timeline: FC<TimelineProps> = ({ isVisible, onToggle }) => {
                           // background: isFirstInGroup ? 'rgba(255, 0, 0, 0.1)' : isLastInGroup ? 'rgba(0, 255, 0, 0.1)' : 'rgba(0, 0, 255, 0.1)',
                           // Force the right border to be visible for debugging
                           ...(isLastInGroup && {
-                            borderRight: `2px solid ${frame?.parentFrameBorderColor || '#ff0000'} !important`,
+                            borderRight: `2px solid ${
+                              frame?.parentFrameBorderColor || '#ff0000'
+                            } !important`,
                           }),
                         }),
                       }}
                     >
-                      
-
-                      {/* Parent Frame Group Label */}
+                      {/* Scene Label - Above Timeline Border */}
                       {parentFrameGroupInfo && isFirstInGroup && (
                         <div
                           css={{
                             position: 'absolute',
-                            top: '-20px',
-                            left: '50%',
-                            transform: 'translateX(-50%)',
-                            background: 'rgba(0, 0, 0, 0.8)',
-                            color: 'white',
-                            fontSize: '8px',
-                            fontWeight: 'bold',
-                            padding: '2px 6px',
-                            borderRadius: '4px',
-                            whiteSpace: 'nowrap',
-                            zIndex: 20,
-                            boxShadow: '0 2px 4px rgba(0, 0, 0, 0.3)',
-                            border: `1px solid ${frame?.parentFrameBorderColor || '#ff0000'}`,
-                          }}
-                        >
-                          Frame Group ({parentFrameGroupInfo.groupFrames.length} elements)
-                        </div>
-                      )}
-
-                      {/* Scene Label - Only show on first element of each group */}
-                      {parentFrameGroupInfo && isFirstInGroup && (
-                        <div
-                          css={{
-                            position: 'absolute',
-                            top: '4px',
+                            top: '-25px', // Position above the timeline box but within container bounds
                             left: '4px',
-                            background: 'rgba(0, 0, 0, 0.8)',
+                            background: 'rgba(0, 0, 0, 0.9)',
                             color: 'white',
                             fontSize: '10px',
                             fontWeight: 'bold',
-                            padding: '3px 6px',
+                            padding: '2px 6px',
                             borderRadius: '3px',
                             whiteSpace: 'nowrap',
-                            zIndex: 25,
-                            boxShadow: '0 1px 3px rgba(0, 0, 0, 0.5)',
-                            border: `1px solid ${frame?.parentFrameBorderColor || '#ff0000'}`,
+                            zIndex: 30,
+                            boxShadow: '0 2px 4px rgba(0, 0, 0, 0.5)',
+                            border: `1px solid ${
+                              frame?.parentFrameBorderColor || '#ff0000'
+                            }`,
                             textShadow: '0 1px 2px rgba(0, 0, 0, 0.8)',
                           }}
                         >
-                          Scene {getSceneNumber(parentFrameGroupInfo.parentFrameId)}
+                          Scene{' '}
+                          {getSceneNumber(parentFrameGroupInfo.parentFrameId)}
                         </div>
                       )}
+
+                      {/* Animation Order Number - Top Left Corner of each box */}
+                      <div
+                        css={{
+                          position: 'absolute',
+                          top: '4px',
+                          left: '11px',
+                          width: '20px',
+                          height: '20px',
+                          background: 'rgba(0, 0, 0, 0.9)',
+                          color: 'white',
+                          fontSize: '12px',
+                          fontWeight: 'bold',
+                          borderRadius: '4px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          zIndex: 25,
+                          boxShadow: '0 2px 4px rgba(0, 0, 0, 0.5)',
+                          border: `2px solid ${
+                            frame?.parentFrameBorderColor || '#ff0000'
+                          }`,
+                          textShadow: '0 1px 2px rgba(0, 0, 0, 0.8)',
+                        }}
+                      >
+                        {segmentIndex + 1}
+                      </div>
 
                       {/* Thumbnail if frames exist */}
                       {frame && (
@@ -539,10 +580,13 @@ const Timeline: FC<TimelineProps> = ({ isVisible, onToggle }) => {
                             position: 'absolute',
                             top: '25px',
                             cursor: frame.resultUrl ? 'pointer' : 'default',
-                            ':hover': frame.resultUrl ? {
-                              border: '1px solid #667eea',
-                              boxShadow: '0 2px 8px rgba(102, 126, 234, 0.3)',
-                            } : {},
+                            ':hover': frame.resultUrl
+                              ? {
+                                  border: '1px solid #667eea',
+                                  boxShadow:
+                                    '0 2px 8px rgba(102, 126, 234, 0.3)',
+                                }
+                              : {},
                           }}
                           onClick={() => {
                             if (frame.resultUrl) {
@@ -571,54 +615,54 @@ const Timeline: FC<TimelineProps> = ({ isVisible, onToggle }) => {
                               : '0KB'}
                           </div>
 
-                           {/* Processing Status Overlay */}
-                           {(!frame.resultUrl && frame.progress !== -1) && (
-                             <div
-                               css={{
-                                 position: 'absolute',
-                                 top: 0,
-                                 left: 0,
-                                 right: 0,
-                                 bottom: 0,
-                                 background: 'rgba(0, 0, 0, 0.7)',
-                                 display: 'flex',
-                                 flexDirection: 'column',
-                                 alignItems: 'center',
-                                 justifyContent: 'center',
-                                 zIndex: 15,
-                                 borderRadius: '4px',
-                               }}
-                             >
-                               {/* Spinning Animation */}
-                               <div
-                                 css={{
-                                   width: '20px',
-                                   height: '20px',
-                                   border: '2px solid rgba(255, 255, 255, 0.3)',
-                                   borderTop: '2px solid #667eea',
-                                   borderRadius: '50%',
-                                   animation: 'spin 1s linear infinite',
-                                   marginBottom: '4px',
-                                   '@keyframes spin': {
-                                     '0%': { transform: 'rotate(0deg)' },
-                                     '100%': { transform: 'rotate(360deg)' },
-                                   },
-                                 }}
-                               />
-                               {/* Processing Text */}
-                               <div
-                                 css={{
-                                   color: 'white',
-                                   fontSize: '8px',
-                                   fontWeight: '500',
-                                   textAlign: 'center',
-                                   textShadow: '0 1px 2px rgba(0, 0, 0, 0.5)',
-                                 }}
-                               >
-                                 Processing...
-                               </div>
-                             </div>
-                           )}
+                          {/* Processing Status Overlay */}
+                          {!frame.resultUrl && frame.progress !== -1 && (
+                            <div
+                              css={{
+                                position: 'absolute',
+                                top: 0,
+                                left: 0,
+                                right: 0,
+                                bottom: 0,
+                                background: 'rgba(0, 0, 0, 0.7)',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                zIndex: 15,
+                                borderRadius: '4px',
+                              }}
+                            >
+                              {/* Spinning Animation */}
+                              <div
+                                css={{
+                                  width: '20px',
+                                  height: '20px',
+                                  border: '2px solid rgba(255, 255, 255, 0.3)',
+                                  borderTop: '2px solid #667eea',
+                                  borderRadius: '50%',
+                                  animation: 'spin 1s linear infinite',
+                                  marginBottom: '4px',
+                                  '@keyframes spin': {
+                                    '0%': { transform: 'rotate(0deg)' },
+                                    '100%': { transform: 'rotate(360deg)' },
+                                  },
+                                }}
+                              />
+                              {/* Processing Text */}
+                              <div
+                                css={{
+                                  color: 'white',
+                                  fontSize: '8px',
+                                  fontWeight: '500',
+                                  textAlign: 'center',
+                                  textShadow: '0 1px 2px rgba(0, 0, 0, 0.5)',
+                                }}
+                              >
+                                Processing...
+                              </div>
+                            </div>
+                          )}
 
                           {/* Failed Processing Overlay */}
                           {frame.progress === -1 && (
@@ -698,17 +742,14 @@ const Timeline: FC<TimelineProps> = ({ isVisible, onToggle }) => {
                                   border: '1px solid rgba(255, 255, 255, 0.3)',
                                 }}
                               >
-                                <svg 
-                                  fill="none" 
-                                  height="10" 
-                                  viewBox="0 0 24 24" 
-                                  width="10" 
+                                <svg
+                                  fill="none"
+                                  height="10"
+                                  viewBox="0 0 24 24"
+                                  width="10"
                                   xmlns="http://www.w3.org/2000/svg"
                                 >
-                                  <path 
-                                    d="M8 5V19L19 12L8 5Z" 
-                                    fill="white"
-                                  />
+                                  <path d="M8 5V19L19 12L8 5Z" fill="white" />
                                 </svg>
                               </div>
 
@@ -782,142 +823,6 @@ const Timeline: FC<TimelineProps> = ({ isVisible, onToggle }) => {
                 })}
               </div>
             </div>
-          </div>
-
-          {/* Timeline Controls */}
-          <div
-            css={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '12px',
-            }}
-          >
-            <button
-              css={{
-                background: '#667eea',
-                border: 'none',
-                borderRadius: '6px',
-                padding: '8px 16px',
-                color: 'white',
-                fontSize: '14px',
-                fontWeight: '500',
-                cursor: 'pointer',
-                ':hover': {
-                  background: '#5a67d8',
-                },
-              }}
-              onClick={() =>
-                handleStartAnimation('demo-text', 'Text', 'Sample Text Element')
-              }
-            >
-              Animate Text
-            </button>
-            <button
-              css={{
-                background: '#10B981',
-                border: 'none',
-                borderRadius: '6px',
-                padding: '8px 16px',
-                color: 'white',
-                fontSize: '14px',
-                fontWeight: '500',
-                cursor: 'pointer',
-                ':hover': {
-                  background: '#059669',
-                },
-              }}
-              onClick={() =>
-                handleStartAnimation(
-                  'demo-image',
-                  'Image',
-                  'Sample Image Element'
-                )
-              }
-            >
-              Animate Image
-            </button>
-            <button
-              css={{
-                background: 'rgba(255, 255, 255, 0.1)',
-                border: '1px solid rgba(255, 255, 255, 0.2)',
-                borderRadius: '6px',
-                padding: '8px 16px',
-                color: 'white',
-                fontSize: '14px',
-                fontWeight: '500',
-                cursor: 'pointer',
-                ':hover': {
-                  background: 'rgba(255, 255, 255, 0.15)',
-                },
-              }}
-              onClick={() => {
-                const animatedElements =
-                  animationService.getAnimatedElementIds();
-                animatedElements.forEach((elementId) => {
-                  animationService.stopAnimation(elementId);
-                });
-              }}
-            >
-              Stop All
-            </button>
-
-
-
-            {/* Timeline Progress Bar */}
-            <div
-              css={{
-                flex: 1,
-                height: '4px',
-                background: 'rgba(255, 255, 255, 0.2)',
-                borderRadius: '2px',
-                position: 'relative',
-              }}
-            >
-              <div
-                css={{
-                  position: 'absolute',
-                  top: '0',
-                  left: '0',
-                  width: `${Math.min(
-                    ((currentTime % totalTimelineDuration) /
-                      totalTimelineDuration) *
-                      100,
-                    100
-                  )}%`,
-                  height: '100%',
-                  background: '#667eea',
-                  borderRadius: '2px',
-                }}
-              />
-            </div>
-
-            {/* Current Time Display */}
-            <span
-              css={{
-                fontSize: '12px',
-                color: '#a0aec0',
-                fontWeight: '500',
-                minWidth: '50px',
-              }}
-            >
-              {Math.floor(currentTime % totalTimelineDuration)}s
-            </span>
-
-            {/* Scroll Indicator */}
-            {timelineWidth > 800 && (
-              <div
-                css={{
-                  fontSize: '10px',
-                  color: '#a0aec0',
-                  padding: '4px 8px',
-                  background: 'rgba(255, 255, 255, 0.1)',
-                  borderRadius: '4px',
-                  border: '1px solid rgba(255, 255, 255, 0.2)',
-                }}
-              >
-                Scroll →
-              </div>
-            )}
           </div>
         </div>
       </div>
