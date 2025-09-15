@@ -83,7 +83,7 @@ export const addLockIconToElement = (elementId: string, pages: unknown[] = []): 
         justify-content: center;
         border: 3px solid rgba(255, 107, 107, 0.3);
         box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
-        pointer-events: none;
+        pointer-events: auto;
       ` :
       // Middle-left positioning for all other elements (inside the element)
       `
@@ -104,7 +104,7 @@ export const addLockIconToElement = (elementId: string, pages: unknown[] = []): 
         justify-content: center;
         border: 3px solid rgba(255, 107, 107, 0.3);
         box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
-        pointer-events: none;
+        pointer-events: auto;
       `;
     
     lockIconContainer.style.cssText = lockIconStyles;
@@ -138,6 +138,22 @@ export const addLockIconToElement = (elementId: string, pages: unknown[] = []): 
         lockIconContainer.style.transform = 'translateY(-50%) scale(1)';
       }
       lockIconContainer.style.borderColor = 'rgba(255, 107, 107, 0.3)';
+    });
+
+    // Add click handler to remove animation
+    lockIconContainer.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      console.log(`🔓 Lock icon clicked for element ${elementId}`);
+      
+      // Import and use the animation removal function
+      import('./AnimationService').then((module) => {
+        const AnimationService = module.default;
+        const animationService = AnimationService.getInstance();
+        animationService.removeAnimation(elementId);
+      }).catch(error => {
+        console.error(`❌ Error importing AnimationService:`, error);
+      });
     });
 
     // Make sure the parent element has relative positioning

@@ -243,6 +243,155 @@ class AnimationService {
   }
 
   /**
+   * Remove animation completely (stop animation and clean up all related elements)
+   */
+  removeAnimation(elementId: string): boolean {
+    try {
+      console.log(`🗑️ Removing animation for element ${elementId}`);
+      
+      // First stop the animation (this removes the element from both maps)
+      const animationStopped = this.stopAnimation(elementId);
+      
+      // Remove video container
+      this.frameVideoReplacer.removeVideoContainerByElementId(elementId);
+      
+      // Remove play button and related elements synchronously
+      this.removePlayButtonSynchronously(elementId);
+      
+      // Renumber remaining animated elements AFTER removal
+      this.renumberAnimatedElements();
+      
+      // Reset nextFrameIndex to ensure proper sequential numbering
+      this.nextFrameIndex = this.nextFrameIndex -1;
+      
+      // Remove from timeline by dispatching a custom event
+      const removeFromTimelineEvent = new CustomEvent('removeAnimationFromTimeline', {
+        detail: { elementId }
+      });
+      document.dispatchEvent(removeFromTimelineEvent);
+      
+      // Notify timeline that data has been renumbered
+      const renumberTimelineEvent = new CustomEvent('renumberTimeline', {
+        detail: { elementId }
+      });
+      document.dispatchEvent(renumberTimelineEvent);
+      
+      console.log(`✅ Animation completely removed for element ${elementId}`);
+      return animationStopped;
+      
+    } catch (error) {
+      console.error(`❌ Error removing animation for element ${elementId}:`, error);
+      return false;
+    }
+  }
+
+  /**
+   * Remove play button synchronously
+   */
+  private removePlayButtonSynchronously(elementId: string): void {
+    try {
+      console.log(`🗑️ Removing play buttons synchronously for element ${elementId}`);
+      
+      // Debug: Check what play buttons exist in the DOM
+      const allPlayButtons = document.querySelectorAll('.element-play-button');
+      console.log(`🔍 Found ${allPlayButtons.length} total play buttons in DOM`);
+      allPlayButtons.forEach((button, index) => {
+        const buttonElementId = button.getAttribute('data-element-id');
+        console.log(`🔍 Play button ${index}: data-element-id="${buttonElementId}"`);
+      });
+      
+      // Method 1: Remove play buttons by data-element-id attribute
+      const playButtons = document.querySelectorAll(`[data-element-id="${elementId}"].element-play-button`);
+      console.log(`🔍 Found ${playButtons.length} play buttons with data-element-id="${elementId}"`);
+      playButtons.forEach((button, index) => {
+        console.log(`🗑️ Removing play button ${index} for element ${elementId}`);
+        button.remove();
+        console.log(`✅ Removed play button ${index} for element ${elementId}`);
+      });
+
+      // Method 2: Remove pause buttons by data-element-id attribute
+      const pauseButtons = document.querySelectorAll(`[data-element-id="${elementId}"].element-pause-button`);
+      console.log(`🔍 Found ${pauseButtons.length} pause buttons with data-element-id="${elementId}"`);
+      pauseButtons.forEach((button, index) => {
+        console.log(`🗑️ Removing pause button ${index} for element ${elementId}`);
+        button.remove();
+        console.log(`✅ Removed pause button ${index} for element ${elementId}`);
+      });
+
+      // Method 3: Remove pause button containers
+      const pauseButtonContainers = document.querySelectorAll('.pause-button-container');
+      console.log(`🔍 Found ${pauseButtonContainers.length} pause button containers`);
+      pauseButtonContainers.forEach((container, index) => {
+        const pauseButton = container.querySelector(`[data-element-id="${elementId}"]`);
+        if (pauseButton) {
+          console.log(`🗑️ Removing pause button container ${index} for element ${elementId}`);
+          container.remove();
+          console.log(`✅ Removed pause button container ${index} for element ${elementId}`);
+        }
+      });
+
+      // Method 4: Fallback - search for any buttons with this element ID anywhere
+      const allButtonsWithElementId = document.querySelectorAll(`[data-element-id="${elementId}"]`);
+      console.log(`🔍 Found ${allButtonsWithElementId.length} total elements with data-element-id="${elementId}"`);
+      allButtonsWithElementId.forEach((element, index) => {
+        console.log(`🔍 Element ${index}:`, element.className, element.tagName);
+        if (element.classList.contains('element-play-button') || element.classList.contains('element-pause-button')) {
+          console.log(`🗑️ Removing button element ${index} for element ${elementId}`);
+          element.remove();
+        }
+      });
+
+      console.log(`✅ Play button removal completed for element ${elementId}`);
+    } catch (error) {
+      console.error(`❌ Error removing play button for element ${elementId}:`, error);
+    }
+  }
+
+  /**
+   * Renumber animated elements and frames to maintain sequential order
+   */
+  private renumberAnimatedElements(): void {
+    try {
+      const animatedElementsArray = Array.from(this.animatedElements.values());
+      
+      // Sort by current frameIndex to maintain order
+      animatedElementsArray.sort((a, b) => a.frameIndex - b.frameIndex);
+      
+      // Renumber animated elements starting from 0
+      animatedElementsArray.forEach((element, index) => {
+        element.frameIndex = index;
+        this.animatedElements.set(element.id, element);
+      });
+      
+      // Renumber animation frames to match the new frameIndex values
+      const framesArray = Array.from(this.animationFrames.values());
+      
+      // Group frames by elementId and sort by their current frameIndex
+      const framesByElement = new Map<string, AnimationFrame[]>();
+      framesArray.forEach(frame => {
+        if (!framesByElement.has(frame.elementId)) {
+          framesByElement.set(frame.elementId, []);
+        }
+        framesByElement.get(frame.elementId)!.push(frame);
+      });
+      
+      // For each element, update the frameIndex of its frames
+      for (const [elementId, frames] of framesByElement.entries()) {
+        const animatedElement = this.animatedElements.get(elementId);
+        if (animatedElement) {
+          // Update all frames for this element to use the new frameIndex
+          frames.forEach(frame => {
+            frame.frameIndex = animatedElement.frameIndex;
+            this.animationFrames.set(frame.id, frame);
+          });
+        }
+      }
+    } catch (error) {
+      console.error(`❌ Error renumbering animated elements:`, error);
+    }
+  }
+
+  /**
    * Get frames organized by frame index
    */
   getFramesByIndex(): Map<number, AnimationFrame[]> {

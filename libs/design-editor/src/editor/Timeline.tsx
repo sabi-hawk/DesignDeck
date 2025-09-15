@@ -94,10 +94,37 @@ const Timeline: FC<TimelineProps> = ({ isVisible, onToggle }) => {
       );
     };
 
+    const handleRemoveAnimationFromTimeline = (event: CustomEvent) => {
+      const { elementId } = event.detail;
+      console.log(`🗑️ Removing animation from timeline for element ${elementId}`);
+      
+      // Remove all frames for this element from the timeline
+      setCurrentFrames((prev) => 
+        prev.filter((frame) => frame.elementId !== elementId)
+      );
+    };
+
+    const handleRenumberTimeline = (event: CustomEvent) => {
+      const { elementId } = event.detail;
+      
+      // Refresh timeline data from AnimationService using getFramesByIndex for consistency
+      const framesByIndex = animationService.getFramesByIndex();
+      const updatedFrames: AnimationFrame[] = [];
+      
+      // Convert framesByIndex back to a flat array for setCurrentFrames
+      for (const frames of framesByIndex.values()) {
+        updatedFrames.push(...frames);
+      }
+      
+      setCurrentFrames(updatedFrames);
+    };
+
     // Add event listeners
     document.addEventListener('processingComplete', handleProcessingComplete as EventListener);
     document.addEventListener('progressUpdate', handleProgressUpdate as EventListener);
     document.addEventListener('processingFailed', handleProcessingFailed as EventListener);
+    document.addEventListener('removeAnimationFromTimeline', handleRemoveAnimationFromTimeline as EventListener);
+    document.addEventListener('renumberTimeline', handleRenumberTimeline as EventListener);
 
     // Update current time every second for timeline display
     const timeInterval = setInterval(() => {
@@ -110,6 +137,8 @@ const Timeline: FC<TimelineProps> = ({ isVisible, onToggle }) => {
       document.removeEventListener('processingComplete', handleProcessingComplete as EventListener);
       document.removeEventListener('progressUpdate', handleProgressUpdate as EventListener);
       document.removeEventListener('processingFailed', handleProcessingFailed as EventListener);
+      document.removeEventListener('removeAnimationFromTimeline', handleRemoveAnimationFromTimeline as EventListener);
+      document.removeEventListener('renumberTimeline', handleRenumberTimeline as EventListener);
     };
   }, [animationService, pages]); // Add pages to dependency array
 

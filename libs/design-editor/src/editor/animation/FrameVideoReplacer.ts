@@ -108,7 +108,8 @@ class FrameVideoReplacer {
         domPosition, 
         videoUrl, 
         targetElementId,
-        this.frameManager['pages'] // Access private pages for now
+        this.frameManager['pages'], // Access private pages for now
+        originalAnimatedElementId // Pass the original animated element ID
       );
 
       if (!videoContainer) {
@@ -178,6 +179,47 @@ class FrameVideoReplacer {
       return true;
     }
     return false;
+  }
+
+  /**
+   * Remove video container by element ID
+   */
+  removeVideoContainerByElementId(elementId: string): boolean {
+    let removed = false;
+    
+    // Method 1: Find and remove video containers from stored map
+    for (const [frameId, container] of this.videoContainers.entries()) {
+      const containerElementId = container.getAttribute('data-animated-element-id');
+      if (containerElementId === elementId) {
+        container.remove();
+        this.videoContainers.delete(frameId);
+        this.sceneManager.resetSceneCounter(frameId);
+        console.log(`🗑️ Video container removed for element ${elementId} (frame ${frameId})`);
+        removed = true;
+      }
+    }
+    
+    // Method 2: Search DOM directly for containers with this element ID
+    const containers = document.querySelectorAll('.animation-video-standalone-container');
+    containers.forEach(container => {
+      const containerElementId = container.getAttribute('data-animated-element-id');
+      if (containerElementId === elementId) {
+        container.remove();
+        console.log(`🗑️ Video container removed from DOM for element ${elementId}`);
+        removed = true;
+      }
+    });
+    
+    // Method 3: Search by element ID in class name (with proper CSS escaping)
+    const escapedElementId = CSS.escape(elementId);
+    const containersByClass = document.querySelectorAll(`.${escapedElementId}-video-container`);
+    containersByClass.forEach(container => {
+      container.remove();
+      console.log(`🗑️ Video container removed by class for element ${elementId}`);
+      removed = true;
+    });
+    
+    return removed;
   }
 
   /**

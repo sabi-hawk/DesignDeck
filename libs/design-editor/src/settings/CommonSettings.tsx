@@ -33,6 +33,7 @@ const CommonSettings: React.FC<CommonSettingsProps> = ({ onShowAnimationPopup })
       animatedLayers: state.animatedLayers[state.activePage] || [],
     })
   );
+  const state = useEditor((state) => state);
   const [size, setSize] = useState(pageSize);
   const [animationService] = useState(() => AnimationService.getInstance());
   const [currentAnimatedElement, setCurrentAnimatedElement] = useState<string | null>(null);

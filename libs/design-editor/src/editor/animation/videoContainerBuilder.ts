@@ -41,7 +41,8 @@ export class VideoContainerBuilder {
     domPosition: DOMPosition,
     videoUrl: string,
     originalFrameId: string,
-    pages: unknown[]
+    pages: unknown[],
+    elementId?: string
   ): HTMLDivElement | null {
     try {
       // Store pages data for element type checking
@@ -68,6 +69,12 @@ export class VideoContainerBuilder {
       videoContainer.setAttribute('data-original-frame-id', originalFrameId);
       videoContainer.setAttribute('data-video-url', videoUrl);
       videoContainer.setAttribute('data-frame-data', JSON.stringify(frameData));
+      
+      // Add element ID to distinguish between different animated elements in the same frame
+      if (elementId) {
+        videoContainer.setAttribute('data-animated-element-id', elementId);
+        videoContainer.className += ` ${elementId}-video-container`;
+      }
 
       // Apply minimal styling - just positioning and size
       videoContainer.style.cssText = `
@@ -255,6 +262,7 @@ export class VideoContainerBuilder {
       elementPlayButton.className = `element-play-button ${originalFrameId}-element-play`;
       elementPlayButton.setAttribute('data-original-frame-id', originalFrameId);
       elementPlayButton.setAttribute('data-video-container-id', videoContainer.className);
+      elementPlayButton.setAttribute('data-element-id', elementId);
       elementPlayButton.innerHTML = `
         <svg width="${buttonSVGSize}" height="${buttonSVGSize}" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
           <path d="M8 5V19L19 12L8 5Z" fill="white"/>
@@ -363,6 +371,7 @@ export class VideoContainerBuilder {
           const pauseButton = document.createElement('div');
           pauseButton.className = `element-pause-button ${originalFrameId}-element-pause`;
           pauseButton.setAttribute('data-original-frame-id', originalFrameId);
+          pauseButton.setAttribute('data-element-id', elementId);
           pauseButton.innerHTML = `
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M6 4H10V20H6V4Z" fill="white"/>
@@ -541,6 +550,84 @@ export class VideoContainerBuilder {
     } catch (error) {
       console.error(`❌ Error adding play button to animated element ${elementId}:`, error);
       return null;
+    }
+  }
+
+  /**
+   * Remove play button and related elements by element ID
+   */
+  removePlayButtonByElementId(elementId: string): boolean {
+    try {
+      let removed = false;
+
+      console.log(`🗑️ Removing play buttons for element ${elementId}`);
+
+      // Method 1: Remove play buttons by data-element-id attribute
+      const playButtons = document.querySelectorAll(`[data-element-id="${elementId}"].element-play-button`);
+      playButtons.forEach(button => {
+        button.remove();
+        console.log(`🗑️ Removed play button for element ${elementId}`);
+        removed = true;
+      });
+
+      // Method 2: Remove pause buttons by data-element-id attribute
+      const pauseButtons = document.querySelectorAll(`[data-element-id="${elementId}"].element-pause-button`);
+      pauseButtons.forEach(button => {
+        button.remove();
+        console.log(`🗑️ Removed pause button for element ${elementId}`);
+        removed = true;
+      });
+
+      // Method 3: Remove pause button containers (they don't have data-element-id, so search within elements)
+      const pauseButtonContainers = document.querySelectorAll('.pause-button-container');
+      pauseButtonContainers.forEach(container => {
+        const pauseButton = container.querySelector(`[data-element-id="${elementId}"]`);
+        if (pauseButton) {
+          container.remove();
+          console.log(`🗑️ Removed pause button container for element ${elementId}`);
+          removed = true;
+        }
+      });
+
+      // Method 4: Fallback - search within the original element if it exists
+      let originalElement = document.querySelector(`.${CSS_ESCAPE(elementId)}`) as HTMLElement;
+      if (!originalElement) {
+        originalElement = document.querySelector(`[data-layer-id="${elementId}"]`) as HTMLElement;
+      }
+      if (!originalElement) {
+        const textElements = document.querySelectorAll('.lidojs-text');
+        for (const element of textElements) {
+          if (element.classList.contains(elementId)) {
+            originalElement = element as HTMLElement;
+            break;
+          }
+        }
+      }
+
+      if (originalElement) {
+        // Remove any remaining play buttons within the element
+        const elementPlayButtons = originalElement.querySelectorAll('.element-play-button');
+        elementPlayButtons.forEach(button => {
+          button.remove();
+          console.log(`🗑️ Removed play button from element for ${elementId}`);
+          removed = true;
+        });
+
+        // Remove any remaining pause button containers within the element
+        const elementPauseContainers = originalElement.querySelectorAll('.pause-button-container');
+        elementPauseContainers.forEach(container => {
+          container.remove();
+          console.log(`🗑️ Removed pause button container from element for ${elementId}`);
+          removed = true;
+        });
+      }
+
+      console.log(`✅ Play button removal completed for element ${elementId}, removed: ${removed}`);
+      return removed;
+
+    } catch (error) {
+      console.error(`❌ Error removing play button for element ${elementId}:`, error);
+      return false;
     }
   }
 }

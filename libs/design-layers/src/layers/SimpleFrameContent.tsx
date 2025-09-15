@@ -201,7 +201,7 @@ export const SimpleFrameContent: FC<SimpleFrameContentProps> = ({
   useEffect(() => {
     try {
       // Store the color as a data attribute on the DOM element
-      const element = document.querySelector(`.${layerId}`);
+      const element = document.querySelector(`.${CSS.escape(layerId)}`);
       if (element) {
         element.setAttribute('data-frame-color', frameColor);
         console.log(`🎨 Stored frame color for ${layerId}: ${frameColor}`);
@@ -214,7 +214,7 @@ export const SimpleFrameContent: FC<SimpleFrameContentProps> = ({
   // Store frame lock state and animated elements in DOM data attributes for useDragLayer access
   useEffect(() => {
     try {
-      const element = document.querySelector(`.${layerId}`);
+      const element = document.querySelector(`.${CSS.escape(layerId)}`);
       if (element) {
         // Store lock state
         element.setAttribute('data-frame-locked', isLocked.toString());
@@ -348,7 +348,7 @@ export const SimpleFrameContent: FC<SimpleFrameContentProps> = ({
 
       // Immediately update DOM attributes to ensure drag behavior is correct
       try {
-        const element = document.querySelector(`.${layerId}`);
+        const element = document.querySelector(`.${CSS.escape(layerId)}`);
         if (element) {
           element.setAttribute('data-frame-locked', newLockState.toString());
           console.log(`🔄 Immediately updated frame ${layerId} lock state in DOM: ${newLockState}`);
