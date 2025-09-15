@@ -52,7 +52,7 @@ const DesignFrame: FC<DesignFrameProps> = ({ data }) => {
   const contextMenuRef = useRef<HTMLDivElement>(null);
   const draggingItemRef = useRef<HTMLDivElement>(null);
   const { usedFonts } = useUsedFont();
-  const [showTimeline, setShowTimeline] = useState(false);
+  const [showTimeline, setShowTimeline] = useState(true);
   const {
     config: { assetPath },
   } = useContext(EditorContext);
