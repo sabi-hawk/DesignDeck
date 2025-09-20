@@ -342,6 +342,10 @@ export class VideoContainerBuilder {
          e.preventDefault();
          e.stopPropagation();
          
+         // Clear selection when play button is clicked
+         const clearSelectionEvent = new CustomEvent('clearSelectionOnPlay');
+         document.dispatchEvent(clearSelectionEvent);
+         
          // Show the video container
          this.showVideoContainer(videoContainer);
          

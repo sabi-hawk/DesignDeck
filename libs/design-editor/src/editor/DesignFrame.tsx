@@ -128,6 +128,20 @@ const DesignFrame: FC<DesignFrameProps> = ({ data }) => {
       window.removeEventListener('dragend', drop);
     };
   });
+
+  // Listen for custom event to clear selection when play button is clicked
+  useEffect(() => {
+    const handleClearSelectionOnPlay = () => {
+      console.log('🎬 Clearing selection due to play button click');
+      actions.resetSelectLayer();
+    };
+
+    document.addEventListener('clearSelectionOnPlay', handleClearSelectionOnPlay);
+    return () => {
+      document.removeEventListener('clearSelectionOnPlay', handleClearSelectionOnPlay);
+    };
+  }, [actions]);
+
   const boxRef = useRef<HTMLDivElement>(null);
   const { selectedLayerIds } = useSelectedLayers();
 

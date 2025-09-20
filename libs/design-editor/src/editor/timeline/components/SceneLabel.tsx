@@ -29,6 +29,10 @@ export const SceneLabel: React.FC<SceneLabelProps> = ({
         <button
           css={scenePlayButtonStyles(borderColor)}
           onClick={() => {
+            // Clear selection when scene play button is clicked
+            const clearSelectionEvent = new CustomEvent('clearSelectionOnPlay');
+            document.dispatchEvent(clearSelectionEvent);
+            
             // TODO: Implement scene play functionality
             console.log(`Playing scene ${getSceneNumber(parentFrameId)}`);
           }}

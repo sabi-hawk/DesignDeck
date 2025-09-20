@@ -17,6 +17,10 @@ export class VideoEventHandlers {
     playButton.addEventListener('click', (e) => {
       e.stopPropagation();
       
+      // Clear selection when play button is clicked
+      const clearSelectionEvent = new CustomEvent('clearSelectionOnPlay');
+      document.dispatchEvent(clearSelectionEvent);
+      
       // Check if video is ready to play
       if (videoElement.readyState < 2) { // HAVE_CURRENT_DATA
         videoElement.addEventListener('canplay', () => {
