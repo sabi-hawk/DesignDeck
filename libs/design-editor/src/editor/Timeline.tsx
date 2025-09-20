@@ -251,6 +251,24 @@ const Timeline: FC<TimelineProps> = ({ isVisible, onToggle }) => {
     }
   };
 
+  // Check if any element in a scene has completed animation (has resultUrl)
+  const hasCompletedAnimation = (parentFrameId: string): boolean => {
+    try {
+      const framesByParent = getFramesByParentFrame();
+      const sceneFrames = framesByParent.get(parentFrameId);
+      
+      if (!sceneFrames || sceneFrames.length === 0) {
+        return false;
+      }
+
+      // Check if any frame in this scene has a resultUrl
+      return sceneFrames.some(({ frame }) => frame.resultUrl && frame.resultUrl.trim() !== '');
+    } catch (error) {
+      console.error(`Error checking completed animation for scene ${parentFrameId}:`, error);
+      return false;
+    }
+  };
+
   // Check if this segment is the first in its parent frame group
   const isFirstInParentFrameGroup = (segmentIndex: number): boolean => {
     const group = getParentFrameGroupInfo(segmentIndex);
@@ -546,23 +564,67 @@ const Timeline: FC<TimelineProps> = ({ isVisible, onToggle }) => {
                             position: 'absolute',
                             top: '-25px', // Position above the timeline box but within container bounds
                             left: '4px',
-                            background: 'rgba(0, 0, 0, 0.9)',
-                            color: 'white',
-                            fontSize: '10px',
-                            fontWeight: 'bold',
-                            padding: '2px 6px',
-                            borderRadius: '3px',
-                            whiteSpace: 'nowrap',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '6px',
                             zIndex: 30,
-                            boxShadow: '0 2px 4px rgba(0, 0, 0, 0.5)',
-                            border: `1px solid ${
-                              frame?.parentFrameBorderColor || '#ff0000'
-                            }`,
-                            textShadow: '0 1px 2px rgba(0, 0, 0, 0.8)',
                           }}
                         >
-                          Scene{' '}
-                          {getSceneNumber(parentFrameGroupInfo.parentFrameId)}
+                          {/* Scene Text */}
+                          <div
+                            css={{
+                              background: 'rgba(0, 0, 0, 0.9)',
+                              color: 'white',
+                              fontSize: '10px',
+                              fontWeight: 'bold',
+                              padding: '2px 6px',
+                              borderRadius: '3px',
+                              whiteSpace: 'nowrap',
+                              boxShadow: '0 2px 4px rgba(0, 0, 0, 0.5)',
+                              border: `1px solid ${
+                                frame?.parentFrameBorderColor || '#ff0000'
+                              }`,
+                              textShadow: '0 1px 2px rgba(0, 0, 0, 0.8)',
+                            }}
+                          >
+                            Scene{' '}
+                            {getSceneNumber(parentFrameGroupInfo.parentFrameId)}
+                          </div>
+                          
+                          {/* Play Button - Only show if scene has completed animation */}
+                          {hasCompletedAnimation(parentFrameGroupInfo.parentFrameId) && (
+                            <button
+                              css={{
+                                background: 'rgba(0, 0, 0, 0.9)',
+                                border: `1px solid ${
+                                  frame?.parentFrameBorderColor || '#ff0000'
+                                }`,
+                                borderRadius: '3px',
+                                color: 'white',
+                                padding: '2px 6px',
+                                fontSize: '10px',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '4px',
+                                boxShadow: '0 2px 4px rgba(0, 0, 0, 0.5)',
+                                transition: 'all 0.2s ease',
+                                '&:hover': {
+                                  background: 'rgba(255, 255, 255, 0.1)',
+                                  transform: 'scale(1.05)',
+                                },
+                                '&:active': {
+                                  transform: 'scale(0.95)',
+                                },
+                              }}
+                              onClick={() => {
+                                // TODO: Implement scene play functionality
+                                console.log(`Playing scene ${getSceneNumber(parentFrameGroupInfo.parentFrameId)}`);
+                              }}
+                            >
+                              ▶️ Play
+                            </button>
+                          )}
                         </div>
                       )}
 
