@@ -38,7 +38,7 @@ import { useUsedFont } from '../layers/hooks/useUsedFont';
 import DesignPage from './DesignPage';
 import { DraggingLayer } from './dragging/DraggingLayer';
 import { EditorContext } from './EditorContext';
-import Timeline from './Timeline';
+import Timeline from './timeline/Timeline';
 
 interface DesignFrameProps {
   data: SerializedPage[];
