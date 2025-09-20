@@ -1,4 +1,3 @@
-import { css } from '@emotion/react';
 import React from 'react';
 import { 
   timelineRulerStyles, 
@@ -41,7 +40,7 @@ export const TimelineContent: React.FC<TimelineContentProps> = ({
       <div css={timelineScrollContainerStyles}>
         <div css={timelineContentContainerStyles(timelineWidth)}>
           {/* Timeline Segments with Thumbnails */}
-          {animatedSegments.map(({ segmentIndex, frame }) => {
+          {animatedSegments.map(({ segmentIndex, frame, sceneRelativeIndex }) => {
             const parentFrameGroupInfo = getParentFrameGroupInfo(segmentIndex, parentFrameGroupMapping);
             const isFirstInGroup = isFirstInParentFrameGroup(segmentIndex, parentFrameGroupMapping);
             const isLastInGroup = isLastInParentFrameGroup(segmentIndex, parentFrameGroupMapping);
@@ -49,15 +48,16 @@ export const TimelineContent: React.FC<TimelineContentProps> = ({
             return (
               <TimelineSegment
                 key={segmentIndex}
-                segmentIndex={segmentIndex}
                 frame={frame}
-                segmentWidth={segmentWidth}
-                timelineScale={timelineScale}
-                parentFrameGroupInfo={parentFrameGroupInfo}
-                isFirstInGroup={isFirstInGroup}
-                isLastInGroup={isLastInGroup}
                 getSceneNumber={(parentFrameId) => getSceneNumber(parentFrameId, pages)}
                 hasCompletedAnimation={(parentFrameId) => hasCompletedAnimation(parentFrameId, framesByParent)}
+                isFirstInGroup={isFirstInGroup}
+                isLastInGroup={isLastInGroup}
+                parentFrameGroupInfo={parentFrameGroupInfo}
+                sceneRelativeIndex={sceneRelativeIndex}
+                segmentIndex={segmentIndex}
+                segmentWidth={segmentWidth}
+                timelineScale={timelineScale}
               />
             );
           })}

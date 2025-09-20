@@ -1,5 +1,4 @@
 import React from 'react';
-import { css } from '@emotion/react';
 import { getSegmentStyles } from '../styles/segmentStyles';
 import { animationOrderNumberStyles } from '../styles/timelineStyles';
 import { SceneLabel } from './SceneLabel';
@@ -15,6 +14,7 @@ interface TimelineSegmentProps {
   isLastInGroup: boolean;
   getSceneNumber: (parentFrameId: string) => number;
   hasCompletedAnimation: (parentFrameId: string) => boolean;
+  sceneRelativeIndex: number;
 }
 
 export const TimelineSegment: React.FC<TimelineSegmentProps> = ({
@@ -26,7 +26,8 @@ export const TimelineSegment: React.FC<TimelineSegmentProps> = ({
   isFirstInGroup,
   isLastInGroup,
   getSceneNumber,
-  hasCompletedAnimation
+  hasCompletedAnimation,
+  sceneRelativeIndex
 }) => {
   const startTime = segmentIndex * timelineScale;
   const borderColor = frame?.parentFrameBorderColor || '#ff0000';
@@ -39,16 +40,16 @@ export const TimelineSegment: React.FC<TimelineSegmentProps> = ({
       {/* Scene Label - Above Timeline Border */}
       {parentFrameGroupInfo && isFirstInGroup && (
         <SceneLabel
-          parentFrameId={parentFrameGroupInfo.parentFrameId}
           frame={frame}
           getSceneNumber={getSceneNumber}
           hasCompletedAnimation={hasCompletedAnimation}
+          parentFrameId={parentFrameGroupInfo.parentFrameId}
         />
       )}
 
       {/* Animation Order Number - Top Left Corner of each box */}
       <div css={animationOrderNumberStyles(borderColor)}>
-        {segmentIndex + 1}
+        {sceneRelativeIndex + 1}
       </div>
 
       {/* Thumbnail if frames exist */}

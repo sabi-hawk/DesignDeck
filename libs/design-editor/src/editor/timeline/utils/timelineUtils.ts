@@ -132,15 +132,32 @@ export const isLastInParentFrameGroup = (
 
 export const getAnimatedSegments = (
   framesByIndex: Map<number, AnimationFrame[]>
-): { segmentIndex: number; frame: AnimationFrame }[] => {
-  const segments: { segmentIndex: number; frame: AnimationFrame }[] = [];
+): { segmentIndex: number; frame: AnimationFrame; sceneRelativeIndex: number }[] => {
+  const segments: { segmentIndex: number; frame: AnimationFrame; sceneRelativeIndex: number }[] = [];
+  
+  // Create a map to track scene-relative indices for each parent frame
+  const sceneRelativeIndices = new Map<string, number>();
   
   for (const [frameIndex, frames] of framesByIndex.entries()) {
     if (frames.length > 0) {
+      const frame = frames[0];
+      const parentFrameId = frame.parentFrameId;
+      
+      // Get or initialize the scene-relative index for this parent frame
+      if (!sceneRelativeIndices.has(parentFrameId)) {
+        sceneRelativeIndices.set(parentFrameId, 0);
+      }
+      
+      const currentSceneIndex = sceneRelativeIndices.get(parentFrameId)!;
+      
       segments.push({
         segmentIndex: frameIndex,
-        frame: frames[0]
+        frame: frame,
+        sceneRelativeIndex: currentSceneIndex
       });
+      
+      // Increment the scene-relative index for this parent frame
+      sceneRelativeIndices.set(parentFrameId, currentSceneIndex + 1);
     }
   }
   
