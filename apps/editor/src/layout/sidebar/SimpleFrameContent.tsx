@@ -45,7 +45,7 @@ const SimpleFrameContent: FC<{ onClose: () => void }> = ({ onClose }) => {
             textAlign: 'center',
           }}
         >
-          Advanced Frame
+          Advanced Scene
         </p>
         
         {/* Close button */}
@@ -117,7 +117,7 @@ const SimpleFrameContent: FC<{ onClose: () => void }> = ({ onClose }) => {
               marginBottom: 8,
             }}
           >
-            Advanced Frame
+            Advanced Scene
           </div>
           <div
             css={{
@@ -172,7 +172,7 @@ const SimpleFrameContent: FC<{ onClose: () => void }> = ({ onClose }) => {
               marginBottom: 12,
             }}
           >
-            Advanced content management with smart grouping technology. Lock the frame to create unified content groups that move as cohesive units, or unlock for granular control over individual elements.
+            Advanced content management with smart grouping technology. Lock the scene to create unified content groups that move as cohesive units, or unlock for granular control over individual elements.
           </div>
         </div>
 
@@ -232,7 +232,7 @@ const SimpleFrameContent: FC<{ onClose: () => void }> = ({ onClose }) => {
               lineHeight: 1.5,
             }}
           >
-            Dynamic dimension monitoring system providing real-time pixel-perfect measurements at the bottom-right corner. Updates instantaneously during frame manipulation operations.
+            Dynamic dimension monitoring system providing real-time pixel-perfect measurements at the bottom-right corner. Updates instantaneously during scene manipulation operations.
           </div>
         </div>
       </div>
