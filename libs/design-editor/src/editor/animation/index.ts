@@ -34,3 +34,6 @@ export * from './utils';
 
 // Element Lock Icon
 export { addLockIconToElement, removeLockIconFromElement, hasLockIcon } from './elementLockIcon';
+
+// Element Animation Number
+export { addAnimationNumberToElement, removeAnimationNumberFromElement, updateAnimationNumberForElement } from './elementAnimationNumber';

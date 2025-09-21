@@ -1,5 +1,6 @@
 import { toPng } from 'html-to-image';
 import { submitFrameToAPI, pollForResult } from './apiService';
+import { addAnimationNumberToElement, removeAnimationNumberFromElement, updateAnimationNumberForElement } from './elementAnimationNumber';
 import { addLockIconToElement, removeLockIconFromElement } from './elementLockIcon';
 import FrameVideoReplacer from './FrameVideoReplacer';
 import { 
@@ -165,6 +166,13 @@ class AnimationService {
       
       // Add lock icon to the element immediately when animation starts
       addLockIconToElement(elementId);
+      
+      // Add animation number to the element (scene-relative index + 1 for display)
+      const sceneRelativeIndex = this.getSceneRelativeIndex(elementId);
+      addAnimationNumberToElement(elementId, sceneRelativeIndex + 1, this.pages);
+      
+      // Refresh all animation numbers to ensure correct scene-relative numbering
+      this.refreshAllAnimationNumbers();
 
       // Notify callback
       if (this.onElementAnimationStarted) {
@@ -213,6 +221,9 @@ class AnimationService {
         
         // Remove lock icon from the element
         removeLockIconFromElement(elementId);
+        
+        // Remove animation number from the element
+        removeAnimationNumberFromElement(elementId);
         
         // Notify callback
         if (this.onElementAnimationStopped) {
@@ -363,6 +374,9 @@ class AnimationService {
         this.animatedElements.set(element.id, element);
       });
       
+      // Update animation numbers using scene-relative indices
+      this.refreshAllAnimationNumbers();
+      
       // Renumber animation frames to match the new frameIndex values
       const framesArray = Array.from(this.animationFrames.values());
       
@@ -388,6 +402,50 @@ class AnimationService {
       }
     } catch (error) {
       console.error(`❌ Error renumbering animated elements:`, error);
+    }
+  }
+
+  /**
+   * Refresh animation numbers for all elements using scene-relative indices
+   */
+  private refreshAllAnimationNumbers(): void {
+    try {
+      for (const element of this.animatedElements.values()) {
+        const sceneRelativeIndex = this.getSceneRelativeIndex(element.id);
+        updateAnimationNumberForElement(element.id, sceneRelativeIndex + 1);
+      }
+    } catch (error) {
+      console.error(`❌ Error refreshing animation numbers:`, error);
+    }
+  }
+
+  /**
+   * Get scene-relative index for an element within its parent frame
+   */
+  private getSceneRelativeIndex(elementId: string): number {
+    try {
+      const animatedElement = this.animatedElements.get(elementId);
+      if (!animatedElement) {
+        return 0;
+      }
+
+      const parentFrameId = animatedElement.parentFrameId;
+      if (!parentFrameId) {
+        return 0;
+      }
+
+      // Get all animated elements in the same parent frame
+      const elementsInSameFrame = Array.from(this.animatedElements.values())
+        .filter(element => element.parentFrameId === parentFrameId)
+        .sort((a, b) => a.frameIndex - b.frameIndex);
+
+      // Find the index of the current element within its parent frame
+      const sceneRelativeIndex = elementsInSameFrame.findIndex(element => element.id === elementId);
+      
+      return sceneRelativeIndex >= 0 ? sceneRelativeIndex : 0;
+    } catch (error) {
+      console.error(`❌ Error calculating scene-relative index for element ${elementId}:`, error);
+      return 0;
     }
   }
 
