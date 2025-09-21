@@ -71,7 +71,7 @@ export const timelineRulerStyles = css`
   position: relative;
   overflow: visible;
   margin-bottom: 20px;
-  padding-top: 30px;
+  padding-top: 40px;
 `;
 
 export const timelineScrollContainerStyles = css`
@@ -106,6 +106,7 @@ export const timelineContentContainerStyles = (timelineWidth: number) => css`
   display: flex;
   align-items: center;
   position: relative;
+  overflow: visible;
 `;
 
 export const sceneLabelContainerStyles = css`
@@ -188,7 +189,6 @@ export const thumbnailStyles = (hasResultUrl: boolean) => css`
   display: flex;
   align-items: center;
   justify-content: center;
-  overflow: hidden;
   position: absolute;
   top: 0;
   left: 0;

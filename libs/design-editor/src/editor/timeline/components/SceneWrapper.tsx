@@ -26,12 +26,15 @@ const sceneWrapperStyles = (borderColor: string, totalWidth: number) => css({
   flexDirection: 'row',
   alignItems: 'flex-start',
   marginRight: '20px',
+  marginTop: '15px', // Add space from timeline header
   border: `2px solid ${borderColor}`,
   borderRadius: '8px',
   padding: '8px',
   paddingTop: '12px', // Space for scene label
+  // paddingBottom: '30px', // More space for duration display
   background: 'rgba(0, 0, 0, 0.1)',
   minWidth: totalWidth + 16, // Add padding width
+  overflow: 'visible', // Allow duration to be visible outside
   '&:last-child': {
     marginRight: 0,
   },
@@ -43,6 +46,8 @@ const sceneContentStyles = css({
   alignItems: 'flex-start',
   gap: '4px',
   width: '100%',
+  paddingBottom: '30px', // More space for duration display outside thumbnail
+  overflow: 'visible', // Allow duration to be visible outside
 });
 
 export const SceneWrapper: React.FC<SceneWrapperProps> = ({
@@ -81,7 +86,7 @@ export const SceneWrapper: React.FC<SceneWrapperProps> = ({
               background: 'rgba(64, 87, 109, 0.1)',
               border: `2px solid ${borderColor}`,
               borderRadius: '6px',
-              overflow: 'hidden',
+              // overflow: 'hidden',
             }}
           >
 

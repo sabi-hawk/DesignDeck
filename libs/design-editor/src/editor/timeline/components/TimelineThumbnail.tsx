@@ -138,6 +138,30 @@ export const TimelineThumbnail: React.FC<TimelineThumbnailProps> = ({
           Invalid Image Data
         </div>
       )}
+
+      {/* Duration Display - Below Thumbnail */}
+      {frame?.settings?.sketchingDuration && (
+        <div css={{
+          position: 'absolute',
+          bottom: '-32px',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          background: 'rgba(0, 0, 0, 0.95)',
+          color: 'white',
+          fontSize: '10px',
+          fontWeight: 'bold',
+          padding: '4px 10px',
+          borderRadius: '6px',
+          zIndex: 50,
+          border: '2px solid rgba(255, 255, 255, 0.6)',
+          whiteSpace: 'nowrap',
+          boxShadow: '0 3px 8px rgba(0, 0, 0, 0.7)',
+          minWidth: '30px',
+          textAlign: 'center',
+        }}>
+          {frame.settings.sketchingDuration}s
+        </div>
+      )}
     </div>
   );
 };
