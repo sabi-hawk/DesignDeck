@@ -6,15 +6,11 @@ import {
 } from '../styles/timelineStyles';
 import { 
   getFramesByParentFrame, 
-  getParentFrameGroupMapping, 
-  getParentFrameGroupInfo,
   getSceneNumber,
   hasCompletedAnimation,
-  isFirstInParentFrameGroup,
-  isLastInParentFrameGroup,
   getAnimatedSegments
 } from '../utils/timelineUtils';
-import { TimelineSegment } from './TimelineSegment';
+import { SceneWrapper } from './SceneWrapper';
 
 interface TimelineContentProps {
   animationService: any;
@@ -31,33 +27,66 @@ export const TimelineContent: React.FC<TimelineContentProps> = ({
 }) => {
   const framesByIndex = animationService.getFramesByIndex();
   const framesByParent = getFramesByParentFrame(framesByIndex);
-  const parentFrameGroupMapping = getParentFrameGroupMapping(framesByParent);
   const animatedSegments = getAnimatedSegments(framesByIndex);
-  const timelineWidth = animatedSegments.length > 0 ? animatedSegments.length * segmentWidth : 800;
+
+  // Group segments by parent frame (scene)
+  const sceneGroups = new Map<string, Array<{
+    segmentIndex: number;
+    frame: any;
+    sceneRelativeIndex: number;
+  }>>();
+
+  // Organize segments by parent frame
+  animatedSegments.forEach(({ segmentIndex, frame, sceneRelativeIndex }) => {
+    const parentFrameId = frame.parentFrameId;
+    if (!sceneGroups.has(parentFrameId)) {
+      sceneGroups.set(parentFrameId, []);
+    }
+    sceneGroups.get(parentFrameId)!.push({
+      segmentIndex,
+      frame,
+      sceneRelativeIndex
+    });
+  });
+
+  // Sort scenes by their first segment index to maintain order
+  const sortedScenes = Array.from(sceneGroups.entries()).sort(([, segmentsA], [, segmentsB]) => {
+    const minIndexA = Math.min(...segmentsA.map(s => s.segmentIndex));
+    const minIndexB = Math.min(...segmentsB.map(s => s.segmentIndex));
+    return minIndexA - minIndexB;
+  });
+
+  // Calculate total width for all scenes
+  const totalSceneWidth = sortedScenes.reduce((total, [, segments]) => {
+    return total + (segments.length * segmentWidth) + 40; // Add margin between scenes
+  }, 0);
+  
+  const timelineWidth = Math.max(totalSceneWidth, 800);
 
   return (
     <div css={timelineRulerStyles}>
       <div css={timelineScrollContainerStyles}>
         <div css={timelineContentContainerStyles(timelineWidth)}>
-          {/* Timeline Segments with Thumbnails */}
-          {animatedSegments.map(({ segmentIndex, frame, sceneRelativeIndex }) => {
-            const parentFrameGroupInfo = getParentFrameGroupInfo(segmentIndex, parentFrameGroupMapping);
-            const isFirstInGroup = isFirstInParentFrameGroup(segmentIndex, parentFrameGroupMapping);
-            const isLastInGroup = isLastInParentFrameGroup(segmentIndex, parentFrameGroupMapping);
+          {/* Scene Wrappers */}
+          {sortedScenes.map(([parentFrameId, segments]) => {
+            const firstFrame = segments[0]?.frame;
+            const borderColor = firstFrame?.parentFrameBorderColor || '#ff0000';
+            const sceneNumber = getSceneNumber(parentFrameId, pages);
+            const hasCompleted = hasCompletedAnimation(parentFrameId, framesByParent);
 
             return (
-              <TimelineSegment
-                key={segmentIndex}
-                frame={frame}
-                getSceneNumber={(parentFrameId) => getSceneNumber(parentFrameId, pages)}
-                hasCompletedAnimation={(parentFrameId) => hasCompletedAnimation(parentFrameId, framesByParent)}
-                isFirstInGroup={isFirstInGroup}
-                isLastInGroup={isLastInGroup}
-                parentFrameGroupInfo={parentFrameGroupInfo}
-                sceneRelativeIndex={sceneRelativeIndex}
-                segmentIndex={segmentIndex}
+              <SceneWrapper
+                key={parentFrameId}
+                parentFrameId={parentFrameId}
+                sceneNumber={sceneNumber}
+                segments={segments}
                 segmentWidth={segmentWidth}
                 timelineScale={timelineScale}
+                borderColor={borderColor}
+                hasCompletedAnimation={hasCompleted}
+                getSceneNumber={(id) => getSceneNumber(id, pages)}
+                hasCompletedAnimationFn={(id) => hasCompletedAnimation(id, framesByParent)}
+                pages={pages}
               />
             );
           })}

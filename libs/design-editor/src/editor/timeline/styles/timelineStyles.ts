@@ -110,25 +110,27 @@ export const timelineContentContainerStyles = (timelineWidth: number) => css`
 
 export const sceneLabelContainerStyles = css`
   position: absolute;
-  top: -25px;
-  left: 4px;
+  top: -30px;
+  left: 8px;
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   z-index: 30;
+  white-space: nowrap;
 `;
 
 export const sceneTextStyles = (borderColor: string) => css`
   background: rgba(0, 0, 0, 0.9);
   color: white;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: bold;
-  padding: 2px 6px;
-  border-radius: 3px;
+  padding: 4px 8px;
+  border-radius: 4px;
   white-space: nowrap;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.6);
   border: 1px solid ${borderColor};
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+  min-width: fit-content;
 `;
 
 export const scenePlayButtonStyles = (borderColor: string) => css`
@@ -136,7 +138,7 @@ export const scenePlayButtonStyles = (borderColor: string) => css`
   border: 1px solid ${borderColor};
   border-radius: 3px;
   color: white;
-  padding: 2px 6px;
+  padding: 4px 8px;
   font-size: 10px;
   cursor: pointer;
   display: flex;
@@ -144,6 +146,8 @@ export const scenePlayButtonStyles = (borderColor: string) => css`
   gap: 4px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
   transition: all 0.2s ease;
+  white-space: nowrap;
+  min-width: fit-content;
 
   &:hover {
     background: rgba(255, 255, 255, 0.1);

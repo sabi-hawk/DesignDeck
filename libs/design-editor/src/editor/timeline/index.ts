@@ -1,6 +1,7 @@
 export { default as Timeline } from './Timeline';
 export { AnimationSettings } from './types';
 export * from './components/SceneLabel';
+export * from './components/SceneWrapper';
 export * from './components/TimelineThumbnail';
 export * from './components/TimelineSegment';
 export * from './components/TimelineContent';
