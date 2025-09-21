@@ -62,7 +62,23 @@ export const SceneWrapper: React.FC<SceneWrapperProps> = ({
   hasCompletedAnimationFn,
   pages
 }) => {
-  const totalWidth = segments.length * (segmentWidth + 4); // Include gap between segments
+  // Calculate dynamic widths based on duration (1-10 seconds range)
+  const calculateSegmentWidth = (duration: number): number => {
+    const minWidth = 60; // Minimum visible width
+    const maxWidth = 200; // Maximum width for 10 seconds
+    
+    // Scale from 1-10 seconds to minWidth-maxWidth
+    const scale = (duration - 1) / (10 - 1); // 0 to 1 scale
+    const dynamicWidth = minWidth + (scale * (maxWidth - minWidth));
+    
+    return Math.max(dynamicWidth, minWidth); // Ensure minimum width
+  };
+
+  // Calculate total width based on dynamic segment widths
+  const totalWidth = segments.reduce((total, segment) => {
+    const duration = segment.frame?.settings?.sketchingDuration || 5; // Default to 5 seconds
+    return total + calculateSegmentWidth(duration) + 4; // Include gap
+  }, 0);
 
   return (
     <div css={sceneWrapperStyles(borderColor, totalWidth)}>
@@ -76,30 +92,35 @@ export const SceneWrapper: React.FC<SceneWrapperProps> = ({
 
       {/* Scene Content - Timeline segments */}
       <div css={sceneContentStyles}>
-        {segments.map(({ segmentIndex, frame, sceneRelativeIndex }) => (
-          <div
-            key={segmentIndex}
-            css={{
-              position: 'relative',
-              width: segmentWidth,
-              height: '80px',
-              background: 'rgba(64, 87, 109, 0.1)',
-              border: `2px solid ${borderColor}`,
-              borderRadius: '6px',
-              // overflow: 'hidden',
-            }}
-          >
+        {segments.map(({ segmentIndex, frame, sceneRelativeIndex }) => {
+          const duration = frame?.settings?.sketchingDuration || 5; // Default to 5 seconds
+          const dynamicWidth = calculateSegmentWidth(duration);
+          
+          return (
+            <div
+              key={segmentIndex}
+              css={{
+                position: 'relative',
+                width: `${dynamicWidth}px`,
+                height: '80px',
+                background: 'rgba(64, 87, 109, 0.1)',
+                border: `2px solid ${borderColor}`,
+                borderRadius: '6px',
+                // overflow: 'hidden',
+              }}
+            >
 
-            {/* Thumbnail Content */}
-            {frame && (
-              <TimelineThumbnail
-                frame={frame}
-                sceneRelativeIndex={sceneRelativeIndex}
-                startTime={segmentIndex * timelineScale}
-              />
-            )}
-          </div>
-        ))}
+              {/* Thumbnail Content */}
+              {frame && (
+                <TimelineThumbnail
+                  frame={frame}
+                  sceneRelativeIndex={sceneRelativeIndex}
+                  startTime={segmentIndex * timelineScale}
+                />
+              )}
+            </div>
+          );
+        })}
       </div>
     </div>
   );

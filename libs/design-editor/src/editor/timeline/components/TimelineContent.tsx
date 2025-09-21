@@ -56,9 +56,25 @@ export const TimelineContent: React.FC<TimelineContentProps> = ({
     return minIndexA - minIndexB;
   });
 
-  // Calculate total width for all scenes
+  // Calculate dynamic segment width based on duration
+  const calculateSegmentWidth = (duration: number): number => {
+    const minWidth = 60; // Minimum visible width
+    const maxWidth = 200; // Maximum width for 10 seconds
+    
+    // Scale from 1-10 seconds to minWidth-maxWidth
+    const scale = (duration - 1) / (10 - 1); // 0 to 1 scale
+    const dynamicWidth = minWidth + (scale * (maxWidth - minWidth));
+    
+    return Math.max(dynamicWidth, minWidth); // Ensure minimum width
+  };
+
+  // Calculate total width for all scenes based on dynamic segment widths
   const totalSceneWidth = sortedScenes.reduce((total, [, segments]) => {
-    return total + (segments.length * segmentWidth) + 40; // Add margin between scenes
+    const sceneWidth = segments.reduce((sceneTotal, segment) => {
+      const duration = segment.frame?.settings?.sketchingDuration || 5; // Default to 5 seconds
+      return sceneTotal + calculateSegmentWidth(duration) + 4; // Include gap
+    }, 0);
+    return total + sceneWidth + 40; // Add margin between scenes
   }, 0);
   
   const timelineWidth = Math.max(totalSceneWidth, 800);
@@ -77,16 +93,16 @@ export const TimelineContent: React.FC<TimelineContentProps> = ({
             return (
               <SceneWrapper
                 key={parentFrameId}
-                parentFrameId={parentFrameId}
-                sceneNumber={sceneNumber}
-                segments={segments}
-                segmentWidth={segmentWidth}
-                timelineScale={timelineScale}
                 borderColor={borderColor}
-                hasCompletedAnimation={hasCompleted}
                 getSceneNumber={(id) => getSceneNumber(id, pages)}
+                hasCompletedAnimation={hasCompleted}
                 hasCompletedAnimationFn={(id) => hasCompletedAnimation(id, framesByParent)}
                 pages={pages}
+                parentFrameId={parentFrameId}
+                sceneNumber={sceneNumber}
+                segmentWidth={segmentWidth}
+                segments={segments}
+                timelineScale={timelineScale}
               />
             );
           })}
