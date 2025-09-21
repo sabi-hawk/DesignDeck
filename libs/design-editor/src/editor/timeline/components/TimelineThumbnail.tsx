@@ -19,11 +19,13 @@ import {
 interface TimelineThumbnailProps {
   frame: any;
   startTime: number;
+  sceneRelativeIndex?: number;
 }
 
 export const TimelineThumbnail: React.FC<TimelineThumbnailProps> = ({
   frame,
-  startTime
+  startTime,
+  sceneRelativeIndex
 }) => {
   const hasResultUrl = !!frame.resultUrl;
 
@@ -42,6 +44,25 @@ export const TimelineThumbnail: React.FC<TimelineThumbnailProps> = ({
           ? `${Math.round(frame.imageDataUrl.length / 1024)}KB`
           : '0KB'}
       </div>
+
+      {/* Animation Order Number - Top Left Corner */}
+      {sceneRelativeIndex !== undefined && (
+        <div css={{
+          position: 'absolute',
+          top: '4px',
+          left: '4px',
+          background: 'rgba(0, 0, 0, 0.8)',
+          color: 'white',
+          fontSize: '10px',
+          fontWeight: 'bold',
+          padding: '2px 6px',
+          borderRadius: '3px',
+          zIndex: 20,
+          border: '1px solid rgba(255, 255, 255, 0.3)',
+        }}>
+          {sceneRelativeIndex + 1}
+        </div>
+      )}
 
       {/* Processing Status Overlay */}
       {!frame.resultUrl && frame.progress !== -1 && (

@@ -1,6 +1,7 @@
 import { css } from '@emotion/react';
 import React from 'react';
 import { SceneLabel } from './SceneLabel';
+import { TimelineThumbnail } from './TimelineThumbnail';
 
 interface SceneWrapperProps {
   parentFrameId: string;
@@ -80,87 +81,17 @@ export const SceneWrapper: React.FC<SceneWrapperProps> = ({
               background: 'rgba(64, 87, 109, 0.1)',
               border: `2px solid ${borderColor}`,
               borderRadius: '6px',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
               overflow: 'hidden',
             }}
           >
-            {/* Animation Order Number - Top Left Corner */}
-            <div css={{
-              position: 'absolute',
-              top: '4px',
-              left: '4px',
-              background: 'rgba(0, 0, 0, 0.8)',
-              color: 'white',
-              fontSize: '10px',
-              fontWeight: 'bold',
-              padding: '2px 6px',
-              borderRadius: '3px',
-              zIndex: 10,
-              border: `1px solid ${borderColor}`,
-            }}>
-              {sceneRelativeIndex + 1}
-            </div>
 
             {/* Thumbnail Content */}
             {frame && (
-              <div css={{
-                width: '100%',
-                height: '100%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                position: 'relative',
-              }}>
-                {frame.progress === 100 && frame.resultUrl ? (
-                  <div css={{
-                    width: '100%',
-                    height: '100%',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    background: 'rgba(34, 197, 94, 0.2)',
-                    color: '#22c55e',
-                    fontSize: '12px',
-                    fontWeight: 'bold',
-                  }}>
-                    <div css={{ textAlign: 'center' }}>
-                      <div>✓</div>
-                      <div style={{ fontSize: '8px', marginTop: '2px' }}>Ready</div>
-                    </div>
-                  </div>
-                ) : frame.progress > 0 ? (
-                  <div css={{
-                    width: '100%',
-                    height: '100%',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    background: 'rgba(59, 130, 246, 0.2)',
-                    color: '#3b82f6',
-                    fontSize: '10px',
-                    fontWeight: 'bold',
-                  }}>
-                    {frame.progress}%
-                  </div>
-                ) : (
-                  <div css={{
-                    width: '100%',
-                    height: '100%',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    background: 'rgba(107, 114, 128, 0.2)',
-                    color: '#6b7280',
-                    fontSize: '10px',
-                    fontWeight: 'bold',
-                  }}>
-                    Processing...
-                  </div>
-                )}
-              </div>
+              <TimelineThumbnail
+                frame={frame}
+                sceneRelativeIndex={sceneRelativeIndex}
+                startTime={segmentIndex * timelineScale}
+              />
             )}
           </div>
         ))}

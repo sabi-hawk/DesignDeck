@@ -180,8 +180,8 @@ export const animationOrderNumberStyles = (borderColor: string) => css`
 `;
 
 export const thumbnailStyles = (hasResultUrl: boolean) => css`
-  height: 70px;
-  width: 100px;
+  height: 100%;
+  width: 100%;
   background: rgba(0, 0, 0, 0.3);
   border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 4px;
@@ -190,7 +190,8 @@ export const thumbnailStyles = (hasResultUrl: boolean) => css`
   justify-content: center;
   overflow: hidden;
   position: absolute;
-  top: 25px;
+  top: 0;
+  left: 0;
   cursor: ${hasResultUrl ? 'pointer' : 'default'};
 
   ${hasResultUrl && css`
@@ -298,7 +299,7 @@ export const successOverlayStyles = css`
 export const playButtonIconStyles = css`
   position: absolute;
   top: 4px;
-  left: 4px;
+  right: 4px;
   width: 16px;
   height: 16px;
   background: rgba(0, 0, 0, 0.7);
