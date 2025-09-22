@@ -23,7 +23,7 @@ export const Timeline: FC<TimelineProps> = ({ isVisible, onToggle }) => {
     state: { pages },
   } = useEditor();
 
-  const { animationService, currentFrames } = useTimelineData(pages);
+  const { animationService, currentFrames, refreshKey } = useTimelineData(pages);
   const {
     showAnimationPopup,
     selectedElementId,
@@ -80,6 +80,7 @@ export const Timeline: FC<TimelineProps> = ({ isVisible, onToggle }) => {
         {/* Timeline Content */}
         <div css={timelineContentStyles}>
           <TimelineContent
+            key={refreshKey}
             animationService={animationService}
             pages={pages}
             segmentWidth={segmentWidth}

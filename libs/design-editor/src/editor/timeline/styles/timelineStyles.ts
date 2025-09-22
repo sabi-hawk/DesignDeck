@@ -13,6 +13,7 @@ export const timelineContainerStyles = css`
   transition: bottom 0.3s ease;
   margin: 0 auto;
   max-width: calc(100vw - 146px);
+  pointer-events: auto;
 `;
 
 export const timelineContainerHiddenStyles = css`
@@ -52,6 +53,7 @@ export const timelineHeaderStyles = css`
   padding: 0 16px;
   border-bottom: 1px solid #4a5568;
   background: rgba(255, 255, 255, 0.05);
+  pointer-events: auto;
 `;
 
 export const timelineHeaderTextStyles = css`
@@ -63,6 +65,7 @@ export const timelineHeaderTextStyles = css`
 export const timelineContentStyles = css`
   padding: 8px 16px 8px 16px;
   height: 188px;
+  pointer-events: auto;
 `;
 
 export const timelineRulerStyles = css`
@@ -72,6 +75,7 @@ export const timelineRulerStyles = css`
   overflow: visible;
   margin-bottom: 20px;
   padding-top: 40px;
+  pointer-events: auto;
 `;
 
 export const timelineScrollContainerStyles = css`
@@ -80,6 +84,7 @@ export const timelineScrollContainerStyles = css`
   position: relative;
   scrollbar-width: thin;
   scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
+  pointer-events: auto;
 
   &::-webkit-scrollbar {
     height: 8px;
@@ -107,6 +112,7 @@ export const timelineContentContainerStyles = (timelineWidth: number) => css`
   align-items: center;
   position: relative;
   overflow: visible;
+  pointer-events: auto;
 `;
 
 export const sceneLabelContainerStyles = css`
@@ -192,7 +198,12 @@ export const thumbnailStyles = (hasResultUrl: boolean) => css`
   position: absolute;
   top: 0;
   left: 0;
-  cursor: ${hasResultUrl ? 'pointer' : 'default'};
+  user-select: none;
+  pointer-events: auto;
+  -webkit-user-drag: element;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
 
   ${hasResultUrl && css`
     &:hover {
@@ -300,8 +311,8 @@ export const playButtonIconStyles = css`
   position: absolute;
   top: 4px;
   right: 4px;
-  width: 16px;
-  height: 16px;
+  width: 22px;
+  height: 22px;
   background: rgba(0, 0, 0, 0.7);
   border-radius: 3px;
   display: flex;

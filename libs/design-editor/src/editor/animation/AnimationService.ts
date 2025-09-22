@@ -410,10 +410,13 @@ class AnimationService {
    */
   private refreshAllAnimationNumbers(): void {
     try {
+      console.log('🔄 Refreshing all animation numbers...');
       for (const element of this.animatedElements.values()) {
         const sceneRelativeIndex = this.getSceneRelativeIndex(element.id);
+        console.log(`🔄 Updating element ${element.id} to number ${sceneRelativeIndex + 1}`);
         updateAnimationNumberForElement(element.id, sceneRelativeIndex + 1);
       }
+      console.log('✅ All animation numbers refreshed');
     } catch (error) {
       console.error(`❌ Error refreshing animation numbers:`, error);
     }
@@ -471,6 +474,67 @@ class AnimationService {
    */
   getAnimatedElementIds(): string[] {
     return Array.from(this.animatedElements.keys());
+  }
+
+  /**
+   * Reorder frames within a scene
+   */
+  reorderFramesInScene(sceneId: string, fromIndex: number, toIndex: number): boolean {
+    try {
+      // Get all frames for this scene
+      const sceneFrames = Array.from(this.animationFrames.values())
+        .filter(frame => frame.parentFrameId === sceneId)
+        .sort((a, b) => a.frameIndex - b.frameIndex);
+
+      if (fromIndex < 0 || fromIndex >= sceneFrames.length || 
+          toIndex < 0 || toIndex >= sceneFrames.length) {
+        console.warn('Invalid indices for reordering frames');
+        return false;
+      }
+
+      // Create a copy of the frames array
+      const reorderedFrames = [...sceneFrames];
+      
+      // Remove the frame from the original position
+      const [movedFrame] = reorderedFrames.splice(fromIndex, 1);
+      
+      // Insert it at the new position
+      reorderedFrames.splice(toIndex, 0, movedFrame);
+
+      // Update frame indices to reflect the new order
+      reorderedFrames.forEach((frame, index) => {
+        const updatedFrame = {
+          ...frame,
+          frameIndex: index
+        };
+        this.animationFrames.set(frame.id, updatedFrame);
+        
+        // Also update the animatedElements map with the new frameIndex
+        const animatedElement = this.animatedElements.get(frame.elementId);
+        if (animatedElement) {
+          const updatedAnimatedElement = {
+            ...animatedElement,
+            frameIndex: index
+          };
+          this.animatedElements.set(frame.elementId, updatedAnimatedElement);
+        }
+      });
+
+      // Refresh all animation numbers to reflect the new order
+      this.refreshAllAnimationNumbers();
+
+      // Trigger renumber event to update UI
+      const renumberEvent = new CustomEvent('renumberTimeline', {
+        detail: { sceneId }
+      });
+      document.dispatchEvent(renumberEvent);
+
+      console.log(`Reordered frames in scene ${sceneId}: ${fromIndex} -> ${toIndex}`);
+      return true;
+    } catch (error) {
+      console.error('Error reordering frames:', error);
+      return false;
+    }
   }
 
   /**

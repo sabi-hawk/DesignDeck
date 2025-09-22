@@ -17,29 +17,134 @@ import {
 } from '../styles/timelineStyles';
 
 interface TimelineThumbnailProps {
-  frame: any;
+  frame: {
+    id: string;
+    elementId: string;
+    parentFrameId: string;
+    imageDataUrl?: string;
+    resultUrl?: string;
+    progress?: number;
+    settings?: {
+      sketchingDuration: number;
+    };
+  };
   startTime: number;
   sceneRelativeIndex?: number;
+  sceneIndex?: number;
+  elementIndex?: number;
+  isDraggable?: boolean;
+  isDragOver?: boolean;
+  isBeingDragged?: boolean;
+  onDragStart?: (elementId: string, sceneIndex: number, elementIndex: number, event: React.DragEvent) => void;
+  onDragOver?: (sceneIndex: number, elementIndex: number, event: React.DragEvent) => void;
+  onDragLeave?: () => void;
+  onDrop?: (sceneId: string, sceneIndex: number, elementIndex: number, event: React.DragEvent) => void;
+  onDragEnd?: () => void;
 }
 
 export const TimelineThumbnail: React.FC<TimelineThumbnailProps> = ({
   frame,
   startTime,
-  sceneRelativeIndex
+  sceneRelativeIndex,
+  sceneIndex,
+  elementIndex,
+  isDraggable = false,
+  isDragOver = false,
+  isBeingDragged = false,
+  onDragStart,
+  onDragOver,
+  onDragLeave,
+  onDrop,
+  onDragEnd
 }) => {
   const hasResultUrl = !!frame.resultUrl;
 
+  const handleDragStart = (event: React.DragEvent) => {
+    console.log('TimelineThumbnail drag start triggered:', { isDraggable, sceneIndex, elementIndex, hasOnDragStart: !!onDragStart });
+    if (isDraggable && onDragStart && sceneIndex !== undefined && elementIndex !== undefined) {
+      // Don't prevent default - let the browser handle the drag
+      event.stopPropagation();
+      onDragStart(frame.elementId, sceneIndex, elementIndex, event);
+    }
+  };
+
+  // Add a simple test to see if the element is draggable
+  React.useEffect(() => {
+    console.log('TimelineThumbnail mounted with props:', { 
+      isDraggable, 
+      sceneIndex, 
+      elementIndex, 
+      hasOnDragStart: !!onDragStart,
+      frameId: frame.elementId 
+    });
+  }, [isDraggable, sceneIndex, elementIndex, onDragStart, frame.elementId]);
+
+  // Add a simple test to see if drag events work at all
+  const handleMouseDown = (event: React.MouseEvent) => {
+    console.log('Mouse down on thumbnail:', event);
+    // Don't interfere with native drag behavior
+  };
+
+  const handleMouseMove = (event: React.MouseEvent) => {
+    // console.log('Mouse move on thumbnail:', event);
+  };
+
+  const handleDragOver = (event: React.DragEvent) => {
+    console.log('TimelineThumbnail drag over triggered:', { isDraggable, sceneIndex, elementIndex, hasOnDragOver: !!onDragOver });
+    if (isDraggable && onDragOver && sceneIndex !== undefined && elementIndex !== undefined) {
+      event.preventDefault(); // This is needed for drop to work
+      event.stopPropagation();
+      onDragOver(sceneIndex, elementIndex, event);
+    }
+  };
+
+  const handleDrop = (event: React.DragEvent) => {
+    console.log('TimelineThumbnail drop triggered:', { isDraggable, sceneIndex, elementIndex, hasOnDrop: !!onDrop });
+    if (isDraggable && onDrop && sceneIndex !== undefined && elementIndex !== undefined) {
+      event.preventDefault(); // This is needed for drop to work
+      event.stopPropagation();
+      onDrop(frame.parentFrameId, sceneIndex, elementIndex, event);
+    }
+  };
+
   return (
     <div
-      css={thumbnailStyles(hasResultUrl)}
-      onClick={() => {
-        if (frame.resultUrl) {
-          window.open(frame.resultUrl, '_blank');
-        }
-      }}
-    >
+        css={[
+          thumbnailStyles(hasResultUrl),
+          isDragOver && {
+            border: '2px dashed #007acc',
+            backgroundColor: 'rgba(0, 122, 204, 0.1)',
+          },
+          isBeingDragged && {
+            opacity: 0.5,
+            transform: 'rotate(5deg)',
+          }
+        ]}
+        draggable={isDraggable}
+        style={{
+          cursor: isDraggable ? 'grab' : 'default',
+        }}
+        onDragEnd={(e) => {
+          console.log('onDragEnd called');
+          onDragEnd?.();
+        }}
+        onDragLeave={onDragLeave}
+        onDragOver={handleDragOver}
+        onDragStart={(e) => {
+          console.log('Raw onDragStart event fired!', e);
+          handleDragStart(e);
+        }}
+        onDrop={handleDrop}
+        onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+        // onClick={() => {
+        //   if (frame.resultUrl) {
+        //     window.open(frame.resultUrl, '_blank');
+        //   }
+        // }}
+      >
       {/* Debug info */}
-      <div css={debugInfoStyles}>
+      <div css={debugInfoStyles} draggable={false}>
         {frame.imageDataUrl
           ? `${Math.round(frame.imageDataUrl.length / 1024)}KB`
           : '0KB'}
@@ -47,54 +152,60 @@ export const TimelineThumbnail: React.FC<TimelineThumbnailProps> = ({
 
       {/* Animation Order Number - Top Left Corner */}
       {sceneRelativeIndex !== undefined && (
-        <div css={{
-          position: 'absolute',
-          top: '4px',
-          left: '4px',
-          background: 'rgba(0, 0, 0, 0.8)',
-          color: 'white',
-          fontSize: '10px',
-          fontWeight: 'bold',
-          padding: '2px 6px',
-          borderRadius: '3px',
-          zIndex: 20,
-          border: '1px solid rgba(255, 255, 255, 0.3)',
-        }}>
+        <div
+          css={{
+            position: 'absolute',
+            top: '4px',
+            left: '4px',
+            background: 'rgba(0, 0, 0, 0.8)',
+            color: 'white',
+            fontSize: '10px',
+            fontWeight: 'bold',
+            padding: '2px 6px',
+            borderRadius: '3px',
+            zIndex: 20,
+            border: '1px solid rgba(255, 255, 255, 0.3)',
+          }}
+          draggable={false}
+        >
           {sceneRelativeIndex + 1}
         </div>
       )}
 
       {/* Processing Status Overlay */}
       {!frame.resultUrl && frame.progress !== -1 && (
-        <div css={processingOverlayStyles}>
+        <div css={processingOverlayStyles} draggable={false}>
           {/* Spinning Animation */}
           <div css={spinningAnimationStyles} />
           {/* Processing Text */}
-          <div css={processingTextStyles}>
-            Processing...
-          </div>
+          <div css={processingTextStyles}>Processing...</div>
         </div>
       )}
 
       {/* Failed Processing Overlay */}
       {frame.progress === -1 && (
-        <div css={failedOverlayStyles}>
+        <div css={failedOverlayStyles} draggable={false}>
           {/* Error Icon */}
           <div css={errorIconStyles}>
-            ❌
+            <span aria-label="Error" role="img">❌</span>
           </div>
           {/* Error Text */}
-          <div css={errorTextStyles}>
-            Failed
-          </div>
+          <div css={errorTextStyles}>Failed</div>
         </div>
       )}
 
       {/* Success Overlay */}
       {frame.resultUrl && (
-        <div css={successOverlayStyles}>
+        <div css={successOverlayStyles} draggable={false}>
           {/* Play Button Icon - Top Left */}
-          <div css={playButtonIconStyles}>
+          <div
+            css={playButtonIconStyles}
+            onClick={() => {
+              if (frame.resultUrl) {
+                window.open(frame.resultUrl, '_blank');
+              }
+            }}
+          >
             <svg
               fill="none"
               height="10"
@@ -108,12 +219,10 @@ export const TimelineThumbnail: React.FC<TimelineThumbnailProps> = ({
 
           {/* Success Icon */}
           <div css={successIconStyles}>
-            ✅
+            <span aria-label="Success" role="img">✅</span>
           </div>
           {/* Success Text */}
-          <div css={successTextStyles}>
-            Ready
-          </div>
+          <div css={successTextStyles}>Ready</div>
         </div>
       )}
 
@@ -122,6 +231,7 @@ export const TimelineThumbnail: React.FC<TimelineThumbnailProps> = ({
         <img
           alt={`Frame at ${startTime}s`}
           css={imageStyles}
+          draggable={false}
           src={frame.imageDataUrl}
           onAbort={() => {
             // Image loading aborted
@@ -134,31 +244,32 @@ export const TimelineThumbnail: React.FC<TimelineThumbnailProps> = ({
           }}
         />
       ) : (
-        <div css={invalidImageStyles}>
-          Invalid Image Data
-        </div>
+        <div css={invalidImageStyles} draggable={false}>Invalid Image Data</div>
       )}
 
       {/* Duration Display - Below Thumbnail */}
       {frame?.settings?.sketchingDuration && (
-        <div css={{
-          position: 'absolute',
-          bottom: '-32px',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          background: 'rgba(0, 0, 0, 0.95)',
-          color: 'white',
-          fontSize: '10px',
-          fontWeight: 'bold',
-          padding: '4px 10px',
-          borderRadius: '6px',
-          zIndex: 50,
-          border: '2px solid rgba(255, 255, 255, 0.6)',
-          whiteSpace: 'nowrap',
-          boxShadow: '0 3px 8px rgba(0, 0, 0, 0.7)',
-          minWidth: '30px',
-          textAlign: 'center',
-        }}>
+        <div
+          css={{
+            position: 'absolute',
+            bottom: '-32px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            background: 'rgba(0, 0, 0, 0.95)',
+            color: 'white',
+            fontSize: '10px',
+            fontWeight: 'bold',
+            padding: '4px 10px',
+            borderRadius: '6px',
+            zIndex: 50,
+            border: '2px solid rgba(255, 255, 255, 0.6)',
+            whiteSpace: 'nowrap',
+            boxShadow: '0 3px 8px rgba(0, 0, 0, 0.7)',
+            minWidth: '30px',
+            textAlign: 'center',
+          }}
+          draggable={false}
+        >
           {frame.settings.sketchingDuration}s
         </div>
       )}

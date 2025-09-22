@@ -1,5 +1,6 @@
 import { css } from '@emotion/react';
 import React from 'react';
+import { useTimelineDragDrop } from '../hooks/useTimelineDragDrop';
 import { SceneLabel } from './SceneLabel';
 import { TimelineThumbnail } from './TimelineThumbnail';
 
@@ -18,6 +19,7 @@ interface SceneWrapperProps {
   getSceneNumber: (parentFrameId: string) => number;
   hasCompletedAnimationFn: (parentFrameId: string) => boolean;
   pages: any[];
+  animationService: any;
 }
 
 const sceneWrapperStyles = (borderColor: string, totalWidth: number) => css({
@@ -48,20 +50,49 @@ const sceneContentStyles = css({
   width: '100%',
   paddingBottom: '30px', // More space for duration display outside thumbnail
   overflow: 'visible', // Allow duration to be visible outside
+  pointerEvents: 'auto',
 });
 
 export const SceneWrapper: React.FC<SceneWrapperProps> = ({
+  animationService,
+  borderColor,
+  getSceneNumber,
+  hasCompletedAnimation,
+  hasCompletedAnimationFn,
+  pages,
   parentFrameId,
   sceneNumber,
   segments,
   segmentWidth,
-  timelineScale,
-  borderColor,
-  hasCompletedAnimation,
-  getSceneNumber,
-  hasCompletedAnimationFn,
-  pages
+  timelineScale
 }) => {
+  const handleReorder = React.useCallback((sceneId: string, fromIndex: number, toIndex: number) => {
+    animationService.reorderFramesInScene(sceneId, fromIndex, toIndex);
+  }, [animationService]);
+
+  const {
+    handleDragStart,
+    handleDragOver,
+    handleDragLeave,
+    handleDrop,
+    handleDragEnd,
+    isDragOver,
+    isBeingDragged,
+  } = useTimelineDragDrop({
+    animationService,
+    onReorder: handleReorder,
+  });
+
+  // Debug: Log when handlers are created
+  React.useEffect(() => {
+    console.log('SceneWrapper handlers created:', {
+      hasHandleDragStart: !!handleDragStart,
+      hasHandleDragOver: !!handleDragOver,
+      hasHandleDrop: !!handleDrop,
+      sceneNumber,
+      parentFrameId
+    });
+  }, [handleDragStart, handleDragOver, handleDrop, sceneNumber, parentFrameId]);
   // Calculate dynamic widths based on duration (1-10 seconds range)
   const calculateSegmentWidth = (duration: number): number => {
     const minWidth = 60; // Minimum visible width
@@ -95,27 +126,53 @@ export const SceneWrapper: React.FC<SceneWrapperProps> = ({
         {segments.map(({ segmentIndex, frame, sceneRelativeIndex }) => {
           const duration = frame?.settings?.sketchingDuration || 5; // Default to 5 seconds
           const dynamicWidth = calculateSegmentWidth(duration);
+          const isDragOverThis = isDragOver(sceneNumber, sceneRelativeIndex);
+          const isBeingDraggedThis = isBeingDragged(sceneNumber, sceneRelativeIndex);
+          
           
           return (
             <div
               key={segmentIndex}
-              css={{
-                position: 'relative',
-                width: `${dynamicWidth}px`,
-                height: '80px',
-                background: 'rgba(64, 87, 109, 0.1)',
-                border: `2px solid ${borderColor}`,
-                borderRadius: '6px',
-                // overflow: 'hidden',
+              css={[
+                {
+                  position: 'relative',
+                  width: `${dynamicWidth}px`,
+                  height: '80px',
+                  background: 'rgba(64, 87, 109, 0.1)',
+                  border: `2px solid ${borderColor}`,
+                  borderRadius: '6px',
+                  // overflow: 'hidden',
+                },
+                isDragOverThis && {
+                  border: '2px dashed #007acc',
+                  backgroundColor: 'rgba(0, 122, 204, 0.1)',
+                }
+              ]}
+              onDragStart={(e) => {
+                console.log('Parent div drag start intercepted:', e);
+                // Don't prevent default here, let it bubble to child
+              }}
+              onMouseDown={(e) => {
+                console.log('Parent div mouse down:', e);
               }}
             >
 
               {/* Thumbnail Content */}
               {frame && (
                 <TimelineThumbnail
+                  elementIndex={sceneRelativeIndex}
                   frame={frame}
+                  isBeingDragged={isBeingDraggedThis}
+                  isDraggable={true}
+                  isDragOver={isDragOverThis}
+                  sceneIndex={sceneNumber}
                   sceneRelativeIndex={sceneRelativeIndex}
                   startTime={segmentIndex * timelineScale}
+                  onDragEnd={handleDragEnd}
+                  onDragLeave={handleDragLeave}
+                  onDragOver={handleDragOver}
+                  onDragStart={handleDragStart}
+                  onDrop={handleDrop}
                 />
               )}
             </div>

@@ -93,6 +93,7 @@ export const TimelineContent: React.FC<TimelineContentProps> = ({
             return (
               <SceneWrapper
                 key={parentFrameId}
+                animationService={animationService}
                 borderColor={borderColor}
                 getSceneNumber={(id) => getSceneNumber(id, pages)}
                 hasCompletedAnimation={hasCompleted}

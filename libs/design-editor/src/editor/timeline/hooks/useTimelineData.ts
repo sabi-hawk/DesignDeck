@@ -4,6 +4,7 @@ import { AnimationService, AnimationFrame } from '../../animation';
 export const useTimelineData = (pages: any[]) => {
   const [animationService] = useState(() => AnimationService.getInstance());
   const [currentFrames, setCurrentFrames] = useState<AnimationFrame[]>([]);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
     // Update AnimationService with current pages data
@@ -81,7 +82,8 @@ export const useTimelineData = (pages: any[]) => {
     };
 
     const handleRenumberTimeline = (event: CustomEvent) => {
-      const { elementId } = event.detail;
+      const { sceneId } = event.detail;
+      console.log('Renumber timeline event received:', { sceneId });
       
       // Refresh timeline data from AnimationService using getFramesByIndex for consistency
       const framesByIndex = animationService.getFramesByIndex();
@@ -92,7 +94,10 @@ export const useTimelineData = (pages: any[]) => {
         updatedFrames.push(...frames);
       }
       
+      console.log('Updated frames after renumber:', updatedFrames.length);
       setCurrentFrames(updatedFrames);
+      // Force a re-render by updating the refresh key
+      setRefreshKey(prev => prev + 1);
     };
 
     // Add event listeners
@@ -115,6 +120,7 @@ export const useTimelineData = (pages: any[]) => {
   return {
     animationService,
     currentFrames,
-    setCurrentFrames
+    setCurrentFrames,
+    refreshKey
   };
 };

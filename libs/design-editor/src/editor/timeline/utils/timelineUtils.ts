@@ -135,30 +135,38 @@ export const getAnimatedSegments = (
 ): { segmentIndex: number; frame: AnimationFrame; sceneRelativeIndex: number }[] => {
   const segments: { segmentIndex: number; frame: AnimationFrame; sceneRelativeIndex: number }[] = [];
   
-  // Create a map to track scene-relative indices for each parent frame
-  const sceneRelativeIndices = new Map<string, number>();
+  // First, collect all frames and group them by parent frame
+  const framesByParent = new Map<string, { frameIndex: number; frame: AnimationFrame }[]>();
   
   for (const [frameIndex, frames] of framesByIndex.entries()) {
     if (frames.length > 0) {
       const frame = frames[0];
       const parentFrameId = frame.parentFrameId;
       
-      // Get or initialize the scene-relative index for this parent frame
-      if (!sceneRelativeIndices.has(parentFrameId)) {
-        sceneRelativeIndices.set(parentFrameId, 0);
+      if (!framesByParent.has(parentFrameId)) {
+        framesByParent.set(parentFrameId, []);
       }
       
-      const currentSceneIndex = sceneRelativeIndices.get(parentFrameId)!;
-      
+      framesByParent.get(parentFrameId)!.push({
+        frameIndex,
+        frame
+      });
+    }
+  }
+  
+  // Now process each parent frame group and assign scene-relative indices
+  for (const [parentFrameId, parentFrames] of framesByParent.entries()) {
+    // Sort frames by their frameIndex to maintain the correct order
+    const sortedFrames = parentFrames.sort((a, b) => a.frameIndex - b.frameIndex);
+    
+    // Assign scene-relative indices based on the sorted order
+    sortedFrames.forEach(({ frameIndex, frame }, index) => {
       segments.push({
         segmentIndex: frameIndex,
         frame: frame,
-        sceneRelativeIndex: currentSceneIndex
+        sceneRelativeIndex: index
       });
-      
-      // Increment the scene-relative index for this parent frame
-      sceneRelativeIndices.set(parentFrameId, currentSceneIndex + 1);
-    }
+    });
   }
   
   return segments.sort((a, b) => a.segmentIndex - b.segmentIndex);
