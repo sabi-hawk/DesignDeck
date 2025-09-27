@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   thumbnailStyles, 
   debugInfoStyles, 
@@ -13,7 +13,9 @@ import {
   successIconStyles,
   successTextStyles,
   imageStyles,
-  invalidImageStyles
+  invalidImageStyles,
+  progressBarStyles,
+  progressBarFillStyles
 } from '../styles/timelineStyles';
 
 interface TimelineThumbnailProps {
@@ -58,6 +60,56 @@ export const TimelineThumbnail: React.FC<TimelineThumbnailProps> = ({
   onDragEnd
 }) => {
   const hasResultUrl = !!frame.resultUrl;
+  const [videoProgress, setVideoProgress] = useState(0);
+  const [isVideoPlaying, setIsVideoPlaying] = useState(false);
+
+  // Track video progress for this specific element
+  useEffect(() => {
+    if (!hasResultUrl) return;
+
+    const handleVideoProgress = (event: CustomEvent) => {
+      const { elementId, progress, isPlaying } = event.detail;
+      if (elementId === frame.elementId) {
+        setVideoProgress(progress);
+        setIsVideoPlaying(isPlaying);
+      }
+    };
+
+    const handleVideoPlay = (event: CustomEvent) => {
+      const { elementId } = event.detail;
+      if (elementId === frame.elementId) {
+        setIsVideoPlaying(true);
+      }
+    };
+
+    const handleVideoPause = (event: CustomEvent) => {
+      const { elementId } = event.detail;
+      if (elementId === frame.elementId) {
+        setIsVideoPlaying(false);
+      }
+    };
+
+    const handleVideoEnd = (event: CustomEvent) => {
+      const { elementId } = event.detail;
+      if (elementId === frame.elementId) {
+        setIsVideoPlaying(false);
+        setVideoProgress(0);
+      }
+    };
+
+    // Listen for video progress events
+    document.addEventListener('videoProgress', handleVideoProgress as EventListener);
+    document.addEventListener('videoPlay', handleVideoPlay as EventListener);
+    document.addEventListener('videoPause', handleVideoPause as EventListener);
+    document.addEventListener('videoEnd', handleVideoEnd as EventListener);
+
+    return () => {
+      document.removeEventListener('videoProgress', handleVideoProgress as EventListener);
+      document.removeEventListener('videoPlay', handleVideoPlay as EventListener);
+      document.removeEventListener('videoPause', handleVideoPause as EventListener);
+      document.removeEventListener('videoEnd', handleVideoEnd as EventListener);
+    };
+  }, [hasResultUrl, frame.elementId]);
 
   const handleDragStart = (event: React.DragEvent) => {
     console.log('TimelineThumbnail drag start triggered:', { isDraggable, sceneIndex, elementIndex, hasOnDragStart: !!onDragStart });
@@ -271,6 +323,16 @@ export const TimelineThumbnail: React.FC<TimelineThumbnailProps> = ({
           draggable={false}
         >
           {frame.settings.sketchingDuration}s
+        </div>
+      )}
+
+      {/* Video Progress Bar - Bottom of Thumbnail */}
+      {hasResultUrl && (isVideoPlaying || videoProgress > 0) && (
+        <div css={progressBarStyles}>
+          <div 
+            css={progressBarFillStyles}
+            style={{ width: `${videoProgress * 100}%` }}
+          />
         </div>
       )}
     </div>

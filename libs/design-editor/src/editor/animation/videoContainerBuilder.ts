@@ -153,6 +153,64 @@ export class VideoContainerBuilder {
   }
 
   /**
+   * Set up video progress tracking for timeline thumbnails
+   */
+  private setupVideoProgressTracking(videoElement: HTMLVideoElement, elementId: string): void {
+    // Track video progress
+    videoElement.addEventListener('timeupdate', () => {
+      if (videoElement.duration > 0) {
+        const progress = videoElement.currentTime / videoElement.duration;
+        const isPlaying = !videoElement.paused && !videoElement.ended;
+        
+        // Dispatch video progress event
+        const videoProgressEvent = new CustomEvent('videoProgress', {
+          detail: {
+            elementId: elementId,
+            progress: progress,
+            isPlaying: isPlaying,
+            currentTime: videoElement.currentTime,
+            duration: videoElement.duration
+          }
+        });
+        document.dispatchEvent(videoProgressEvent);
+      }
+    });
+
+    // Dispatch video play event
+    videoElement.addEventListener('play', () => {
+      const videoPlayEvent = new CustomEvent('videoPlay', {
+        detail: {
+          elementId: elementId,
+          videoElement: videoElement
+        }
+      });
+      document.dispatchEvent(videoPlayEvent);
+    });
+
+    // Dispatch video pause event
+    videoElement.addEventListener('pause', () => {
+      const videoPauseEvent = new CustomEvent('videoPause', {
+        detail: {
+          elementId: elementId,
+          videoElement: videoElement
+        }
+      });
+      document.dispatchEvent(videoPauseEvent);
+    });
+
+    // Dispatch video end event
+    videoElement.addEventListener('ended', () => {
+      const videoEndEvent = new CustomEvent('videoEnd', {
+        detail: {
+          elementId: elementId,
+          videoElement: videoElement
+        }
+      });
+      document.dispatchEvent(videoEndEvent);
+    });
+  }
+
+  /**
    * Add a play button to the original element
    */
   addPlayButtonToElement(
@@ -451,6 +509,15 @@ export class VideoContainerBuilder {
             if (videoElement) {
               videoElement.pause();
               console.log(`🎬 Video paused successfully`);
+              
+              // Dispatch video pause event for progress tracking
+              const videoPauseEvent = new CustomEvent('videoPause', {
+                detail: {
+                  elementId: elementId,
+                  videoElement: videoElement
+                }
+              });
+              document.dispatchEvent(videoPauseEvent);
             }
             
             // Hide the video container
@@ -495,15 +562,36 @@ export class VideoContainerBuilder {
                    // Start playing the video
           const videoElement = videoContainer.querySelector('video') as HTMLVideoElement;
           if (videoElement) {
+            // Set up video progress tracking
+            this.setupVideoProgressTracking(videoElement, elementId);
+            
             // Ensure video is ready to play
             if (videoElement.readyState >= 2) { // HAVE_CURRENT_DATA
-              videoElement.play().catch(error => {
+              videoElement.play().then(() => {
+                // Dispatch video play event for progress tracking
+                const videoPlayEvent = new CustomEvent('videoPlay', {
+                  detail: {
+                    elementId: elementId,
+                    videoElement: videoElement
+                  }
+                });
+                document.dispatchEvent(videoPlayEvent);
+              }).catch(error => {
                 console.error(`❌ Error playing video:`, error);
               });
             } else {
               // Wait for video to be ready, then play
               videoElement.addEventListener('canplay', () => {
-                videoElement.play().catch(error => {
+                videoElement.play().then(() => {
+                  // Dispatch video play event for progress tracking
+                  const videoPlayEvent = new CustomEvent('videoPlay', {
+                    detail: {
+                      elementId: elementId,
+                      videoElement: videoElement
+                    }
+                  });
+                  document.dispatchEvent(videoPlayEvent);
+                }).catch(error => {
                   console.error(`❌ Error playing video:`, error);
                 });
               }, { once: true });
@@ -511,6 +599,15 @@ export class VideoContainerBuilder {
             
             // Set up video ended event to show play button again
             videoElement.addEventListener('ended', () => {
+              // Dispatch video end event for progress tracking
+              const videoEndEvent = new CustomEvent('videoEnd', {
+                detail: {
+                  elementId: elementId,
+                  videoElement: videoElement
+                }
+              });
+              document.dispatchEvent(videoEndEvent);
+              
               // Show the original content (first child) of the element again
               const firstChild = originalElement.firstElementChild as HTMLElement;
               if (firstChild) {

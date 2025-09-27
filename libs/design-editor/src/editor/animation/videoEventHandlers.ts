@@ -69,6 +69,15 @@ export class VideoEventHandlers {
       pauseButton.style.opacity = '1';
       pauseButton.style.pointerEvents = 'auto';
 
+      // Dispatch video play event for progress tracking
+      const videoPlayEvent = new CustomEvent('videoPlay', {
+        detail: {
+          elementId: originalFrameId,
+          videoElement: videoElement
+        }
+      });
+      document.dispatchEvent(videoPlayEvent);
+
       // Auto-hide pause button after 4 seconds
       setTimeout(() => {
         if (!videoElement.paused && !videoElement.ended) {
@@ -83,6 +92,15 @@ export class VideoEventHandlers {
       pauseButton.style.pointerEvents = 'none';
       playButton.style.opacity = '1';
       playButton.style.pointerEvents = 'auto';
+
+      // Dispatch video pause event for progress tracking
+      const videoPauseEvent = new CustomEvent('videoPause', {
+        detail: {
+          elementId: originalFrameId,
+          videoElement: videoElement
+        }
+      });
+      document.dispatchEvent(videoPauseEvent);
     });
 
     // Handle video end - show play button again
@@ -91,6 +109,35 @@ export class VideoEventHandlers {
       pauseButton.style.pointerEvents = 'none';
       playButton.style.opacity = '1';
       playButton.style.pointerEvents = 'auto';
+
+      // Dispatch video end event for progress tracking
+      const videoEndEvent = new CustomEvent('videoEnd', {
+        detail: {
+          elementId: originalFrameId,
+          videoElement: videoElement
+        }
+      });
+      document.dispatchEvent(videoEndEvent);
+    });
+
+    // Track video progress
+    videoElement.addEventListener('timeupdate', () => {
+      if (videoElement.duration > 0) {
+        const progress = videoElement.currentTime / videoElement.duration;
+        const isPlaying = !videoElement.paused && !videoElement.ended;
+        
+        // Dispatch video progress event
+        const videoProgressEvent = new CustomEvent('videoProgress', {
+          detail: {
+            elementId: originalFrameId,
+            progress: progress,
+            isPlaying: isPlaying,
+            currentTime: videoElement.currentTime,
+            duration: videoElement.duration
+          }
+        });
+        document.dispatchEvent(videoProgressEvent);
+      }
     });
 
     // Show pause button on hover when video is playing

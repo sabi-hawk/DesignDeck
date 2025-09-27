@@ -298,7 +298,7 @@ export const successOverlayStyles = css`
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(16, 185, 129, 0.8);
+  background: rgba(16, 185, 129, 0.5);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -350,4 +350,48 @@ export const invalidImageStyles = css`
   font-size: 10px;
   text-align: center;
   padding: 4px;
+`;
+
+export const progressBarStyles = css`
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 8px;
+  background: rgba(0, 0, 0, 0.8);
+  border-radius: 0 0 6px 6px;
+  overflow: hidden;
+  z-index: 30;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 
+    0 -3px 12px rgba(0, 0, 0, 0.7),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+`;
+
+export const progressBarFillStyles = css`
+  height: 100%;
+  background: linear-gradient(90deg, #00ff88 0%, #00d4ff 30%, #667eea 70%, #ff6b6b 100%);
+  border-radius: 0 0 4px 4px;
+  transition: width 0.1s ease;
+  box-shadow: 
+    0 0 12px rgba(0, 255, 136, 0.9),
+    0 0 24px rgba(0, 255, 136, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  position: relative;
+  
+  &::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.4) 50%, transparent 100%);
+    animation: shimmer 2s infinite;
+  }
+  
+  @keyframes shimmer {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+  }
 `;
