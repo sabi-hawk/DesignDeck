@@ -119,6 +119,7 @@ export const SceneWrapper: React.FC<SceneWrapperProps> = ({
         getSceneNumber={getSceneNumber}
         hasCompletedAnimation={hasCompletedAnimationFn}
         parentFrameId={parentFrameId}
+        segments={segments}
       />
 
       {/* Scene Content - Timeline segments */}

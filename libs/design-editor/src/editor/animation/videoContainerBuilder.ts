@@ -474,6 +474,13 @@ export class VideoContainerBuilder {
             lockIcon.style.display = 'none';
             console.log(`🔒 Hidden lock icon while video plays for element ${elementId}`);
           }
+
+         // Hide the element-animation-number icon while video is playing
+         const animationNumber = originalElement.querySelector('.element-animation-number') as HTMLElement;
+         if (animationNumber) {
+           animationNumber.style.display = 'none';
+           console.log(`🔒 Hidden element-animation-number while video plays for element ${elementId}`);
+         }
           
           // Set z-index on the parent element to ensure buttons are above video container
           originalElement.style.zIndex = '1001'; // Higher than video container (999)
@@ -547,6 +554,13 @@ export class VideoContainerBuilder {
                lockIcon.style.display = 'flex';
                console.log(`🔒 Shown lock icon again after video paused for element ${elementId}`);
              }
+
+            // Show the element-animation-number again when video ends
+            const animationNumber = originalElement.querySelector('.element-animation-number') as HTMLElement;
+            if (animationNumber) {
+              animationNumber.style.display = 'flex';
+              console.log(`🔒 Shown element-animation-number again after video ended for element ${elementId}`);
+            }
             
             // Remove the pause button container from DOM
             pauseButtonContainer.remove();
@@ -608,6 +622,12 @@ export class VideoContainerBuilder {
               });
               document.dispatchEvent(videoEndEvent);
               
+              // Notify scene playback service about video end
+              const scenePlaybackService = (window as any).ScenePlaybackService;
+              if (scenePlaybackService) {
+                scenePlaybackService.handleVideoEnd(elementId);
+              }
+              
               // Show the original content (first child) of the element again
               const firstChild = originalElement.firstElementChild as HTMLElement;
               if (firstChild) {
@@ -630,6 +650,13 @@ export class VideoContainerBuilder {
                  lockIcon.style.display = 'flex';
                  console.log(`🔒 Shown lock icon again after video ended for element ${elementId}`);
                }
+
+              // Show the element-animation-number again when video ends
+              const animationNumber = originalElement.querySelector('.element-animation-number') as HTMLElement;
+              if (animationNumber) {
+                animationNumber.style.display = 'flex';
+                console.log(`🔒 Shown element-animation-number again after video ended for element ${elementId}`);
+              }
               
               // Remove the pause button container from DOM
               pauseButtonContainer.remove();
