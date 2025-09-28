@@ -501,7 +501,40 @@ export class VideoContainerBuilder {
             pauseButton.style.borderColor = 'rgba(255, 255, 255, 0.9)';
             pauseButton.style.boxShadow = '0 4px 16px rgba(0, 0, 0, 0.8)';
           });
+
+          // Prevent mouse events from bubbling up on the pause button
+          pauseButton.addEventListener('mousedown', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            e.stopImmediatePropagation();
+          });
+
+          pauseButton.addEventListener('mouseup', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            e.stopImmediatePropagation();
+          });
           
+          // Add event handling to prevent container clicks from bubbling
+          pauseButtonContainer.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            e.stopImmediatePropagation();
+          });
+
+          // Prevent mouse events from bubbling up
+          pauseButtonContainer.addEventListener('mousedown', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            e.stopImmediatePropagation();
+          });
+
+          pauseButtonContainer.addEventListener('mouseup', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            e.stopImmediatePropagation();
+          });
+
           // Add the pause button container to the original element
           originalElement.appendChild(pauseButtonContainer);
           
@@ -510,6 +543,7 @@ export class VideoContainerBuilder {
             console.log(`🎬 Pause button clicked for frame ${originalFrameId}`);
             e.preventDefault();
             e.stopPropagation();
+            e.stopImmediatePropagation();
             
             // Pause the video
             const videoElement = videoContainer.querySelector('video') as HTMLVideoElement;
