@@ -50,6 +50,9 @@ export class ScenePlaybackService {
     this.currentElementIndex = 0;
     this.isPlaying = true;
 
+    // Hide all elements in the scene initially
+    this.hideAllSceneElements();
+
     // Start playing the first element
     this.playCurrentElement();
   }
@@ -65,6 +68,9 @@ export class ScenePlaybackService {
 
     const currentElement = this.sceneElements[this.currentElementIndex];
     console.log(`🎬 Playing element ${currentElement.elementId} (${this.currentElementIndex + 1}/${this.sceneElements.length})`);
+
+    // Show only the current element
+    // this.showCurrentElement();
 
     // Find the play button for this element and click it
     this.clickElementPlayButton(currentElement.elementId);
@@ -100,6 +106,16 @@ export class ScenePlaybackService {
    * Move to the next element in the sequence
    */
   private moveToNextElement(): void {
+    // Hide the current element before moving to the next one
+    if (this.currentElementIndex < this.sceneElements.length) {
+      const currentElement = this.sceneElements[this.currentElementIndex];
+      const elementWrapper = document.querySelector(`.${CSS_ESCAPE(currentElement.elementId)}`) as HTMLElement;
+      if (elementWrapper) {
+        elementWrapper.style.display = 'none';
+        console.log(`🎬 Hidden current element: ${currentElement.elementId}`);
+      }
+    }
+
     this.currentElementIndex++;
     console.log(`🎬 Moving to next element: ${this.currentElementIndex}/${this.sceneElements.length}`);
     
@@ -114,10 +130,62 @@ export class ScenePlaybackService {
   }
 
   /**
+   * Hide all elements in the current scene
+   */
+  private hideAllSceneElements(): void {
+    console.log(`🎬 Hiding all elements in scene ${this.currentSceneId}`);
+    
+    this.sceneElements.forEach(element => {
+      const elementWrapper = document.querySelector(`.${CSS_ESCAPE(element.elementId)}`) as HTMLElement;
+      if (elementWrapper) {
+        elementWrapper.style.display = 'none';
+        console.log(`🎬 Hidden element: ${element.elementId}`);
+      } else {
+        console.warn(`⚠️ Could not find element wrapper for: ${element.elementId}`);
+      }
+    });
+  }
+
+  /**
+   * Show all elements in the current scene
+   */
+  private showAllSceneElements(): void {
+    console.log(`🎬 Showing all elements in scene ${this.currentSceneId}`);
+    
+    this.sceneElements.forEach(element => {
+      const elementWrapper = document.querySelector(`.${CSS_ESCAPE(element.elementId)}`) as HTMLElement;
+      if (elementWrapper) {
+        elementWrapper.style.display = '';
+        console.log(`🎬 Shown element: ${element.elementId}`);
+      } else {
+        console.warn(`⚠️ Could not find element wrapper for: ${element.elementId}`);
+      }
+    });
+  }
+
+  // /**
+  //  * Show only the current element
+  //  */
+  // private showCurrentElement(): void {
+  //   if (this.currentElementIndex < this.sceneElements.length) {
+  //     const currentElement = this.sceneElements[this.currentElementIndex];
+  //     const elementWrapper = document.querySelector(`.${CSS_ESCAPE(currentElement.elementId)}`) as HTMLElement;
+  //     if (elementWrapper) {
+  //       elementWrapper.style.display = '';
+  //       console.log(`🎬 Showing current element: ${currentElement.elementId}`);
+  //     }
+  //   }
+  // }
+
+  /**
    * Stop the scene playback
    */
   stopScenePlayback(): void {
     console.log(`🎬 Stopping scene playback for scene ${this.currentSceneId}`);
+    
+    // Show all elements again
+    this.showAllSceneElements();
+    
     this.isPlaying = false;
     this.currentSceneId = null;
     this.currentElementIndex = 0;
