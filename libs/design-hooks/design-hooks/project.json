@@ -1,0 +1,16 @@
+{
+  "name": "design-hooks-design-hooks",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/design-hooks/design-hooks/src",
+  "projectType": "library",
+  "tags": [],
+  "targets": {
+    "test": {
+      "executor": "@nx/jest:jest",
+      "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
+      "options": {
+        "jestConfig": "libs/design-hooks/design-hooks/jest.config.ts"
+      }
+    }
+  }
+}

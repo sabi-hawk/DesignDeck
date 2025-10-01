@@ -5,15 +5,23 @@ import PlayCircleIcon from '@duyank/icons/regular/PlayCircle';
 import { useEditor } from '@lidojs/design-editor';
 import { toPng } from 'html-to-image';
 import React, { forwardRef, ForwardRefRenderFunction } from 'react';
+import { SaveButton } from '@lidojs/design-editor';
+import { User } from '@lidojs/design-editor';
 
 interface HeaderLayoutProps {
   openPreview: () => void;
+  user: User;
+  onLogout: () => void;
+  onSave: (projectId?: string) => void;
+  onLoad: (projectId: string) => void;
+  currentProjectId?: string;
+  canvasData: any;
 }
 
 const HeaderLayout: ForwardRefRenderFunction<
   HTMLDivElement,
   HeaderLayoutProps
-> = ({ openPreview }, ref) => {
+> = ({ openPreview, user, onLogout, onSave, onLoad, currentProjectId, canvasData }, ref) => {
   const { actions, query } = useEditor();
 
   const handleExportAllPages = async () => {
@@ -198,7 +206,7 @@ const HeaderLayout: ForwardRefRenderFunction<
         </button>
       </div>
 
-      {/* Right Section - Export and Preview */}
+      {/* Right Section - Save, Export and User */}
       <div
         css={{
           display: 'flex',
@@ -206,6 +214,75 @@ const HeaderLayout: ForwardRefRenderFunction<
           gap: 12,
         }}
       >
+        {/* Save Button */}
+        <SaveButton
+          onSave={onSave}
+          onLoad={onLoad}
+          currentProjectId={currentProjectId}
+          canvasData={canvasData}
+        />
+
+        {/* User Info */}
+        <div
+          css={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            background: 'rgba(255, 255, 255, 0.15)',
+            padding: '8px 12px',
+            borderRadius: '12px',
+            border: '1px solid rgba(255, 255, 255, 0.2)',
+            backdropFilter: 'blur(10px)',
+          }}
+        >
+          <div
+            css={{
+              width: 32,
+              height: 32,
+              borderRadius: '50%',
+              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: 'white',
+              fontSize: '14px',
+              fontWeight: '600',
+            }}
+          >
+            {user.name.charAt(0).toUpperCase()}
+          </div>
+          <div
+            css={{
+              color: 'white',
+              fontSize: '14px',
+              fontWeight: '600',
+              '@media (max-width: 900px)': {
+                display: 'none',
+              },
+            }}
+          >
+            {user.name}
+          </div>
+          <button
+            css={{
+              background: 'none',
+              border: 'none',
+              color: 'rgba(255, 255, 255, 0.7)',
+              cursor: 'pointer',
+              padding: '4px',
+              borderRadius: '4px',
+              fontSize: '12px',
+              ':hover': {
+                color: 'white',
+                background: 'rgba(255, 255, 255, 0.1)',
+              },
+            }}
+            onClick={onLogout}
+            title="Logout"
+          >
+            Logout
+          </button>
+        </div>
         {/* Export All Pages Button */}
         {/* <button
           css={{

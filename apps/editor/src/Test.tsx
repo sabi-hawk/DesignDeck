@@ -12,8 +12,15 @@ import HeaderLayout from './layout/HeaderLayout';
 import Sidebar from './layout/Sidebar';
 import EditorContent from './pages/EditorContent';
 import PreviewModal from './PreviewModal';
+import { User } from '@lidojs/design-editor';
+import { SaveButton } from '@lidojs/design-editor';
+import { projectService } from '@lidojs/design-editor';
 
-const Test = ({ googleFontList }: { googleFontList: FontData[] }) => {
+const Test = ({ googleFontList, user, onLogout }: { 
+  googleFontList: FontData[]; 
+  user: User; 
+  onLogout: () => void; 
+}) => {
   const leftSidebarRef = useRef<HTMLDivElement>(null);
   const [openPreview, setOpenPreview] = useState(false);
   const [showAnimationPopup, setShowAnimationPopup] = useState(false);
@@ -21,6 +28,8 @@ const Test = ({ googleFontList }: { googleFontList: FontData[] }) => {
   const [selectedElementType, setSelectedElementType] = useState<string>('Element');
   const [selectedElementName, setSelectedElementName] = useState<string>('Selected Element');
   const [animationService] = useState(() => AnimationService.getInstance());
+  const [currentProjectId, setCurrentProjectId] = useState<string | undefined>();
+  const [canvasData, setCanvasData] = useState<any>(null);
 
   // Debug state changes
   useEffect(() => {
@@ -115,6 +124,38 @@ const Test = ({ googleFontList }: { googleFontList: FontData[] }) => {
     }
   };
 
+  // Save project
+  const handleSave = (projectId?: string) => {
+    setCurrentProjectId(projectId);
+    console.log('Project saved with ID:', projectId);
+  };
+
+  // Load project
+  const handleLoad = async (projectId: string) => {
+    try {
+      const project = await projectService.getProject(projectId);
+      setCurrentProjectId(projectId);
+      setCanvasData(project.canvasData);
+      console.log('Project loaded:', project);
+      // Here you would restore the canvas state
+      // This would need to be integrated with the Editor component
+    } catch (error) {
+      console.error('Failed to load project:', error);
+      alert('Failed to load project');
+    }
+  };
+
+  // Get current canvas data (this would be called when saving)
+  const getCurrentCanvasData = () => {
+    // This would need to be implemented to get the current state from the Editor
+    // For now, return a placeholder
+    return {
+      pages: [],
+      selectedPageId: null,
+      // Add other canvas state here
+    };
+  };
+
   return (
     <Editor config={config} getFonts={getFonts} uploadImage={uploadImage}>
       <div
@@ -126,7 +167,15 @@ const Test = ({ googleFontList }: { googleFontList: FontData[] }) => {
           maxHeight: viewPortHeight ? `${viewPortHeight}px` : 'auto',
         }}
       >
-        <HeaderLayout openPreview={() => setOpenPreview(true)} />
+        <HeaderLayout 
+          openPreview={() => setOpenPreview(true)}
+          user={user}
+          onLogout={onLogout}
+          onSave={handleSave}
+          onLoad={handleLoad}
+          currentProjectId={currentProjectId}
+          canvasData={canvasData || getCurrentCanvasData()}
+        />
         {openPreview && <PreviewModal onClose={() => setOpenPreview(false)} />}
         <div
           css={{

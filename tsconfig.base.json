@@ -19,6 +19,7 @@
     "baseUrl": ".",
     "paths": {
       "@lidojs/design-editor": ["libs/design-editor/src/index.ts"],
+      "@lidojs/design-hooks": ["libs/design-hooks/design-hooks/src/index.ts"],
       "@lidojs/design-layers": ["libs/design-layers/src/index.ts"],
       "@lidojs/design-screen": ["libs/design-screen/src/index.ts"]
     }

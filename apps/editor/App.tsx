@@ -1,9 +1,11 @@
 import { FontData } from '@lidojs/design-core';
 import axios from 'axios';
-import { FC, useState } from 'react';
+import { FC, useState, useEffect } from 'react';
 import ReactGA from 'react-ga4';
 import { useAsync } from 'react-use';
 import Test from './src/Test';
+import { AuthScreen } from '@lidojs/design-editor';
+import { authService, User } from '@lidojs/design-editor';
 
 if (process.env.NODE_ENV === 'production') {
   ReactGA.initialize('G-68BJDBYMLE');
@@ -27,6 +29,27 @@ type FontVariant =
   | '900';
 const App: FC = () => {
   const [googleFontList, setGoogleFontList] = useState([]);
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  // Check authentication on app load
+  useEffect(() => {
+    const checkAuth = async () => {
+      if (authService.isAuthenticated()) {
+        try {
+          const userData = await authService.getCurrentUser();
+          setUser(userData);
+        } catch (error) {
+          console.error('Auth check failed:', error);
+          authService.logout();
+        }
+      }
+      setLoading(false);
+    };
+
+    checkAuth();
+  }, []);
+
   useAsync(async () => {
     const rand = Math.floor(Math.random() * 2);
     const data = await axios.get<{
@@ -73,7 +96,35 @@ const App: FC = () => {
     });
     setGoogleFontList(res);
   }, []);
-  return <Test googleFontList={googleFontList} />;
+
+  const handleAuthSuccess = (userData: User) => {
+    setUser(userData);
+  };
+
+  const handleLogout = () => {
+    authService.logout();
+    setUser(null);
+  };
+
+  if (loading) {
+    return (
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        height: '100vh',
+        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+      }}>
+        <div style={{ color: 'white', fontSize: '1.2rem' }}>Loading DesignDeck...</div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <AuthScreen onAuthSuccess={handleAuthSuccess} />;
+  }
+
+  return <Test googleFontList={googleFontList} user={user} onLogout={handleLogout} />;
 };
 
 export default App;
