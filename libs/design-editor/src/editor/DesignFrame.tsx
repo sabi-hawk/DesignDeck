@@ -23,13 +23,14 @@ import React, {
   // useState removed since PageSettings state is no longer needed
 } from 'react';
 import { isMobile } from 'react-device-detect';
+import { SMOOTH_ZOOM_CONFIG } from '../config/smoothZoom';
 import { useEditor, useSelectedLayers } from '../hooks';
 import useClickOutside from '../hooks/useClickOutside';
 import { useDragLayer } from '../hooks/useDragLayer';
+import { useFixedSmoothZoom } from '../hooks/useFixedSmoothZoom';
 import { useSelectLayer } from '../hooks/useSelectLayer';
 import useShortcut from '../hooks/useShortcut';
 import { useTrackingShiftKey } from '../hooks/useTrackingShiftKey';
-import { useZoomPage } from '../hooks/useZoomPage';
 import LayerContextMenu from '../layers/core/context-menu/LayerContextMenu';
 import SelectionBox from '../layers/core/SelectionBox';
 import { useUsedFont } from '../layers/hooks/useUsedFont';
@@ -53,6 +54,9 @@ const DesignFrame: FC<DesignFrameProps> = ({ data }) => {
   const draggingItemRef = useRef<HTMLDivElement>(null);
   const { usedFonts } = useUsedFont();
   const [showTimeline, setShowTimeline] = useState(true);
+
+  // 🎯 SMOOTH ZOOM CONFIGURATION - Controlled via config/smoothZoom.ts
+  const enableSmoothZoom = SMOOTH_ZOOM_CONFIG.enabled;
   const {
     config: { assetPath },
   } = useContext(EditorContext);
@@ -95,6 +99,7 @@ const DesignFrame: FC<DesignFrameProps> = ({ data }) => {
       dragNDrop: state.dragNDrop,
     };
   });
+  // 🚀 FIXED SMOOTH ZOOM - Preserves original panning, adds smooth Ctrl+wheel zoom
   const {
     pageTransform,
     onZoomStart,
@@ -105,7 +110,11 @@ const DesignFrame: FC<DesignFrameProps> = ({ data }) => {
     onMoveEnd,
     onMovePage,
     onMovePageEnd,
-  } = useZoomPage(frameRef, pageRef, pageContainerRef);
+    smoothZoom,
+  } = useFixedSmoothZoom(frameRef, pageRef, pageContainerRef, {
+    enableSmoothZoom: enableSmoothZoom,
+    debugMode: SMOOTH_ZOOM_CONFIG.debugMode,
+  });
   useEffect(() => {
     actions.setData(data);
   }, [data, actions]);
@@ -136,9 +145,15 @@ const DesignFrame: FC<DesignFrameProps> = ({ data }) => {
       actions.resetSelectLayer();
     };
 
-    document.addEventListener('clearSelectionOnPlay', handleClearSelectionOnPlay);
+    document.addEventListener(
+      'clearSelectionOnPlay',
+      handleClearSelectionOnPlay
+    );
     return () => {
-      document.removeEventListener('clearSelectionOnPlay', handleClearSelectionOnPlay);
+      document.removeEventListener(
+        'clearSelectionOnPlay',
+        handleClearSelectionOnPlay
+      );
     };
   }, [actions]);
 
@@ -320,7 +335,7 @@ const DesignFrame: FC<DesignFrameProps> = ({ data }) => {
     // Make timeline control globally accessible
     (window as any).showTimeline = () => setShowTimeline(true);
     (window as any).hideTimeline = () => setShowTimeline(false);
-    
+
     return () => {
       delete (window as any).showTimeline;
       delete (window as any).hideTimeline;
@@ -351,11 +366,11 @@ const DesignFrame: FC<DesignFrameProps> = ({ data }) => {
         onTouchStart={onZoomStart}
       >
         {/* Timeline Component */}
-        <Timeline 
-          isVisible={showTimeline} 
-          onToggle={() => setShowTimeline(!showTimeline)} 
+        <Timeline
+          isVisible={showTimeline}
+          onToggle={() => setShowTimeline(!showTimeline)}
         />
-        
+
         {/* Rest of the component */}
         <div
           css={{
@@ -412,6 +427,28 @@ const DesignFrame: FC<DesignFrameProps> = ({ data }) => {
                 }}
               >
                 <GlobalStyle fonts={usedFonts} mode={'editor'} />
+
+                {/* 🎯 SMOOTH ZOOM STATUS INDICATOR (controlled via config) */}
+                {enableSmoothZoom && SMOOTH_ZOOM_CONFIG.showIndicator && (
+                  <div
+                    style={{
+                      position: 'fixed',
+                      top: 10,
+                      left: 10,
+                      zIndex: 9999,
+                      background: 'rgba(0, 150, 0, 0.8)',
+                      color: 'white',
+                      padding: '4px 8px',
+                      borderRadius: '4px',
+                      fontSize: '12px',
+                      fontWeight: 'bold',
+                      pointerEvents: 'none',
+                    }}
+                  >
+                    🎯 Stable Zoom (Ctrl+Wheel)
+                  </div>
+                )}
+
                 {pages.map((_, index) => (
                   <div
                     key={index}

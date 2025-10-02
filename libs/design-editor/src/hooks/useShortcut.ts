@@ -213,16 +213,22 @@ const useShortcut = (frameEle: RefObject<HTMLElement | null>) => {
 
   useEffect(() => {
     const handleZoomDesktop = (e: WheelEvent) => {
-      if (e.ctrlKey) {
-        const s = Math.exp(-e.deltaY / 600);
-        const { minScale, maxScale } = getZoomParams();
-
-        // Apply zoom with new limits
-        const newScale = Math.min(Math.max(scale * s, minScale), maxScale);
-        actions.setScale(newScale);
-        e.preventDefault();
-        e.stopPropagation();
-      }
+      if (!e.ctrlKey) return;
+      const factor = Math.exp(-e.deltaY / 600);
+      if (!frameEle.current) return;
+      const rect = frameEle.current.getBoundingClientRect();
+      const payload = {
+        factor,
+        clientX: e.clientX,
+        clientY: e.clientY,
+        containerLeft: rect.left,
+        containerTop: rect.top,
+      };
+      // Dispatch a custom zoom event for the zoom system to handle (cursor-centered)
+      const evt = new CustomEvent('lido:zoom', { detail: payload });
+      document.dispatchEvent(evt);
+      e.preventDefault();
+      e.stopPropagation();
     };
 
     frameEle.current?.addEventListener('wheel', handleZoomDesktop, {
