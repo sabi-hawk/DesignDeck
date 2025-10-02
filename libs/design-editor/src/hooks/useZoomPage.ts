@@ -83,19 +83,49 @@ export const useZoomPage = (
   }, []);
 
   const pageZoomMove = useCallback(
-    (change: number) => {
+    (change: number, cursorX?: number, cursorY?: number) => {
       if (
         frameRef.current &&
         transformRef.current.isZoom &&
         pageListRef.current
       ) {
+        const { x, y } = pageTransform;
+
+        // 🎯 CURSOR-CENTERED ZOOM: If cursor position is provided, zoom towards it
+        if (cursorX !== undefined && cursorY !== undefined) {
+          // Calculate current page element position
+          const pageElement = pageListRef.current[activePage];
+          const pageRect = pageElement.getBoundingClientRect();
+          const containerRect = frameRef.current.getBoundingClientRect();
+
+          // Calculate cursor position relative to current page position
+          const relativeCursorX =
+            cursorX - (pageRect.left - containerRect.left);
+          const relativeCursorY = cursorY - (pageRect.top - containerRect.top);
+
+          // Calculate what content point is under the cursor
+          const contentX = relativeCursorX / scale;
+          const contentY = relativeCursorY / scale;
+
+          // Calculate new position to keep that content point under cursor
+          const newScale = change;
+          const newX = cursorX - contentX * scale * newScale;
+          const newY = cursorY - contentY * scale * newScale;
+
+          pageListRef.current[activePage].style.transform = getTransformStyle({
+            position: { x: newX, y: newY },
+            scale: newScale,
+          });
+          return;
+        }
+
+        // ORIGINAL CENTER-BASED ZOOM (fallback)
         const headerHeight = 70;
         const footerHeight = 72;
         const offset = 16;
         const containerWidth = window.innerWidth - offset * 2;
         const containerHeight =
           window.innerHeight - headerHeight - footerHeight - offset * 2;
-        const { x, y } = pageTransform;
         const oldPageW = pageSize.width * scale;
         const oldPageH = pageSize.height * scale;
         const perfectX = (containerWidth - oldPageW) / 2;
@@ -202,6 +232,61 @@ export const useZoomPage = (
       activePage,
     ]
   );
+
+  // Desktop Ctrl/Cmd + wheel cursor-centered zoom (application-level entry)
+  useEffect(() => {
+    const onDesktopZoom = (ev: Event) => {
+      const e = ev as CustomEvent<{
+        factor: number;
+        clientX: number;
+        clientY: number;
+        containerLeft: number;
+        containerTop: number;
+      }>;
+
+      if (!frameRef.current || !pageListRef.current) return;
+
+      // Compute new scale with same limits used by PageControl defaults
+      const newScale = Math.max(0.01, scale * e.detail.factor);
+
+      const pageEl = pageListRef.current[activePage];
+      if (!pageEl) return;
+
+      // Cursor position relative to frame container
+      const cursorX = e.detail.clientX - e.detail.containerLeft;
+      const cursorY = e.detail.clientY - e.detail.containerTop;
+
+      // Use actual DOM offsets (includes margins) instead of state
+      const containerRect = frameRef.current.getBoundingClientRect();
+      const pageRect = pageEl.getBoundingClientRect();
+      const offsetX = pageRect.left - containerRect.left; // visual left of page within container
+      const offsetY = pageRect.top - containerRect.top; // visual top of page within container
+      const wrapperScale = pageTransform.scale || 1; // usually 1
+
+      // Map screen -> content coords before zoom
+      const contentX = (cursorX - offsetX) / (scale * wrapperScale);
+      const contentY = (cursorY - offsetY) / (scale * wrapperScale);
+
+      // New position to keep the same content point under the cursor
+      const newX = cursorX - contentX * (newScale * wrapperScale);
+      const newY = cursorY - contentY * (newScale * wrapperScale);
+
+      // Apply immediate style for responsiveness
+      pageEl.style.transform = getTransformStyle({
+        position: { x: newX, y: newY },
+        scale: wrapperScale,
+      });
+
+      // Commit state
+      setPageTransform({ scale: wrapperScale, x: newX, y: newY });
+      actions.setScale(newScale);
+    };
+
+    document.addEventListener('lido:zoom', onDesktopZoom as EventListener);
+    return () => {
+      document.removeEventListener('lido:zoom', onDesktopZoom as EventListener);
+    };
+  }, [actions, activePage, frameRef, pageListRef, pageTransform, scale]);
   const handleZoomStart = useCallback(
     (e: React.TouchEvent) => {
       const { touches } = e.nativeEvent;
