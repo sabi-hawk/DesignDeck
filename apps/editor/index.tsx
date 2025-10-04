@@ -24,6 +24,7 @@ if (process.env.MODE === 'production') {
   Sentry.setUser({ id: uid });
   FullStory.identify(uid);
 }
+// axios.defaults.baseURL = 'http://localhost:3001';
 axios.defaults.baseURL = 'https://editor-api.lidojs.com';
 const root = ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement

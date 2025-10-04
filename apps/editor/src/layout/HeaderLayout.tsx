@@ -2,9 +2,11 @@ import ArrowClockwiseIcon from '@duyank/icons/regular/ArrowClockwise';
 import ArrowCounterClockwiseIcon from '@duyank/icons/regular/ArrowCounterClockwise';
 import DownloadIcon from '@duyank/icons/regular/Download';
 import PlayCircleIcon from '@duyank/icons/regular/PlayCircle';
+import SignOutIcon from '@duyank/icons/regular/SignOut';
 import { useEditor } from '@lidojs/design-editor';
 import { toPng } from 'html-to-image';
 import React, { forwardRef, ForwardRefRenderFunction } from 'react';
+import { useAuth } from '../contexts/AuthContext';
 
 interface HeaderLayoutProps {
   openPreview: () => void;
@@ -15,6 +17,7 @@ const HeaderLayout: ForwardRefRenderFunction<
   HeaderLayoutProps
 > = ({ openPreview }, ref) => {
   const { actions, query } = useEditor();
+  const { user, logout } = useAuth();
 
   const handleExportAllPages = async () => {
     try {
@@ -198,7 +201,7 @@ const HeaderLayout: ForwardRefRenderFunction<
         </button>
       </div>
 
-      {/* Right Section - Export and Preview */}
+      {/* Right Section - User Info and Logout */}
       <div
         css={{
           display: 'flex',
@@ -206,6 +209,75 @@ const HeaderLayout: ForwardRefRenderFunction<
           gap: 12,
         }}
       >
+        {/* User Info */}
+        <div
+          css={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            background: 'rgba(255, 255, 255, 0.15)',
+            padding: '8px 16px',
+            borderRadius: '20px',
+            border: '1px solid rgba(255, 255, 255, 0.2)',
+            backdropFilter: 'blur(10px)',
+          }}
+        >
+          <div
+            css={{
+              width: 32,
+              height: 32,
+              borderRadius: '50%',
+              background: 'linear-gradient(135deg, #ffffff 0%, #f0f9ff 100%)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '14px',
+              fontWeight: '600',
+              color: '#667eea',
+            }}
+          >
+            {user?.name?.charAt(0).toUpperCase() || 'U'}
+          </div>
+          <span
+            css={{
+              color: '#ffffff',
+              fontSize: '14px',
+              fontWeight: '500',
+              '@media (max-width: 900px)': {
+                display: 'none',
+              },
+            }}
+          >
+            {user?.name || 'User'}
+          </span>
+        </div>
+
+        {/* Logout Button */}
+        <button
+          css={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: '#ffffff',
+            background: 'rgba(255, 255, 255, 0.15)',
+            border: '1px solid rgba(255, 255, 255, 0.2)',
+            padding: '10px',
+            borderRadius: '12px',
+            cursor: 'pointer',
+            transition: 'all 0.2s ease',
+            backdropFilter: 'blur(10px)',
+            fontSize: 18,
+            ':hover': {
+              background: 'rgba(255, 255, 255, 0.25)',
+              borderColor: 'rgba(255, 255, 255, 0.3)',
+              transform: 'translateY(-1px)',
+            },
+          }}
+          title="Sign out"
+          onClick={logout}
+        >
+          <SignOutIcon />
+        </button>
         {/* Export All Pages Button */}
         {/* <button
           css={{

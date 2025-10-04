@@ -3,6 +3,10 @@ import axios from 'axios';
 import { FC, useState } from 'react';
 import ReactGA from 'react-ga4';
 import { useAsync } from 'react-use';
+import AuthPage from './src/components/auth/AuthPage';
+import ToastContainer from './src/components/ui/ToastContainer';
+import { AuthProvider, useAuth } from './src/contexts/AuthContext';
+import { ToastProvider } from './src/contexts/ToastContext';
 import Test from './src/Test';
 
 if (process.env.NODE_ENV === 'production') {
@@ -25,8 +29,10 @@ type FontVariant =
   | '700'
   | '800'
   | '900';
-const App: FC = () => {
+const AppContent: FC = () => {
+  const { user, loading } = useAuth();
   const [googleFontList, setGoogleFontList] = useState([]);
+  
   useAsync(async () => {
     const rand = Math.floor(Math.random() * 2);
     const data = await axios.get<{
@@ -73,7 +79,50 @@ const App: FC = () => {
     });
     setGoogleFontList(res);
   }, []);
+
+  if (loading) {
+    return (
+      <div
+        css={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          height: '100vh',
+          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        }}
+      >
+        <div css={{ textAlign: 'center', color: 'white' }}>
+          <div css={{
+            width: '50px',
+            height: '50px',
+            border: '4px solid rgba(255,255,255,0.3)',
+            borderTop: '4px solid white',
+            borderRadius: '50%',
+            animation: 'spin 1s linear infinite',
+            margin: '0 auto 1rem',
+          }} />
+          <p css={{ fontSize: '1.2rem', margin: '0' }}>Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <AuthPage />;
+  }
+
   return <Test googleFontList={googleFontList} />;
+};
+
+const App: FC = () => {
+  return (
+    <ToastProvider>
+      <AuthProvider>
+        <AppContent />
+        <ToastContainer />
+      </AuthProvider>
+    </ToastProvider>
+  );
 };
 
 export default App;
