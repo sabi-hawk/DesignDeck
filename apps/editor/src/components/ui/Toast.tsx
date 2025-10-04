@@ -90,7 +90,7 @@ const Toast: React.FC<ToastProps> = ({ toast, onHide }) => {
 
   return (
     <div
-      css={{
+      style={{
         ...getToastStyles(),
         display: 'flex',
         alignItems: 'flex-start',
@@ -104,20 +104,11 @@ const Toast: React.FC<ToastProps> = ({ toast, onHide }) => {
         transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
         position: 'relative',
         overflow: 'hidden',
-        '&::before': {
-          content: '""',
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          height: '2px',
-          background: 'rgba(255, 255, 255, 0.3)',
-        },
       }}
     >
       {/* Icon */}
       <div
-        css={{
+        style={{
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -132,9 +123,9 @@ const Toast: React.FC<ToastProps> = ({ toast, onHide }) => {
       </div>
 
       {/* Content */}
-      <div css={{ flex: 1, minWidth: 0 }}>
+      <div style={{ flex: 1, minWidth: 0 }}>
         <h4
-          css={{
+          style={{
             fontSize: '0.875rem',
             fontWeight: '600',
             margin: '0 0 0.25rem 0',
@@ -145,7 +136,7 @@ const Toast: React.FC<ToastProps> = ({ toast, onHide }) => {
           {toast.title}
         </h4>
         <p
-          css={{
+          style={{
             fontSize: '0.8rem',
             margin: '0',
             color: 'rgba(255, 255, 255, 0.9)',
@@ -159,7 +150,7 @@ const Toast: React.FC<ToastProps> = ({ toast, onHide }) => {
       {/* Close Button */}
       <button
         onClick={handleHide}
-        css={{
+        style={{
           background: 'rgba(255, 255, 255, 0.2)',
           border: 'none',
           borderRadius: '6px',
@@ -175,9 +166,12 @@ const Toast: React.FC<ToastProps> = ({ toast, onHide }) => {
           height: '20px',
           transition: 'background-color 0.2s',
           flexShrink: 0,
-          '&:hover': {
-            background: 'rgba(255, 255, 255, 0.3)',
-          },
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.background = 'rgba(255, 255, 255, 0.3)';
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.background = 'rgba(255, 255, 255, 0.2)';
         }}
       >
         <svg width="12" height="12" fill="currentColor" viewBox="0 0 20 20">

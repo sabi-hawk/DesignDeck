@@ -45,7 +45,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) => {
 
   return (
     <div
-      css={{
+      style={{
         width: '100%',
         maxWidth: '400px',
         margin: '0 auto',
@@ -55,8 +55,8 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) => {
         boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)',
       }}
     >
-      <div css={{ textAlign: 'center', marginBottom: '2rem' }}>
-        <h2 css={{ 
+      <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+        <h2 style={{ 
           fontSize: '2rem', 
           fontWeight: '700', 
           color: '#1a1a1a',
@@ -64,7 +64,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) => {
         }}>
           Create Account
         </h2>
-        <p css={{ 
+        <p style={{ 
           color: '#666', 
           margin: '0',
           fontSize: '1rem'
@@ -74,183 +74,205 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) => {
       </div>
 
       <form onSubmit={handleSubmit}>
-        <div css={{ marginBottom: '1.5rem' }}>
+        <div style={{ marginBottom: '1.5rem' }}>
           <label 
-            htmlFor="name" 
-            css={{ 
+            style={{ 
               display: 'block', 
               marginBottom: '0.5rem', 
               fontWeight: '500',
               color: '#333'
-            }}
+            }} 
+            htmlFor="name"
           >
             Full Name
           </label>
           <input
-            type="text"
-            id="name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
             required
-            css={{
+            style={{
               width: '100%',
               padding: '0.75rem',
               border: '2px solid #e1e5e9',
               borderRadius: '8px',
               fontSize: '1rem',
               transition: 'border-color 0.2s',
-              '&:focus': {
-                outline: 'none',
-                borderColor: '#007bff',
-              },
             }}
+            onFocus={(e) => {
+              e.target.style.outline = 'none';
+              e.target.style.borderColor = '#007bff';
+            }}
+            onBlur={(e) => {
+              e.target.style.borderColor = '#e1e5e9';
+            }}
+            id="name"
             placeholder="Enter your full name"
+            type="text"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
           />
         </div>
 
-        <div css={{ marginBottom: '1.5rem' }}>
+        <div style={{ marginBottom: '1.5rem' }}>
           <label 
-            htmlFor="email" 
-            css={{ 
+            style={{ 
               display: 'block', 
               marginBottom: '0.5rem', 
               fontWeight: '500',
               color: '#333'
-            }}
+            }} 
+            htmlFor="email"
           >
             Email Address
           </label>
           <input
-            type="email"
-            id="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
             required
-            css={{
+            style={{
               width: '100%',
               padding: '0.75rem',
               border: '2px solid #e1e5e9',
               borderRadius: '8px',
               fontSize: '1rem',
               transition: 'border-color 0.2s',
-              '&:focus': {
-                outline: 'none',
-                borderColor: '#007bff',
-              },
             }}
+            onFocus={(e) => {
+              e.target.style.outline = 'none';
+              e.target.style.borderColor = '#007bff';
+            }}
+            onBlur={(e) => {
+              e.target.style.borderColor = '#e1e5e9';
+            }}
+            id="email"
             placeholder="Enter your email"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
           />
         </div>
 
-        <div css={{ marginBottom: '1.5rem' }}>
+        <div style={{ marginBottom: '1.5rem' }}>
           <label 
-            htmlFor="password" 
-            css={{ 
+            style={{ 
               display: 'block', 
               marginBottom: '0.5rem', 
               fontWeight: '500',
               color: '#333'
-            }}
+            }} 
+            htmlFor="password"
           >
             Password
           </label>
           <input
-            type="password"
-            id="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
             required
-            css={{
+            style={{
               width: '100%',
               padding: '0.75rem',
               border: '2px solid #e1e5e9',
               borderRadius: '8px',
               fontSize: '1rem',
               transition: 'border-color 0.2s',
-              '&:focus': {
-                outline: 'none',
-                borderColor: '#007bff',
-              },
             }}
+            onFocus={(e) => {
+              e.target.style.outline = 'none';
+              e.target.style.borderColor = '#007bff';
+            }}
+            onBlur={(e) => {
+              e.target.style.borderColor = '#e1e5e9';
+            }}
+            id="password"
             placeholder="Create a password"
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
           />
         </div>
 
-        <div css={{ marginBottom: '1.5rem' }}>
+        <div style={{ marginBottom: '1.5rem' }}>
           <label 
-            htmlFor="confirmPassword" 
-            css={{ 
+            style={{ 
               display: 'block', 
               marginBottom: '0.5rem', 
               fontWeight: '500',
               color: '#333'
-            }}
+            }} 
+            htmlFor="confirmPassword"
           >
             Confirm Password
           </label>
           <input
-            type="password"
-            id="confirmPassword"
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
             required
-            css={{
+            style={{
               width: '100%',
               padding: '0.75rem',
               border: '2px solid #e1e5e9',
               borderRadius: '8px',
               fontSize: '1rem',
               transition: 'border-color 0.2s',
-              '&:focus': {
-                outline: 'none',
-                borderColor: '#007bff',
-              },
             }}
+            onFocus={(e) => {
+              e.target.style.outline = 'none';
+              e.target.style.borderColor = '#007bff';
+            }}
+            onBlur={(e) => {
+              e.target.style.borderColor = '#e1e5e9';
+            }}
+            id="confirmPassword"
             placeholder="Confirm your password"
+            type="password"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
           />
         </div>
 
 
         <button
-          type="submit"
+            style={{
+              width: '100%',
+              padding: '0.75rem',
+              background: isLoading ? '#ccc' : '#28a745',
+              color: 'white',
+              border: 'none',
+              borderRadius: '8px',
+              fontSize: '1rem',
+              fontWeight: '600',
+              cursor: isLoading ? 'not-allowed' : 'pointer',
+              transition: 'background-color 0.2s',
+            }}
+            onMouseEnter={(e) => {
+              if (!isLoading) {
+                e.currentTarget.style.background = '#218838';
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (!isLoading) {
+                e.currentTarget.style.background = '#28a745';
+              }
+            }}
           disabled={isLoading}
-          css={{
-            width: '100%',
-            padding: '0.75rem',
-            background: isLoading ? '#ccc' : '#28a745',
-            color: 'white',
-            border: 'none',
-            borderRadius: '8px',
-            fontSize: '1rem',
-            fontWeight: '600',
-            cursor: isLoading ? 'not-allowed' : 'pointer',
-            transition: 'background-color 0.2s',
-            '&:hover': {
-              background: isLoading ? '#ccc' : '#218838',
-            },
-          }}
+          type="submit"
         >
           {isLoading ? 'Creating Account...' : 'Create Account'}
         </button>
       </form>
 
-      <div css={{ textAlign: 'center', marginTop: '1.5rem' }}>
-        <p css={{ color: '#666', margin: '0' }}>
+      <div style={{ textAlign: 'center', marginTop: '1.5rem' }}>
+        <p style={{ color: '#666', margin: '0' }}>
           Already have an account?{' '}
           <button
-            type="button"
-            onClick={onSwitchToLogin}
-            css={{
+            style={{
               background: 'none',
               border: 'none',
               color: '#007bff',
               cursor: 'pointer',
               textDecoration: 'underline',
               fontSize: '1rem',
-              '&:hover': {
-                color: '#0056b3',
-              },
             }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.color = '#0056b3';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.color = '#007bff';
+            }}
+            type="button"
+            onClick={onSwitchToLogin}
           >
             Sign in
           </button>

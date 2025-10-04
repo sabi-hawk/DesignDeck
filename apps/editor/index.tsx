@@ -1,6 +1,7 @@
 import * as FullStory from '@fullstory/browser';
 import * as Sentry from '@sentry/react';
 import axios from 'axios';
+import React from 'react';
 import * as ReactDOM from 'react-dom/client';
 import { v4 } from 'uuid';
 import App from './App';
@@ -24,7 +25,6 @@ if (process.env.MODE === 'production') {
   Sentry.setUser({ id: uid });
   FullStory.identify(uid);
 }
-// axios.defaults.baseURL = 'http://localhost:3001';
 axios.defaults.baseURL = 'https://editor-api.lidojs.com';
 const root = ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement

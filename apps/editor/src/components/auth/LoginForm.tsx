@@ -22,7 +22,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister }) => {
 
   return (
     <div
-      css={{
+      style={{
         width: '100%',
         maxWidth: '400px',
         margin: '0 auto',
@@ -32,8 +32,8 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister }) => {
         boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)',
       }}
     >
-      <div css={{ textAlign: 'center', marginBottom: '2rem' }}>
-        <h2 css={{ 
+      <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+        <h2 style={{ 
           fontSize: '2rem', 
           fontWeight: '700', 
           color: '#1a1a1a',
@@ -41,7 +41,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister }) => {
         }}>
           Welcome Back
         </h2>
-        <p css={{ 
+        <p style={{ 
           color: '#666', 
           margin: '0',
           fontSize: '1rem'
@@ -51,10 +51,10 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister }) => {
       </div>
 
       <form onSubmit={handleSubmit}>
-        <div css={{ marginBottom: '1.5rem' }}>
+        <div style={{ marginBottom: '1.5rem' }}>
           <label 
             htmlFor="email" 
-            css={{ 
+            style={{ 
               display: 'block', 
               marginBottom: '0.5rem', 
               fontWeight: '500',
@@ -69,26 +69,29 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister }) => {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
-            css={{
+            style={{
               width: '100%',
               padding: '0.75rem',
               border: '2px solid #e1e5e9',
               borderRadius: '8px',
               fontSize: '1rem',
               transition: 'border-color 0.2s',
-              '&:focus': {
-                outline: 'none',
-                borderColor: '#007bff',
-              },
+            }}
+            onFocus={(e) => {
+              e.target.style.outline = 'none';
+              e.target.style.borderColor = '#007bff';
+            }}
+            onBlur={(e) => {
+              e.target.style.borderColor = '#e1e5e9';
             }}
             placeholder="Enter your email"
           />
         </div>
 
-        <div css={{ marginBottom: '1.5rem' }}>
+        <div style={{ marginBottom: '1.5rem' }}>
           <label 
             htmlFor="password" 
-            css={{ 
+            style={{ 
               display: 'block', 
               marginBottom: '0.5rem', 
               fontWeight: '500',
@@ -103,17 +106,20 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister }) => {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
-            css={{
+            style={{
               width: '100%',
               padding: '0.75rem',
               border: '2px solid #e1e5e9',
               borderRadius: '8px',
               fontSize: '1rem',
               transition: 'border-color 0.2s',
-              '&:focus': {
-                outline: 'none',
-                borderColor: '#007bff',
-              },
+            }}
+            onFocus={(e) => {
+              e.target.style.outline = 'none';
+              e.target.style.borderColor = '#007bff';
+            }}
+            onBlur={(e) => {
+              e.target.style.borderColor = '#e1e5e9';
             }}
             placeholder="Enter your password"
           />
@@ -123,42 +129,52 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister }) => {
         <button
           type="submit"
           disabled={isLoading}
-          css={{
-            width: '100%',
-            padding: '0.75rem',
-            background: isLoading ? '#ccc' : '#007bff',
-            color: 'white',
-            border: 'none',
-            borderRadius: '8px',
-            fontSize: '1rem',
-            fontWeight: '600',
-            cursor: isLoading ? 'not-allowed' : 'pointer',
-            transition: 'background-color 0.2s',
-            '&:hover': {
-              background: isLoading ? '#ccc' : '#0056b3',
-            },
-          }}
+            style={{
+              width: '100%',
+              padding: '0.75rem',
+              background: isLoading ? '#ccc' : '#007bff',
+              color: 'white',
+              border: 'none',
+              borderRadius: '8px',
+              fontSize: '1rem',
+              fontWeight: '600',
+              cursor: isLoading ? 'not-allowed' : 'pointer',
+              transition: 'background-color 0.2s',
+            }}
+            onMouseEnter={(e) => {
+              if (!isLoading) {
+                e.currentTarget.style.background = '#0056b3';
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (!isLoading) {
+                e.currentTarget.style.background = '#007bff';
+              }
+            }}
         >
           {isLoading ? 'Signing In...' : 'Sign In'}
         </button>
       </form>
 
-      <div css={{ textAlign: 'center', marginTop: '1.5rem' }}>
-        <p css={{ color: '#666', margin: '0' }}>
+      <div style={{ textAlign: 'center', marginTop: '1.5rem' }}>
+        <p style={{ color: '#666', margin: '0' }}>
           Don't have an account?{' '}
           <button
             type="button"
             onClick={onSwitchToRegister}
-            css={{
+            style={{
               background: 'none',
               border: 'none',
               color: '#007bff',
               cursor: 'pointer',
               textDecoration: 'underline',
               fontSize: '1rem',
-              '&:hover': {
-                color: '#0056b3',
-              },
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.color = '#0056b3';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.color = '#007bff';
             }}
           >
             Sign up

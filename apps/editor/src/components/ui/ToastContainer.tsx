@@ -7,7 +7,7 @@ const ToastContainer: React.FC = () => {
 
   return (
     <div
-      css={{
+      style={{
         position: 'fixed',
         top: '1rem',
         right: '1rem',
@@ -16,17 +16,15 @@ const ToastContainer: React.FC = () => {
         flexDirection: 'column',
         gap: '0.5rem',
         pointerEvents: 'none',
-        '& > *': {
-          pointerEvents: 'auto',
-        },
       }}
     >
       {toasts.map((toast) => (
-        <Toast
-          key={toast.id}
-          toast={toast}
-          onHide={hideToast}
-        />
+        <div key={toast.id} style={{ pointerEvents: 'auto' }}>
+          <Toast
+            toast={toast}
+            onHide={hideToast}
+          />
+        </div>
       ))}
     </div>
   );

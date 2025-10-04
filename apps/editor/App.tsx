@@ -1,6 +1,6 @@
 import { FontData } from '@lidojs/design-core';
 import axios from 'axios';
-import { FC, useState } from 'react';
+import React, { FC, useState } from 'react';
 import ReactGA from 'react-ga4';
 import { useAsync } from 'react-use';
 import AuthPage from './src/components/auth/AuthPage';
@@ -31,7 +31,7 @@ type FontVariant =
   | '900';
 const AppContent: FC = () => {
   const { user, loading } = useAuth();
-  const [googleFontList, setGoogleFontList] = useState([]);
+  const [googleFontList, setGoogleFontList] = useState<FontData[]>([]);
   
   useAsync(async () => {
     const rand = Math.floor(Math.random() * 2);
@@ -83,7 +83,7 @@ const AppContent: FC = () => {
   if (loading) {
     return (
       <div
-        css={{
+        style={{
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -91,8 +91,8 @@ const AppContent: FC = () => {
           background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
         }}
       >
-        <div css={{ textAlign: 'center', color: 'white' }}>
-          <div css={{
+        <div style={{ textAlign: 'center', color: 'white' }}>
+          <div style={{
             width: '50px',
             height: '50px',
             border: '4px solid rgba(255,255,255,0.3)',
@@ -101,7 +101,7 @@ const AppContent: FC = () => {
             animation: 'spin 1s linear infinite',
             margin: '0 auto 1rem',
           }} />
-          <p css={{ fontSize: '1.2rem', margin: '0' }}>Loading...</p>
+          <p style={{ fontSize: '1.2rem', margin: '0' }}>Loading...</p>
         </div>
       </div>
     );
