@@ -47,8 +47,8 @@ import {
   serializeLayers,
 } from '../ultils/layer/layers';
 
-const decodeLayer = (serializedLayer: SerializedLayer, parentId: LayerId) => {
-  const newId = getRandomId();
+const decodeLayer = (serializedLayer: SerializedLayer, parentId: LayerId, _originalId?: string) => {
+  const newId = _originalId ?? getRandomId();
   return {
     id: newId,
     data: deserializeLayer({
@@ -61,11 +61,12 @@ const decodeLayer = (serializedLayer: SerializedLayer, parentId: LayerId) => {
 export const ActionMethods = (state: EditorState, query: CoreEditorQuery) => {
   const addLayerTreeToParent = (
     pageIndex: number,
-    { rootId, layers }: SerializedLayerTree,
+    { rootId, layers, _originalId, positionV2 }: SerializedLayerTree,
     parentId: LayerId = 'ROOT',
     position?: Delta
   ) => {
-    const layer = decodeLayer(layers[rootId], parentId);
+    const actualPosition = positionV2 ?? position;
+    const layer = decodeLayer(layers[rootId], parentId, _originalId);
     const deserializeChild = (layerId: LayerId, newParentId: LayerId) => {
       const res: [LayerId, Layer<LayerComponentProps>][] = [];
       layers[layerId].child.forEach((childId) => {
@@ -81,11 +82,12 @@ export const ActionMethods = (state: EditorState, query: CoreEditorQuery) => {
       state.pages[state.activePage].layers[layerId] = layer;
     });
     const layerData = {
+      _originalId,
       id: layer.id,
       data: mergeWithoutArray(layer.data, {
         props: {
           position:
-            position ??
+            actualPosition ??
             getAddedPosition(
               getPositionWhenLayerCenter(query.getPageSize(), {
                 width: layer.data.props.boxSize.width,
@@ -1038,6 +1040,8 @@ export const ActionMethods = (state: EditorState, query: CoreEditorQuery) => {
         thumb,
         url,
         styles,
+        _originalId,
+        position,
       }: {
         url: string;
         thumb: string;
@@ -1051,11 +1055,13 @@ export const ActionMethods = (state: EditorState, query: CoreEditorQuery) => {
           hueRotate?: number | null;
           blur?: number | null;
         };
+        _originalId?: string;
+        position?: Delta;
       },
       boxSize: BoxSize,
       parentId: LayerId = 'ROOT'
     ) {
-      const layerId = getRandomId();
+      const layerId = _originalId ?? getRandomId();
       // Use virtual page size instead of full canvas size for reasonable image dimensions
       const virtualPageSize = { width: 2000, height: 1000 }; // Reasonable frame area
       const ratio = virtualPageSize.width / virtualPageSize.height;
@@ -1085,8 +1091,8 @@ export const ActionMethods = (state: EditorState, query: CoreEditorQuery) => {
             rotate: 0,
           },
           position: {
-            x: 0,
-            y: 0,
+            x: position?.x ?? 0,
+            y: position?.y ?? 0,
           },
           boxSize: {
             width: w,
@@ -1100,9 +1106,10 @@ export const ActionMethods = (state: EditorState, query: CoreEditorQuery) => {
       });
       state.pages[state.activePage].layers[layerId] = {
         id: layerId,
+        _originalId,
         data: mergeWithoutArray(dl, {
           props: {
-            position: getAddedPosition(
+            position: position ? getAddedPosition(position, 1) : getAddedPosition(
               getPositionWhenLayerCenter(query.getPageSize(), dl.props.boxSize)
             ),
           },
@@ -1210,8 +1217,8 @@ export const ActionMethods = (state: EditorState, query: CoreEditorQuery) => {
       state.pages[state.activePage].layers[parentId].data.child.push(layerId);
       this.selectLayers(state.activePage, layerId);
     },
-    addSimpleFrameLayer(parentId: LayerId = 'ROOT') {
-      const layerId = getRandomId();
+    addSimpleFrameLayer(parentId: LayerId = 'ROOT', _originalId?: string, props?: LayerComponentProps) {
+      const layerId = _originalId ?? getRandomId();
 
       // Calculate the next stable scene number by counting existing SimpleFrames
       const existingFrames = Object.values(state.pages[state.activePage].layers).filter(
@@ -1229,17 +1236,19 @@ export const ActionMethods = (state: EditorState, query: CoreEditorQuery) => {
         },
         props: {
           position: {
-            x: 0,
-            y: 0,
+            x: props?.position?.x ?? 0,
+            y: props?.position?.y ?? 0,
           },
           boxSize: {
-            width: frameWidth,
-            height: frameHeight,
+            width:props?.boxSize?.width ?? frameWidth,
+            height: props?.boxSize?.height ?? frameHeight,
           },
-          rotate: 0,
-          scale: 1,
+          rotate: props?.rotate ?? 0,
+          scale: props?.scale ?? 1,
           // Add stable scene number as a property
-          sceneNumber: nextSceneNumber,
+          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+          // @ts-ignore
+          sceneNumber: props?.sceneNumber ?? nextSceneNumber,
         },
         locked: false, // Keep unlocked for moving, but we'll prevent resizing through other means
         parent: parentId,
@@ -1247,6 +1256,7 @@ export const ActionMethods = (state: EditorState, query: CoreEditorQuery) => {
       });
 
       state.pages[state.activePage].layers[layerId] = {
+        _originalId,
         id: layerId,
         data: mergeWithoutArray(dl, {
           props: {
@@ -1356,8 +1366,8 @@ export const ActionMethods = (state: EditorState, query: CoreEditorQuery) => {
       state.pages[state.activePage].layers[parentId].data.child.push(layerId);
       this.selectLayers(state.activePage, layerId);
     },
-    addTextLayer({ layers, rootId }: SerializedLayerTree) {
-      const layer = addLayerTreeToParent(state.activePage, { layers, rootId });
+    addTextLayer({ layers, rootId, _originalId, position }: SerializedLayerTree) {
+      const layer = addLayerTreeToParent(state.activePage, { layers, rootId, _originalId, positionV2: position });
       this.selectLayers(state.activePage, layer.id);
     },
     startDragNDrop(

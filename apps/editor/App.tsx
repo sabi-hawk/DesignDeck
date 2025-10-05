@@ -6,6 +6,7 @@ import { useAsync } from 'react-use';
 import AuthPage from './src/components/auth/AuthPage';
 import ToastContainer from './src/components/ui/ToastContainer';
 import { AuthProvider, useAuth } from './src/contexts/AuthContext';
+import { ProgressProvider } from './src/contexts/ProgressContext';
 import { ToastProvider } from './src/contexts/ToastContext';
 import Test from './src/Test';
 
@@ -118,8 +119,10 @@ const App: FC = () => {
   return (
     <ToastProvider>
       <AuthProvider>
-        <AppContent />
-        <ToastContainer />
+        <ProgressProvider>
+          <AppContent />
+          <ToastContainer />
+        </ProgressProvider>
       </AuthProvider>
     </ToastProvider>
   );

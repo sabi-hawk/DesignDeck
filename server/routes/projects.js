@@ -6,7 +6,8 @@ const {
   createProject,
   updateProject,
   deleteProject,
-  saveCanvas
+  saveCanvas,
+  getLatestProject
 } = require('../controllers/projectController');
 const { protect } = require('../middleware/auth');
 
@@ -19,6 +20,11 @@ router.use(protect);
 // @desc    Get all projects for user
 // @access  Private
 router.get('/', getProjects);
+
+// @route   GET /api/projects/latest
+// @desc    Get latest project for user
+// @access  Private
+router.get('/latest', getLatestProject);
 
 // @route   GET /api/projects/:id
 // @desc    Get single project

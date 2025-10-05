@@ -175,19 +175,55 @@ exports.deleteProject = async (req, res) => {
   }
 };
 
+// @desc    Get latest project for user (for auto-loading)
+// @route   GET /api/projects/latest
+// @access  Private
+exports.getLatestProject = async (req, res) => {
+  try {
+    const project = await Project.findOne({ userId: req.user.id })
+      .sort({ lastModified: -1 })
+      .limit(1);
+
+    if (!project) {
+      return res.status(404).json({
+        success: false,
+        message: 'No projects found'
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      data: project
+    });
+  } catch (error) {
+    console.error('Get latest project error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error getting latest project'
+    });
+  }
+};
+
 // @desc    Save current canvas state
 // @route   POST /api/projects/save
 // @access  Private
 exports.saveCanvas = async (req, res) => {
   try {
-    const { projectId, canvasData, thumbnail } = req.body;
+    const { projectId, editorState, canvasData, thumbnail } = req.body;
+    
+    // Use editorState if available, otherwise fall back to canvasData
+    const dataToSave = editorState || canvasData;
+    
+    console.log('💾 Saving data for user:', req.user.id);
+    console.log('📊 Data type:', editorState ? 'editorState' : 'canvasData');
+    console.log('📦 Data preview:', dataToSave ? 'Available' : 'Missing');
 
     if (projectId) {
       // Update existing project
       const project = await Project.findOneAndUpdate(
         { _id: projectId, userId: req.user.id },
         {
-          canvasData,
+          canvasData: dataToSave, // Store the data as canvasData
           thumbnail,
           lastModified: new Date()
         },
@@ -207,11 +243,11 @@ exports.saveCanvas = async (req, res) => {
         data: project
       });
     } else {
-      // Create new project with auto-generated name
+      // Create new project with simple default name
       const project = await Project.create({
         userId: req.user.id,
-        name: `Project ${new Date().toLocaleString()}`,
-        canvasData,
+        name: `My Design Project`,
+        canvasData: dataToSave, // Store the data as canvasData
         thumbnail,
         isPublic: false
       });

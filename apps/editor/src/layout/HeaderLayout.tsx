@@ -1,12 +1,12 @@
 import ArrowClockwiseIcon from '@duyank/icons/regular/ArrowClockwise';
 import ArrowCounterClockwiseIcon from '@duyank/icons/regular/ArrowCounterClockwise';
-import DownloadIcon from '@duyank/icons/regular/Download';
-import PlayCircleIcon from '@duyank/icons/regular/PlayCircle';
 import SignOutIcon from '@duyank/icons/regular/SignOut';
 import { useEditor } from '@lidojs/design-editor';
 import { toPng } from 'html-to-image';
 import React, { forwardRef, ForwardRefRenderFunction } from 'react';
+import SaveProgressButton from '../components/ui/SaveProgressButton';
 import { useAuth } from '../contexts/AuthContext';
+import { useProgress } from '../contexts/ProgressContext';
 
 interface HeaderLayoutProps {
   openPreview: () => void;
@@ -18,6 +18,7 @@ const HeaderLayout: ForwardRefRenderFunction<
 > = ({ openPreview }, ref) => {
   const { actions, query } = useEditor();
   const { user, logout } = useAuth();
+  const { currentProject } = useProgress();
 
   const handleExportAllPages = async () => {
     try {
@@ -200,6 +201,13 @@ const HeaderLayout: ForwardRefRenderFunction<
           <ArrowClockwiseIcon />
         </button>
       </div>
+
+      {/* Save Progress Section */}
+      <SaveProgressButton 
+        onSave={(project) => {
+          console.log('Project saved:', project);
+        }}
+      />
 
       {/* Right Section - User Info and Logout */}
       <div

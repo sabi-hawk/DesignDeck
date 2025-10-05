@@ -64,6 +64,7 @@ export type LayerData<P extends LayerComponentProps> = LayerInfo & {
 export type Layer<P extends LayerComponentProps> = {
   id: LayerId;
   data: LayerData<P>;
+  _originalId?: any;
 };
 
 export type LayerDataRef = Record<

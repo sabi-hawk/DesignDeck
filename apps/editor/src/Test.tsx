@@ -7,6 +7,8 @@ import React, {
   useRef,
   useState,
 } from 'react';
+import EditorStateLoader from './components/EditorStateLoader';
+import { useProgress } from './contexts/ProgressContext';
 import AppLayerSettings from './layout/AppLayerSettings';
 import HeaderLayout from './layout/HeaderLayout';
 import Sidebar from './layout/Sidebar';
@@ -21,6 +23,32 @@ const Test = ({ googleFontList }: { googleFontList: FontData[] }) => {
   const [selectedElementType, setSelectedElementType] = useState<string>('Element');
   const [selectedElementName, setSelectedElementName] = useState<string>('Selected Element');
   const [animationService] = useState(() => AnimationService.getInstance());
+  const { loadLatestProject, hasLoadedInitial, currentProject } = useProgress();
+  const [loadedEditorState, setLoadedEditorState] = useState<any>(null);
+
+  // Auto-load latest project on component mount (only once)
+  useEffect(() => {
+    const loadProject = async () => {
+      if (!hasLoadedInitial) {
+        const result = await loadLatestProject();
+        if (result.success && result.project) {
+          console.log('📦 Project loaded from API:', result.project);
+          console.log('📊 Editor state from DB:', result.project.canvasData);
+          
+          // The canvasData from DB is actually the complete editor state
+          if (result.project.canvasData) {
+            setLoadedEditorState(result.project.canvasData);
+            console.log('✅ Editor state ready to be restored');
+          } else {
+            console.warn('⚠️ No editor state found');
+          }
+        } else {
+          console.log('ℹ️ No project to load, starting with blank canvas');
+        }
+      }
+    };
+    loadProject();
+  }, [loadLatestProject, hasLoadedInitial]);
 
   // Debug state changes
   useEffect(() => {
@@ -117,6 +145,9 @@ const Test = ({ googleFontList }: { googleFontList: FontData[] }) => {
 
   return (
     <Editor config={config} getFonts={getFonts} uploadImage={uploadImage}>
+      {/* Load editor state if available */}
+      {loadedEditorState && <EditorStateLoader editorState={loadedEditorState} />}
+      
       <div
         css={{
           display: 'flex',
