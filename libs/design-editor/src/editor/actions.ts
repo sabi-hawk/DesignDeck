@@ -82,7 +82,6 @@ export const ActionMethods = (state: EditorState, query: CoreEditorQuery) => {
       state.pages[state.activePage].layers[layerId] = layer;
     });
     const layerData = {
-      _originalId,
       id: layer.id,
       data: mergeWithoutArray(layer.data, {
         props: {
@@ -1106,7 +1105,6 @@ export const ActionMethods = (state: EditorState, query: CoreEditorQuery) => {
       });
       state.pages[state.activePage].layers[layerId] = {
         id: layerId,
-        _originalId,
         data: mergeWithoutArray(dl, {
           props: {
             position: position ? getAddedPosition(position, 1) : getAddedPosition(
@@ -1256,7 +1254,6 @@ export const ActionMethods = (state: EditorState, query: CoreEditorQuery) => {
       });
 
       state.pages[state.activePage].layers[layerId] = {
-        _originalId,
         id: layerId,
         data: mergeWithoutArray(dl, {
           props: {
