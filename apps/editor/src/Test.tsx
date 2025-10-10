@@ -25,6 +25,7 @@ const Test = ({ googleFontList }: { googleFontList: FontData[] }) => {
   const [animationService] = useState(() => AnimationService.getInstance());
   const { loadLatestProject, hasLoadedInitial, currentProject } = useProgress();
   const [loadedEditorState, setLoadedEditorState] = useState<any>(null);
+  const [loadedAnimationState, setLoadedAnimationState] = useState<any>(null);
 
   // Auto-load latest project on component mount (only once)
   useEffect(() => {
@@ -34,6 +35,7 @@ const Test = ({ googleFontList }: { googleFontList: FontData[] }) => {
         if (result.success && result.project) {
           console.log('📦 Project loaded from API:', result.project);
           console.log('📊 Editor state from DB:', result.project.canvasData);
+          console.log('🎬 Animation state from DB:', result.project.animationState);
           
           // The canvasData from DB is actually the complete editor state
           if (result.project.canvasData) {
@@ -41,6 +43,14 @@ const Test = ({ googleFontList }: { googleFontList: FontData[] }) => {
             console.log('✅ Editor state ready to be restored');
           } else {
             console.warn('⚠️ No editor state found');
+          }
+
+          // Store animation state for restoration
+          if (result.project.animationState) {
+            setLoadedAnimationState(result.project.animationState);
+            console.log('✅ Animation state ready to be restored');
+          } else {
+            console.log('ℹ️ No animation state found');
           }
         } else {
           console.log('ℹ️ No project to load, starting with blank canvas');
@@ -145,8 +155,8 @@ const Test = ({ googleFontList }: { googleFontList: FontData[] }) => {
 
   return (
     <Editor config={config} getFonts={getFonts} uploadImage={uploadImage}>
-      {/* Load editor state if available */}
-      {loadedEditorState && <EditorStateLoader editorState={loadedEditorState} />}
+      {/* Load editor state and animation state if available */}
+      {loadedEditorState && <EditorStateLoader editorState={loadedEditorState} animationState={loadedAnimationState} />}
       
       <div
         css={{

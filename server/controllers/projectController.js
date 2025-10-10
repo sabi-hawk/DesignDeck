@@ -209,7 +209,7 @@ exports.getLatestProject = async (req, res) => {
 // @access  Private
 exports.saveCanvas = async (req, res) => {
   try {
-    const { projectId, editorState, canvasData, thumbnail } = req.body;
+    const { projectId, editorState, canvasData, animationState, thumbnail } = req.body;
     
     // Use editorState if available, otherwise fall back to canvasData
     const dataToSave = editorState || canvasData;
@@ -217,6 +217,7 @@ exports.saveCanvas = async (req, res) => {
     console.log('💾 Saving data for user:', req.user.id);
     console.log('📊 Data type:', editorState ? 'editorState' : 'canvasData');
     console.log('📦 Data preview:', dataToSave ? 'Available' : 'Missing');
+    console.log('🎬 Animation state:', animationState ? 'Available' : 'Missing');
 
     if (projectId) {
       // Update existing project
@@ -224,6 +225,7 @@ exports.saveCanvas = async (req, res) => {
         { _id: projectId, userId: req.user.id },
         {
           canvasData: dataToSave, // Store the data as canvasData
+          animationState: animationState || null, // Store animation state
           thumbnail,
           lastModified: new Date()
         },
@@ -248,6 +250,7 @@ exports.saveCanvas = async (req, res) => {
         userId: req.user.id,
         name: `My Design Project`,
         canvasData: dataToSave, // Store the data as canvasData
+        animationState: animationState || null, // Store animation state
         thumbnail,
         isPublic: false
       });

@@ -21,6 +21,10 @@ const projectSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.Mixed,
     required: true
   },
+  animationState: {
+    type: mongoose.Schema.Types.Mixed,
+    default: null
+  },
   thumbnail: {
     type: String,
     default: ''

@@ -1,13 +1,15 @@
-import { useEditor } from '@lidojs/design-editor';
+import { useEditor, AnimationService } from '@lidojs/design-editor';
 import { useCallback, useEffect, useRef } from 'react';
 
 interface EditorStateLoaderProps {
   editorState: any;
+  animationState?: any;
 }
 
-const EditorStateLoader: React.FC<EditorStateLoaderProps> = ({ editorState }) => {
-  const { actions, query, state } = useEditor();
+const EditorStateLoader: React.FC<EditorStateLoaderProps> = ({ editorState, animationState }) => {
+  const { actions, query } = useEditor();
   const hasLoaded = useRef(false);
+  const animationService = AnimationService.getInstance();
 
   // Helper function to get original ID from any layer
   const getOriginalId = (layerId: string, pageIndex = 0): string | null => {
@@ -251,6 +253,35 @@ const EditorStateLoader: React.FC<EditorStateLoaderProps> = ({ editorState }) =>
           }
           
           console.log('✅ Complete editor state restored successfully');
+          
+          // Restore animation state AFTER editor state is restored
+          if (animationState) {
+            console.log('🎬 Restoring animation state...');
+            
+            // Update pages data in animation service first
+            if (editorState.pages) {
+              animationService.updatePagesData(editorState.pages);
+              console.log('✅ Updated pages data in AnimationService');
+            }
+            
+            // Import the animation state
+            const success = animationService.importAnimationState(animationState);
+            if (success) {
+              console.log('✅ Animation state restored successfully');
+              
+              // Re-add visual indicators for animated elements
+              const animatedElements = animationService.getAllAnimatedElements();
+              console.log(`🔄 Re-adding visual indicators for ${animatedElements.length} animated elements`);
+              
+              // Note: The lock icons and animation numbers will be re-added when the
+              // animation service is fully integrated with the UI
+            } else {
+              console.warn('⚠️ Failed to restore animation state');
+            }
+          } else {
+            console.log('ℹ️ No animation state to restore');
+          }
+          
           hasLoaded.current = true;
         } catch (error) {
           console.error('❌ Error restoring editor state:', error);
@@ -259,7 +290,7 @@ const EditorStateLoader: React.FC<EditorStateLoaderProps> = ({ editorState }) =>
       
       restoreState();
     }
-  }, [editorState, actions, recreateLayersFromData]);
+  }, [editorState, animationState, actions, recreateLayersFromData, animationService]);
 
   return null; // This component doesn't render anything
 };

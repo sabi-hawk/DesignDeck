@@ -658,6 +658,10 @@ class AnimationService {
    * Notify that processing is complete
    */
   private notifyProcessingComplete(elementId: string, frame: AnimationFrame): void {
+    // Update the frame in animationFrames map with the resultUrl
+    this.animationFrames.set(frame.id, frame);
+    console.log(`💾 Saved resultUrl for frame ${frame.id}: ${frame.resultUrl}`);
+
     // Dispatch custom event to notify timeline
     const processingCompleteEvent = new CustomEvent('processingComplete', {
       detail: {
@@ -941,6 +945,119 @@ class AnimationService {
     }
     
     console.log(`🗑️ Animation data removed for element ${elementId}`);
+  }
+
+  /**
+   * Export animation state for saving to backend
+   */
+  exportAnimationState(): any {
+    try {
+      console.log('📤 Exporting animation state...');
+      
+      const animatedElementsArray = Array.from(this.animatedElements.entries()).map(([id, element]) => ({
+        id,
+        frameIndex: element.frameIndex,
+        startTime: element.startTime,
+        lastCaptureTime: element.lastCaptureTime,
+        settings: element.settings,
+        parentFrameId: element.parentFrameId
+      }));
+
+      const animationFramesArray = Array.from(this.animationFrames.entries()).map(([id, frame]) => ({
+        id,
+        timestamp: frame.timestamp,
+        imageDataUrl: frame.imageDataUrl,
+        elementId: frame.elementId,
+        frameIndex: frame.frameIndex,
+        settings: frame.settings,
+        isInsideFrame: frame.isInsideFrame,
+        parentFrameId: frame.parentFrameId,
+        parentFrameBorderColor: frame.parentFrameBorderColor,
+        fileId: frame.fileId,
+        resultUrl: frame.resultUrl,
+        progress: frame.progress
+      }));
+
+      const animationState = {
+        animatedElements: animatedElementsArray,
+        animationFrames: animationFramesArray,
+        nextFrameIndex: this.nextFrameIndex,
+        isCapturing: this.isCapturing
+      };
+
+      console.log(`✅ Exported animation state: ${animatedElementsArray.length} elements, ${animationFramesArray.length} frames`);
+      return animationState;
+    } catch (error) {
+      console.error('❌ Error exporting animation state:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Import animation state from backend (for future use)
+   */
+  importAnimationState(animationState: any): boolean {
+    try {
+      console.log('📥 Importing animation state...');
+      
+      if (!animationState) {
+        console.log('ℹ️ No animation state to import');
+        return false;
+      }
+
+      // Clear existing data
+      this.animatedElements.clear();
+      this.animationFrames.clear();
+
+      // Restore animated elements
+      if (animationState.animatedElements && Array.isArray(animationState.animatedElements)) {
+        animationState.animatedElements.forEach((element: any) => {
+          this.animatedElements.set(element.id, {
+            id: element.id,
+            frameIndex: element.frameIndex,
+            startTime: element.startTime,
+            lastCaptureTime: element.lastCaptureTime,
+            settings: element.settings,
+            parentFrameId: element.parentFrameId
+          });
+        });
+      }
+
+      // Restore animation frames
+      if (animationState.animationFrames && Array.isArray(animationState.animationFrames)) {
+        animationState.animationFrames.forEach((frame: any) => {
+          this.animationFrames.set(frame.id, {
+            id: frame.id,
+            timestamp: frame.timestamp,
+            imageDataUrl: frame.imageDataUrl,
+            elementId: frame.elementId,
+            frameIndex: frame.frameIndex,
+            settings: frame.settings,
+            isInsideFrame: frame.isInsideFrame,
+            parentFrameId: frame.parentFrameId,
+            parentFrameBorderColor: frame.parentFrameBorderColor,
+            fileId: frame.fileId,
+            resultUrl: frame.resultUrl,
+            progress: frame.progress
+          });
+        });
+      }
+
+      // Restore other state
+      if (typeof animationState.nextFrameIndex === 'number') {
+        this.nextFrameIndex = animationState.nextFrameIndex;
+      }
+
+      if (typeof animationState.isCapturing === 'boolean') {
+        this.isCapturing = animationState.isCapturing;
+      }
+
+      console.log(`✅ Imported animation state: ${this.animatedElements.size} elements, ${this.animationFrames.size} frames`);
+      return true;
+    } catch (error) {
+      console.error('❌ Error importing animation state:', error);
+      return false;
+    }
   }
 }
 

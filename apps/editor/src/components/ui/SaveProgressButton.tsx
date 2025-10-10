@@ -1,4 +1,4 @@
-import { useEditor } from '@lidojs/design-editor';
+import { useEditor, AnimationService } from '@lidojs/design-editor';
 import React from 'react';
 import { useProgress } from '../../contexts/ProgressContext';
 
@@ -7,7 +7,6 @@ interface SaveProgressButtonProps {
 }
 
 const SaveProgressButton: React.FC<SaveProgressButtonProps> = ({ onSave }) => {
-  const { query } = useEditor();
   const state = useEditor((state) => state);
   const { saveProgress, isSaving, currentProject } = useProgress();
 
@@ -51,10 +50,15 @@ const SaveProgressButton: React.FC<SaveProgressButtonProps> = ({ onSave }) => {
         sidebar: state.sidebar,
       };
       
+      // Get animation state from AnimationService
+      const animationService = AnimationService.getInstance();
+      const animationState = animationService.exportAnimationState();
+      
       console.log('🔄 Saving cleaned state with project ID:', currentProject?._id);
       console.log('📊 Cleaned state to save:', cleanState);
+      console.log('🎬 Animation state to save:', animationState);
       
-      const result = await saveProgress(cleanState, currentProject?._id);
+      const result = await saveProgress(cleanState, animationState, currentProject?._id);
       if (result.success && result.project) {
         console.log('✅ Save successful, project:', result.project);
         onSave?.(result.project);

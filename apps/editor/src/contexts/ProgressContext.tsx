@@ -10,6 +10,7 @@ interface Project {
   name: string;
   description?: string;
   canvasData: any;
+  animationState?: any;
   thumbnail?: string;
   isPublic: boolean;
   tags: string[];
@@ -22,7 +23,7 @@ interface ProgressContextType {
   isSaving: boolean;
   isLoading: boolean;
   hasLoadedInitial: boolean;
-  saveProgress: (editorState: any, projectId?: string, projectName?: string) => Promise<{ success: boolean; message: string; project?: Project }>;
+  saveProgress: (editorState: any, animationState: any, projectId?: string, projectName?: string) => Promise<{ success: boolean; message: string; project?: Project }>;
   loadLatestProject: () => Promise<{ success: boolean; project?: Project }>;
   loadProject: (projectId: string) => Promise<{ success: boolean; project?: Project }>;
   clearCurrentProject: () => void;
@@ -49,14 +50,16 @@ export const ProgressProvider: React.FC<ProgressProviderProps> = ({ children }) 
   const [hasLoadedInitial, setHasLoadedInitial] = useState(false);
   const { showToast } = useToast();
 
-  const saveProgress = useCallback(async (editorState: any, projectId?: string, projectName?: string) => {
+  const saveProgress = useCallback(async (editorState: any, animationState: any, projectId?: string, projectName?: string) => {
     try {
       setIsSaving(true);
       
       console.log('💾 Saving complete editor state:', editorState);
+      console.log('🎬 Saving animation state:', animationState);
       
       const payload: any = {
         editorState, // Send complete editor state
+        animationState, // Send animation state
         thumbnail: '', // You can generate a thumbnail from canvas data
       };
 
