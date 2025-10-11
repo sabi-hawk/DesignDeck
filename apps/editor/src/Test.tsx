@@ -1,4 +1,5 @@
 import { FontData } from '@lidojs/design-core';
+// eslint-disable-next-line @nx/enforce-module-boundaries
 import { Editor, GetFontQuery, PageControl, AnimationPopup, AnimationSettings, AnimationService } from '@lidojs/design-editor';
 import React, {
   useCallback,
@@ -8,6 +9,7 @@ import React, {
   useState,
 } from 'react';
 import EditorStateLoader from './components/EditorStateLoader';
+import { useAuth } from './contexts/AuthContext';
 import { useProgress } from './contexts/ProgressContext';
 import AppLayerSettings from './layout/AppLayerSettings';
 import HeaderLayout from './layout/HeaderLayout';
@@ -23,7 +25,8 @@ const Test = ({ googleFontList }: { googleFontList: FontData[] }) => {
   const [selectedElementType, setSelectedElementType] = useState<string>('Element');
   const [selectedElementName, setSelectedElementName] = useState<string>('Selected Element');
   const [animationService] = useState(() => AnimationService.getInstance());
-  const { loadLatestProject, hasLoadedInitial, currentProject } = useProgress();
+  const { loadLatestProject, hasLoadedInitial, resetLoadState } = useProgress();
+  const { user } = useAuth();
   const [loadedEditorState, setLoadedEditorState] = useState<any>(null);
   const [loadedAnimationState, setLoadedAnimationState] = useState<any>(null);
 
@@ -59,6 +62,22 @@ const Test = ({ googleFontList }: { googleFontList: FontData[] }) => {
     };
     loadProject();
   }, [loadLatestProject, hasLoadedInitial]);
+
+  // Watch for user login/logout and trigger project loading
+  useEffect(() => {
+    if (user) {
+      // User just logged in, reset the load state and trigger loading
+      console.log('👤 User logged in, resetting load state and loading project');
+      resetLoadState();
+      // The loadProject will trigger automatically via the first useEffect when hasLoadedInitial becomes false
+    } else {
+      // User logged out, clear the loaded state
+      console.log('👤 User logged out, clearing loaded state');
+      setLoadedEditorState(null);
+      setLoadedAnimationState(null);
+      resetLoadState();
+    }
+  }, [user, resetLoadState]);
 
   // Debug state changes
   useEffect(() => {

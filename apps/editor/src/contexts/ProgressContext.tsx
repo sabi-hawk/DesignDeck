@@ -27,6 +27,7 @@ interface ProgressContextType {
   loadLatestProject: () => Promise<{ success: boolean; project?: Project }>;
   loadProject: (projectId: string) => Promise<{ success: boolean; project?: Project }>;
   clearCurrentProject: () => void;
+  resetLoadState: () => void;
 }
 
 const ProgressContext = createContext<ProgressContextType | undefined>(undefined);
@@ -187,6 +188,11 @@ export const ProgressProvider: React.FC<ProgressProviderProps> = ({ children }) 
     setCurrentProject(null);
   }, []);
 
+  const resetLoadState = useCallback(() => {
+    setHasLoadedInitial(false);
+    console.log('🔄 Reset load state - ready to load project on login');
+  }, []);
+
   const value: ProgressContextType = {
     currentProject,
     isSaving,
@@ -196,6 +202,7 @@ export const ProgressProvider: React.FC<ProgressProviderProps> = ({ children }) 
     loadLatestProject,
     loadProject,
     clearCurrentProject,
+    resetLoadState,
   };
 
   return (
