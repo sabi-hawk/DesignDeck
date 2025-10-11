@@ -112,7 +112,9 @@ const EditorStateLoader: React.FC<EditorStateLoaderProps> = ({ editorState, anim
                       _originalId: originalLayerId,
                       position: layerProps.position,
                     },
-                    layerProps.boxSize
+                    layerProps.boxSize,
+                    'ROOT',
+                    true
                   );
                   
                                    
@@ -269,12 +271,16 @@ const EditorStateLoader: React.FC<EditorStateLoaderProps> = ({ editorState, anim
             if (success) {
               console.log('✅ Animation state restored successfully');
               
-              // Re-add visual indicators for animated elements
               const animatedElements = animationService.getAllAnimatedElements();
-              console.log(`🔄 Re-adding visual indicators for ${animatedElements.length} animated elements`);
+              console.log(`🔄 Restoring visual indicators for ${animatedElements.length} animated elements`);
               
-              // Note: The lock icons and animation numbers will be re-added when the
-              // animation service is fully integrated with the UI
+              // Wait a bit for DOM elements to be rendered, then restore visual indicators
+              // This ensures all layer elements are in the DOM before we add icons/numbers
+              setTimeout(() => {
+                console.log('⏰ DOM should be ready, restoring visual indicators now...');
+                animationService.restoreVisualIndicators();
+                console.log('✅ All visual indicators (lock icons, animation numbers, play buttons) restored');
+              }, 500); // 500ms delay to ensure DOM is fully rendered
             } else {
               console.warn('⚠️ Failed to restore animation state');
             }

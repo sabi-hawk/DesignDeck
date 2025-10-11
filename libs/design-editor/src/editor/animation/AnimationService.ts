@@ -1059,6 +1059,79 @@ class AnimationService {
       return false;
     }
   }
+
+  /**
+   * Restore visual indicators and UI elements after loading animation state
+   * This should be called after importAnimationState() to recreate all visual elements
+   */
+  restoreVisualIndicators(): void {
+    try {
+      console.log('🎨 Restoring visual indicators for animated elements...');
+      
+      // Restore visual indicators for each animated element
+      for (const [elementId, animatedElement] of this.animatedElements.entries()) {
+        console.log(`🔄 Restoring indicators for element ${elementId}`);
+        
+        // Add lock icon to the element
+        addLockIconToElement(elementId);
+        console.log(`🔒 Added lock icon to element ${elementId}`);
+        
+        // Add animation number to the element (scene-relative index + 1 for display)
+        const sceneRelativeIndex = this.getSceneRelativeIndex(elementId);
+        addAnimationNumberToElement(elementId, sceneRelativeIndex + 1, this.pages);
+        console.log(`🔢 Added animation number ${sceneRelativeIndex + 1} to element ${elementId}`);
+        
+        // Dispatch elementAnimationStart event for frame locking
+        if (animatedElement.parentFrameId) {
+          console.log(`🔒 Dispatching elementAnimationStart event for frame ${animatedElement.parentFrameId}`);
+          const elementAnimationStartEvent = new CustomEvent('elementAnimationStart', {
+            detail: {
+              frameId: animatedElement.parentFrameId,
+              elementId: elementId,
+              frameIndex: animatedElement.frameIndex
+            }
+          });
+          document.dispatchEvent(elementAnimationStartEvent);
+        }
+        
+        // Check if this element has completed frames with resultUrl
+        const framesForElement = Array.from(this.animationFrames.values())
+          .filter(frame => frame.elementId === elementId && frame.resultUrl);
+        
+        if (framesForElement.length > 0) {
+          // Use the first frame with a resultUrl (usually there's only one per element)
+          const completedFrame = framesForElement[0];
+          console.log(`✅ Element ${elementId} has completed animation with resultUrl: ${completedFrame.resultUrl}`);
+          
+          // Dispatch processingComplete event to notify timeline and other components
+          const processingCompleteEvent = new CustomEvent('processingComplete', {
+            detail: {
+              elementId: elementId,
+              frameId: completedFrame.id,
+              resultUrl: completedFrame.resultUrl
+            }
+          });
+          document.dispatchEvent(processingCompleteEvent);
+          console.log(`📢 Dispatched processing complete event for ${elementId}`);
+          
+          // Replace the frame with video on the canvas
+          if (completedFrame.resultUrl) {
+            this.frameVideoReplacer.replaceFrameWithVideo(elementId, completedFrame.resultUrl);
+            console.log(`🎥 Replaced element ${elementId} with video from ${completedFrame.resultUrl}`);
+          }
+        } else {
+          console.log(`ℹ️ Element ${elementId} has no completed frames yet`);
+        }
+      }
+      
+      // Refresh all animation numbers to ensure correct scene-relative numbering
+      this.refreshAllAnimationNumbers();
+      
+      console.log('✅ Visual indicators restored for all animated elements');
+    } catch (error) {
+      console.error('❌ Error restoring visual indicators:', error);
+    }
+  }
 }
 
 export default AnimationService;

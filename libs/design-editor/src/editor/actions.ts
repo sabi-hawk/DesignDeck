@@ -1058,18 +1058,29 @@ export const ActionMethods = (state: EditorState, query: CoreEditorQuery) => {
         position?: Delta;
       },
       boxSize: BoxSize,
-      parentId: LayerId = 'ROOT'
+      parentId: LayerId = 'ROOT',
+      loadingExistent = false,
     ) {
       const layerId = _originalId ?? getRandomId();
       // Use virtual page size instead of full canvas size for reasonable image dimensions
       const virtualPageSize = { width: 2000, height: 1000 }; // Reasonable frame area
       const ratio = virtualPageSize.width / virtualPageSize.height;
       const imgRatio = boxSize.width / boxSize.height;
-      const w = boxSize.width ??(
-        ratio < imgRatio
-          ? virtualPageSize.width * 0.8
-          : virtualPageSize.height * imgRatio * 0.8);
-      const h = boxSize.height ?? w / imgRatio;
+      const w = loadingExistent
+        ? (boxSize.width ?? (
+          ratio < imgRatio
+            ? virtualPageSize.width * 0.8
+            : virtualPageSize.height * imgRatio * 0.8
+        ))
+        : (
+          ratio < imgRatio
+            ? virtualPageSize.width * 0.8
+            : virtualPageSize.height * imgRatio * 0.8
+        );
+
+      const h = loadingExistent
+        ? (boxSize.height ?? (w / imgRatio))
+        : (w / imgRatio);
       const dl = deserializeLayer({
         type: {
           resolvedName: 'ImageLayer',
@@ -1257,7 +1268,7 @@ export const ActionMethods = (state: EditorState, query: CoreEditorQuery) => {
         id: layerId,
         data: mergeWithoutArray(dl, {
           props: {
-            position: getAddedPosition(
+            position: props?.position ?? getAddedPosition(
               getPositionWhenLayerCenter(query.getPageSize(), dl.props.boxSize)
             ),
           },
