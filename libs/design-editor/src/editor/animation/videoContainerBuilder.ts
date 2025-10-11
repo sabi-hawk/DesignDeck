@@ -395,17 +395,34 @@ export class VideoContainerBuilder {
        });
 
              // Add click handler to show video and hide play button
-       elementPlayButton.addEventListener('click', (e) => {
-         console.log(`🎬 Play button clicked for frame ${originalFrameId}`);
-         e.preventDefault();
-         e.stopPropagation();
-         
-         // Clear selection when play button is clicked
-         const clearSelectionEvent = new CustomEvent('clearSelectionOnPlay');
-         document.dispatchEvent(clearSelectionEvent);
-         
-         // Show the video container
-         this.showVideoContainer(videoContainer);
+      elementPlayButton.addEventListener('click', (e) => {
+        console.log(`🎬 Play button clicked for frame ${originalFrameId}`);
+        e.preventDefault();
+        e.stopPropagation();
+        
+        // Clear selection when play button is clicked
+        const clearSelectionEvent = new CustomEvent('clearSelectionOnPlay');
+        document.dispatchEvent(clearSelectionEvent);
+        
+        // UPDATE VIDEO CONTAINER POSITION BEFORE SHOWING
+        // Get the current frame element and its updated position
+        const currentFrameElement = DOMUtils.findElementByLayerId(originalFrameId);
+        if (currentFrameElement) {
+          // Get the updated transform from the css-19b3lhe div
+          const css19b3lheDiv = currentFrameElement.closest('.css-19b3lhe');
+          if (css19b3lheDiv) {
+            const updatedTransform = (css19b3lheDiv as HTMLElement).style.transform || '';
+            console.log(`🔄 Updating video container transform from "${videoContainer.style.transform}" to "${updatedTransform}"`);
+            videoContainer.style.transform = updatedTransform;
+          } else {
+            console.warn(`⚠️ Could not find css-19b3lhe div for frame ${originalFrameId}`);
+          }
+        } else {
+          console.warn(`⚠️ Could not find current frame element ${originalFrameId} to update position`);
+        }
+        
+        // Show the video container
+        this.showVideoContainer(videoContainer);
          
          // Hide the original content (first child) of the element
          const firstChild = originalElement.firstElementChild as HTMLElement;
