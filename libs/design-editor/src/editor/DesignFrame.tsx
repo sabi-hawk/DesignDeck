@@ -42,9 +42,13 @@ import Timeline from './timeline/Timeline';
 
 interface DesignFrameProps {
   data: SerializedPage[];
+  isSidebarPopupOpen?: boolean;
 }
 
-const DesignFrame: FC<DesignFrameProps> = ({ data }) => {
+const DesignFrame: FC<DesignFrameProps> = ({
+  data,
+  isSidebarPopupOpen = true,
+}) => {
   const shiftKeyRef = useTrackingShiftKey();
   const frameRef = useRef<HTMLDivElement>(null);
   const pageContainerRef = useRef<HTMLDivElement>(null);
@@ -136,9 +140,15 @@ const DesignFrame: FC<DesignFrameProps> = ({ data }) => {
       actions.resetSelectLayer();
     };
 
-    document.addEventListener('clearSelectionOnPlay', handleClearSelectionOnPlay);
+    document.addEventListener(
+      'clearSelectionOnPlay',
+      handleClearSelectionOnPlay
+    );
     return () => {
-      document.removeEventListener('clearSelectionOnPlay', handleClearSelectionOnPlay);
+      document.removeEventListener(
+        'clearSelectionOnPlay',
+        handleClearSelectionOnPlay
+      );
     };
   }, [actions]);
 
@@ -320,7 +330,7 @@ const DesignFrame: FC<DesignFrameProps> = ({ data }) => {
     // Make timeline control globally accessible
     (window as any).showTimeline = () => setShowTimeline(true);
     (window as any).hideTimeline = () => setShowTimeline(false);
-    
+
     return () => {
       delete (window as any).showTimeline;
       delete (window as any).hideTimeline;
@@ -351,11 +361,12 @@ const DesignFrame: FC<DesignFrameProps> = ({ data }) => {
         onTouchStart={onZoomStart}
       >
         {/* Timeline Component */}
-        <Timeline 
-          isVisible={showTimeline} 
-          onToggle={() => setShowTimeline(!showTimeline)} 
+        <Timeline
+          isVisible={showTimeline}
+          onToggle={() => setShowTimeline(!showTimeline)}
+          isSidebarPopupOpen={isSidebarPopupOpen}
         />
-        
+
         {/* Rest of the component */}
         <div
           css={{

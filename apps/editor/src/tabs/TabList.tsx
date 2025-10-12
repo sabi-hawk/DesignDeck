@@ -50,7 +50,7 @@ const SidebarTab: FC<SidebarTabProps> = ({ tabs, active, onChange }) => {
               position: 'absolute',
               left: 2,
               top: 2,
-              transform: `translateY(${activeIdx * 100}%)`,
+              transform: `translateY(${activeIdx * 72}px)`,
               borderRadius: '12px',
               border: '1px solid rgba(102, 126, 234, 0.2)',
               boxShadow:
@@ -91,19 +91,21 @@ const SidebarTab: FC<SidebarTabProps> = ({ tabs, active, onChange }) => {
             onClick={(e) => onChange(e, tab.name)}
           >
             <div css={{ fontSize: 24 }}>{tab.icon}</div>
-            <span css={{ 
-              fontSize: 10, 
-              lineHeight: 1.6, 
-              fontWeight: 600,
-              textAlign: 'center',
-              maxWidth: '100%',
-              wordBreak: 'break-word',
-              padding: '0 2px',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}>
+            <span
+              css={{
+                fontSize: 10,
+                lineHeight: 1.6,
+                fontWeight: 600,
+                textAlign: 'center',
+                maxWidth: '100%',
+                wordBreak: 'break-word',
+                padding: '0 2px',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
               {tab.name.split(' ').map((word, index) => (
                 <span key={index} css={{ textAlign: 'center' }}>
                   {word}

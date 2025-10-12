@@ -7,7 +7,8 @@ import LayoutIcon from '@duyank/icons/regular/Layout';
 import TextTIcon from '@duyank/icons/regular/TextT';
 import UploadIcon from '@duyank/icons/regular/Upload';
 import { useEditor } from '@lidojs/design-editor';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useSidebarContext } from '../contexts/SidebarContext';
 import SidebarTab from '../tabs/TabList';
 import FrameContent from './sidebar/FrameContent';
 import GraphicContent from './sidebar/GraphicContent';
@@ -56,6 +57,12 @@ const tabs = [
 const Sidebar = () => {
   const { actions } = useEditor();
   const [tab, setTab] = useState<string | null>('Template');
+  const { setSidebarPopupOpen } = useSidebarContext();
+
+  // Update sidebar popup state when tab changes
+  useEffect(() => {
+    setSidebarPopupOpen(tab !== null);
+  }, [tab, setSidebarPopupOpen]);
   return (
     <div
       css={{
