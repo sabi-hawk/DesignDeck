@@ -1,6 +1,13 @@
 import { FontData } from '@lidojs/design-core';
 // eslint-disable-next-line @nx/enforce-module-boundaries
-import { Editor, GetFontQuery, PageControl, AnimationPopup, AnimationSettings, AnimationService } from '@lidojs/design-editor';
+import {
+  Editor,
+  GetFontQuery,
+  PageControl,
+  AnimationPopup,
+  AnimationSettings,
+  AnimationService,
+} from '@lidojs/design-editor';
 import React, {
   useCallback,
   useEffect,
@@ -11,6 +18,7 @@ import React, {
 import EditorStateLoader from './components/EditorStateLoader';
 import { useAuth } from './contexts/AuthContext';
 import { useProgress } from './contexts/ProgressContext';
+import { SidebarProvider } from './contexts/SidebarContext';
 import AppLayerSettings from './layout/AppLayerSettings';
 import HeaderLayout from './layout/HeaderLayout';
 import Sidebar from './layout/Sidebar';
@@ -21,9 +29,13 @@ const Test = ({ googleFontList }: { googleFontList: FontData[] }) => {
   const leftSidebarRef = useRef<HTMLDivElement>(null);
   const [openPreview, setOpenPreview] = useState(false);
   const [showAnimationPopup, setShowAnimationPopup] = useState(false);
-  const [selectedElementId, setSelectedElementId] = useState<string | null>(null);
-  const [selectedElementType, setSelectedElementType] = useState<string>('Element');
-  const [selectedElementName, setSelectedElementName] = useState<string>('Selected Element');
+  const [selectedElementId, setSelectedElementId] = useState<string | null>(
+    null
+  );
+  const [selectedElementType, setSelectedElementType] =
+    useState<string>('Element');
+  const [selectedElementName, setSelectedElementName] =
+    useState<string>('Selected Element');
   const [animationService] = useState(() => AnimationService.getInstance());
   const { loadLatestProject, hasLoadedInitial, resetLoadState } = useProgress();
   const { user } = useAuth();
@@ -38,8 +50,11 @@ const Test = ({ googleFontList }: { googleFontList: FontData[] }) => {
         if (result.success && result.project) {
           console.log('📦 Project loaded from API:', result.project);
           console.log('📊 Editor state from DB:', result.project.canvasData);
-          console.log('🎬 Animation state from DB:', result.project.animationState);
-          
+          console.log(
+            '🎬 Animation state from DB:',
+            result.project.animationState
+          );
+
           // The canvasData from DB is actually the complete editor state
           if (result.project.canvasData) {
             setLoadedEditorState(result.project.canvasData);
@@ -67,7 +82,9 @@ const Test = ({ googleFontList }: { googleFontList: FontData[] }) => {
   useEffect(() => {
     if (user) {
       // User just logged in, reset the load state and trigger loading
-      console.log('👤 User logged in, resetting load state and loading project');
+      console.log(
+        '👤 User logged in, resetting load state and loading project'
+      );
       resetLoadState();
       // The loadProject will trigger automatically via the first useEffect when hasLoadedInitial becomes false
     } else {
@@ -85,9 +102,14 @@ const Test = ({ googleFontList }: { googleFontList: FontData[] }) => {
       showAnimationPopup,
       selectedElementId,
       selectedElementType,
-      selectedElementName
+      selectedElementName,
     });
-  }, [showAnimationPopup, selectedElementId, selectedElementType, selectedElementName]);
+  }, [
+    showAnimationPopup,
+    selectedElementId,
+    selectedElementType,
+    selectedElementName,
+  ]);
 
   const getFonts = useCallback(
     async (query: GetFontQuery) => {
@@ -140,8 +162,16 @@ const Test = ({ googleFontList }: { googleFontList: FontData[] }) => {
     });
   };
 
-  const handleShowAnimationPopup = (elementId: string, elementType: string, elementName: string) => {
-    console.log('🎬 handleShowAnimationPopup called with:', { elementId, elementType, elementName });
+  const handleShowAnimationPopup = (
+    elementId: string,
+    elementType: string,
+    elementName: string
+  ) => {
+    console.log('🎬 handleShowAnimationPopup called with:', {
+      elementId,
+      elementType,
+      elementName,
+    });
     setSelectedElementId(elementId);
     setSelectedElementType(elementType);
     setSelectedElementName(elementName);
@@ -152,16 +182,24 @@ const Test = ({ googleFontList }: { googleFontList: FontData[] }) => {
   const handleAnimateWithSettings = (settings: AnimationSettings) => {
     if (selectedElementId) {
       try {
-        console.log(`🎬 Starting animation for element ${selectedElementId} with settings:`, settings);
-        
+        console.log(
+          `🎬 Starting animation for element ${selectedElementId} with settings:`,
+          settings
+        );
+
         // Start animation with settings
-        const success = animationService.startAnimation(selectedElementId, settings);
-        
+        const success = animationService.startAnimation(
+          selectedElementId,
+          settings
+        );
+
         if (success) {
           if ((window as any).showTimeline) {
             (window as any).showTimeline();
           }
-          console.log(`✅ Animation started successfully for element ${selectedElementId}`);
+          console.log(
+            `✅ Animation started successfully for element ${selectedElementId}`
+          );
         } else {
           alert('Failed to start animation for selected element.');
         }
@@ -173,91 +211,102 @@ const Test = ({ googleFontList }: { googleFontList: FontData[] }) => {
   };
 
   return (
-    <Editor config={config} getFonts={getFonts} uploadImage={uploadImage}>
-      {/* Load editor state and animation state if available */}
-      {loadedEditorState && <EditorStateLoader editorState={loadedEditorState} animationState={loadedAnimationState} />}
-      
-      <div
-        css={{
-          display: 'flex',
-          flexDirection: 'column',
-          width: '100vw',
-          height: '100vh',
-          maxHeight: viewPortHeight ? `${viewPortHeight}px` : 'auto',
-        }}
-      >
-        <HeaderLayout openPreview={() => setOpenPreview(true)} />
-        {openPreview && <PreviewModal onClose={() => setOpenPreview(false)} />}
+    <SidebarProvider>
+      <Editor config={config} getFonts={getFonts} uploadImage={uploadImage}>
+        {/* Load editor state and animation state if available */}
+        {loadedEditorState && (
+          <EditorStateLoader
+            animationState={loadedAnimationState}
+            editorState={loadedEditorState}
+          />
+        )}
+
         <div
           css={{
             display: 'flex',
-            flexDirection: 'row',
-            flex: 'auto',
-            overflow: 'auto',
-            background: '#EBECF0',
-            '@media (max-width: 900px)': {
-              flexDirection: 'column-reverse',
-            },
+            flexDirection: 'column',
+            width: '100vw',
+            height: '100vh',
+            maxHeight: viewPortHeight ? `${viewPortHeight}px` : 'auto',
           }}
         >
-          <div
-            ref={leftSidebarRef}
-            css={{
-              display: 'flex',
-              background: 'white',
-            }}
-          >
-            <Sidebar />
-          </div>
+          <HeaderLayout openPreview={() => setOpenPreview(true)} />
+          {openPreview && (
+            <PreviewModal onClose={() => setOpenPreview(false)} />
+          )}
           <div
             css={{
-              flexGrow: 1,
-              position: 'relative',
               display: 'flex',
-              flexDirection: 'column',
+              flexDirection: 'row',
+              flex: 'auto',
               overflow: 'auto',
+              background: '#EBECF0',
+              '@media (max-width: 900px)': {
+                flexDirection: 'column-reverse',
+              },
             }}
           >
-            <AppLayerSettings onShowAnimationPopup={handleShowAnimationPopup} />
+            <div
+              ref={leftSidebarRef}
+              css={{
+                display: 'flex',
+                background: 'white',
+              }}
+            >
+              <Sidebar />
+            </div>
             <div
               css={{
                 flexGrow: 1,
-                overflow: 'auto',
+                position: 'relative',
                 display: 'flex',
                 flexDirection: 'column',
+                overflow: 'auto',
               }}
             >
-              <EditorContent />
-            </div>
-            <div
-              css={{
-                height: 40,
-                background: '#fff',
-                borderTop: '1px solid rgba(57,76,96,.15)',
-                display: 'grid',
-                alignItems: 'center',
-                flexShrink: 0,
-                '@media (max-width: 900px)': {
-                  display: 'none',
-                },
-              }}
-            >
-              <PageControl />
+              <AppLayerSettings
+                onShowAnimationPopup={handleShowAnimationPopup}
+              />
+              <div
+                css={{
+                  flexGrow: 1,
+                  overflow: 'auto',
+                  display: 'flex',
+                  flexDirection: 'column',
+                }}
+              >
+                <EditorContent />
+              </div>
+              <div
+                css={{
+                  height: 40,
+                  background: '#fff',
+                  borderTop: '1px solid rgba(57,76,96,.15)',
+                  display: 'grid',
+                  alignItems: 'center',
+                  flexShrink: 0,
+                  '@media (max-width: 900px)': {
+                    display: 'none',
+                  },
+                }}
+              >
+                <PageControl />
+              </div>
             </div>
           </div>
         </div>
-      </div>
-      
-      {/* Animation Popup */}
-      <AnimationPopup
-        elementId={selectedElementId}
-        elementName={selectedElementName}
-        elementType={selectedElementType}
-        isVisible={showAnimationPopup}
-        onAnimate={handleAnimateWithSettings}
-        onClose={() => setShowAnimationPopup(false)}
-      />
-    </Editor>
+
+        {/* Animation Popup */}
+        <AnimationPopup
+          elementId={selectedElementId}
+          elementName={selectedElementName}
+          elementType={selectedElementType}
+          isVisible={showAnimationPopup}
+          onAnimate={handleAnimateWithSettings}
+          onClose={() => setShowAnimationPopup(false)}
+        />
+      </Editor>
+    </SidebarProvider>
   );
 };
 
