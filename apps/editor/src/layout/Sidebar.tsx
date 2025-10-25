@@ -3,7 +3,6 @@
 // import SquareIcon from '@duyank/icons/regular/Square';
 import FrameCornersIcon from '@duyank/icons/regular/FrameCorners';
 import ImageIcon from '@duyank/icons/regular/Image';
-import LayoutIcon from '@duyank/icons/regular/Layout';
 import TextTIcon from '@duyank/icons/regular/TextT';
 import UploadIcon from '@duyank/icons/regular/Upload';
 import { useEditor } from '@lidojs/design-editor';
@@ -16,30 +15,21 @@ import IframeContent from './sidebar/IframeContent';
 import ImageContent from './sidebar/ImageContent';
 import ShapeContent from './sidebar/ShapeContent';
 import SimpleFrameContent from './sidebar/SimpleFrameContent';
-import TemplateContent from './sidebar/TemplateContent';
 import TextContent from './sidebar/TextContent';
 import UploadContent from './sidebar/UploadContent';
 
 const tabs = [
   {
-    name: 'Template',
-    icon: <LayoutIcon />,
+    name: 'Image',
+    icon: <ImageIcon />,
   },
   {
     name: 'Text',
     icon: <TextTIcon />,
   },
-  // {
-  //   name: 'Frame',
-  //   icon: <FrameCornersIcon />,
-  // },
   {
     name: 'Advanced Scene',
     icon: <FrameCornersIcon />,
-  },
-  {
-    name: 'Image',
-    icon: <ImageIcon />,
   },
   // {
   //   name: 'Graphic',
@@ -56,7 +46,7 @@ const tabs = [
 ];
 const Sidebar = () => {
   const { actions } = useEditor();
-  const [tab, setTab] = useState<string | null>('Template');
+  const [tab, setTab] = useState<string | null>('Image');
   const { setSidebarPopupOpen } = useSidebarContext();
 
   // Update sidebar popup state when tab changes
@@ -104,8 +94,8 @@ const Sidebar = () => {
               },
             }}
           >
-            {tab === 'Template' && (
-              <TemplateContent
+            {tab === 'Image' && (
+              <ImageContent
                 onClose={() => {
                   setTab(null);
                   actions.setSidebar();
@@ -130,14 +120,6 @@ const Sidebar = () => {
             )}
             {tab === 'Advanced Scene' && (
               <SimpleFrameContent
-                onClose={() => {
-                  setTab(null);
-                  actions.setSidebar();
-                }}
-              />
-            )}
-            {tab === 'Image' && (
-              <ImageContent
                 onClose={() => {
                   setTab(null);
                   actions.setSidebar();
