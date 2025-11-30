@@ -2,8 +2,8 @@ import axios from 'axios';
 import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
 import { useToast } from './ToastContext';
 
-// Authentication server URL - separate from the main API base URL
-const AUTH_BASE_URL = 'http://localhost:3001';
+// API URL - uses environment variable for production, falls back to localhost for development
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
 interface Project {
   _id: string;
@@ -72,7 +72,7 @@ export const ProgressProvider: React.FC<ProgressProviderProps> = ({ children }) 
         payload.name = projectName;
       }
 
-      const response = await axios.post(`${AUTH_BASE_URL}/api/projects/save`, payload);
+      const response = await axios.post(`${API_BASE_URL}/api/projects/save`, payload);
       
       if (response.data.success) {
         const project = response.data.data;
@@ -113,7 +113,7 @@ export const ProgressProvider: React.FC<ProgressProviderProps> = ({ children }) 
     try {
       setIsLoading(true);
       console.log('🔄 Loading latest project...');
-      const response = await axios.get(`${AUTH_BASE_URL}/api/projects/latest`);
+      const response = await axios.get(`${API_BASE_URL}/api/projects/latest`);
       
       if (response.data.success) {
         const project = response.data.data;
@@ -152,7 +152,7 @@ export const ProgressProvider: React.FC<ProgressProviderProps> = ({ children }) 
   const loadProject = useCallback(async (projectId: string) => {
     try {
       setIsLoading(true);
-      const response = await axios.get(`${AUTH_BASE_URL}/api/projects/${projectId}`);
+      const response = await axios.get(`${API_BASE_URL}/api/projects/${projectId}`);
       
       if (response.data.success) {
         const project = response.data.data;

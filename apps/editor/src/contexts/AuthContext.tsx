@@ -2,8 +2,8 @@ import axios from 'axios';
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useToast } from './ToastContext';
 
-// Authentication server URL - separate from the main API base URL
-const AUTH_BASE_URL = 'http://localhost:3001';
+// API URL - uses environment variable for production, falls back to localhost for development
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
 interface User {
   id: string;
@@ -56,7 +56,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const storedToken = localStorage.getItem('token');
       if (storedToken) {
         try {
-          const response = await axios.get(`${AUTH_BASE_URL}/api/auth/me`);
+          const response = await axios.get(`${API_BASE_URL}/api/auth/me`);
           if (response.data.success) {
             setUser(response.data.user);
           } else {
@@ -80,7 +80,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const login = async (email: string, password: string) => {
     try {
       setLoading(true);
-      const response = await axios.post(`${AUTH_BASE_URL}/api/auth/login`, { email, password });
+      const response = await axios.post(`${API_BASE_URL}/api/auth/login`, { email, password });
       
       if (response.data.success) {
         const { token: newToken, user: userData } = response.data;
@@ -118,7 +118,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const register = async (name: string, email: string, password: string) => {
     try {
       setLoading(true);
-      const response = await axios.post(`${AUTH_BASE_URL}/api/auth/register`, { name, email, password });
+      const response = await axios.post(`${API_BASE_URL}/api/auth/register`, { name, email, password });
       
       if (response.data.success) {
         const { token: newToken, user: userData } = response.data;

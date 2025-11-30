@@ -6,7 +6,8 @@ import React, { ChangeEvent, FC, useRef, useState, useEffect } from 'react';
 import { isMobile } from 'react-device-detect';
 import { useAuth } from '../../contexts/AuthContext';
 
-const AUTH_BASE_URL = 'http://localhost:3001';
+// API URL - uses environment variable for production, falls back to localhost for development
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
 interface UploadContentProps {
   visibility: boolean;
@@ -37,7 +38,7 @@ const UploadContent: FC<UploadContentProps> = ({ visibility, onClose }) => {
 
   const fetchUserMedia = async () => {
     try {
-      const response = await axios.get(`${AUTH_BASE_URL}/api/media`, {
+      const response = await axios.get(`${API_BASE_URL}/api/media`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem('token')}`
         }
@@ -52,7 +53,7 @@ const UploadContent: FC<UploadContentProps> = ({ visibility, onClose }) => {
           originalName: string;
         }) => ({
           id: item.id,
-          url: `${AUTH_BASE_URL}${item.url}`,
+          url: `${API_BASE_URL}${item.url}`,
           type: item.type,
           filename: item.filename,
           originalName: item.originalName
@@ -121,7 +122,7 @@ const UploadContent: FC<UploadContentProps> = ({ visibility, onClose }) => {
       formData.append('file', file);
 
       const response = await axios.post(
-        `${AUTH_BASE_URL}/api/media/upload`,
+        `${API_BASE_URL}/api/media/upload`,
         formData,
         {
           headers: {
@@ -134,7 +135,7 @@ const UploadContent: FC<UploadContentProps> = ({ visibility, onClose }) => {
       if (response.data.success) {
         const newMedia: MediaItem = {
           id: response.data.media.id,
-          url: `${AUTH_BASE_URL}${response.data.media.url}`,
+          url: `${API_BASE_URL}${response.data.media.url}`,
           type: response.data.media.type,
           filename: response.data.media.filename,
           originalName: response.data.media.originalName
