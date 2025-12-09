@@ -213,7 +213,8 @@ export const useDragLayer = ({
         frameDataRef.current = null;
       }
       if (hoveredLayer && isFrameLayer(hoveredLayer)) {
-        const image = imageLayer.data.props.image;
+        const imageProps = imageLayer.data.props as ImageLayerProps;
+        const image = imageProps.image;
         const ratio =
           hoveredLayer.data.props.boxSize.width /
           hoveredLayer.data.props.boxSize.height;

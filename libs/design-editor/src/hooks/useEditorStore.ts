@@ -9,6 +9,7 @@ import { intersection } from 'lodash';
 import { useCallback, useMemo, useReducer, useRef } from 'react';
 import { ActionMethods } from '../editor/actions';
 import { QueryMethods } from '../editor/query';
+import { TextLayerProps } from '../layers';
 import {
   CoreEditorActions,
   CoreEditorQuery,
@@ -166,7 +167,8 @@ export const useEditorStore = () => {
                   //reset editor content
                   const editor = l.data.editor;
                   if (editor) {
-                    setContent(l.data.props.text)(
+                    const textProps = l.data.props as TextLayerProps;
+                    setContent(textProps.text)(
                       editor.state,
                       editor.dispatch
                     );

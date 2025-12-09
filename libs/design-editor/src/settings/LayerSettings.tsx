@@ -81,7 +81,7 @@ const LayerSettings: React.FC<LayerSettingsProps> = ({ onShowAnimationPopup }) =
         if (isRootLayer(layer)) {
           acc.rootLayer = layer;
         } else if (isGroupLayer(layer)) {
-          const childList = query.getChildLayers(activePage, layer.id);
+          const childList = query.getChildLayers(activePage, (layer as any).id);
           childList.forEach((child) => {
             addingToList(child);
           });

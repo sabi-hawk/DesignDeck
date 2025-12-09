@@ -56,17 +56,18 @@ const CommonSettings: React.FC<CommonSettingsProps> = ({ onShowAnimationPopup })
     return Object.entries(selectedLayers).reduce(
       (acc, [, layer]) => {
         if (isRootLayer(layer)) {
+          const rootProps = layer.data.props as RootLayerProps;
           acc.transparency = Math.max(
             acc.transparency,
-            typeof layer.data.props.image?.transparency !== 'undefined'
-              ? layer.data.props.image.transparency
+            typeof rootProps.image?.transparency !== 'undefined'
+              ? rootProps.image.transparency
               : 1
           );
         } else {
           acc.transparency = Math.max(
             acc.transparency,
-            typeof layer.data.props.transparency !== 'undefined'
-              ? layer.data.props.transparency
+            typeof (layer.data.props as any).transparency !== 'undefined'
+              ? (layer.data.props as any).transparency
               : 1
           );
         }
@@ -303,7 +304,7 @@ const CommonSettings: React.FC<CommonSettingsProps> = ({ onShowAnimationPopup })
           !isPageLocked &&
           (!isRootLayer(selectedLayers[0]) ||
             (isRootLayer(selectedLayers[0]) &&
-              selectedLayers[0].data.props.image)) && (
+              (selectedLayers[0].data.props as RootLayerProps).image)) && (
             <Fragment>
               {/* TODO: Uncomment this */}
               {/* <div

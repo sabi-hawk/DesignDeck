@@ -1,10 +1,12 @@
+import { Delta, BoxSize } from '@lidojs/design-core';
 import { RootContent, RootContentProps } from '@lidojs/design-layers';
 import React, { Fragment, PropsWithChildren } from 'react';
 import { useLayer } from '../hooks';
 import { LayerComponent } from '../types';
 
-export interface RootLayerProps extends Omit<RootContentProps, 'image'> {
+export interface RootLayerProps extends Omit<RootContentProps, 'image' | 'video'> {
   image?: (RootContentProps['image'] & { thumb: string }) | null;
+  video?: RootContentProps['video'] & { thumb?: string } | null;
 }
 
 const RootLayer: LayerComponent<PropsWithChildren<RootLayerProps>> = ({
@@ -14,6 +16,7 @@ const RootLayer: LayerComponent<PropsWithChildren<RootLayerProps>> = ({
   color,
   gradientBackground,
   image,
+  video,
   position,
   rotate,
   scale,
@@ -38,6 +41,7 @@ const RootLayer: LayerComponent<PropsWithChildren<RootLayerProps>> = ({
         color={color}
         gradientBackground={gradientBackground}
         image={image}
+        video={video}
         layerId={layerId}
         position={position}
         rotate={rotate}

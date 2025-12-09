@@ -19,7 +19,7 @@ import SelectionForegroundIcon from '@duyank/icons/regular/SelectionForeground';
 import ShapesIcon from '@duyank/icons/regular/Shapes';
 import TrashIcon from '@duyank/icons/regular/Trash';
 import XIcon from '@duyank/icons/regular/X';
-import { getTransformStyle } from '@lidojs/design-core';
+import { BoxSize, Delta, getTransformStyle } from '@lidojs/design-core';
 import { useForwardedRef } from '@lidojs/design-utils';
 import { cloneDeep } from 'lodash';
 import React, {
@@ -37,8 +37,23 @@ import { duplicate } from '../../../ultils/menu-actions/duplicate';
 import { paste } from '../../../ultils/menu-actions/paste';
 import { ImageLayerProps } from '../../ImageLayer';
 import { RootLayerProps } from '../../RootLayer';
-import { VideoLayerProps } from '../../VideoLayer';
 import ContextMenuItem from './ContextMenuItem';
+
+// VideoLayerProps type definition (VideoLayer component doesn't exist but props are used)
+type VideoLayerProps = {
+  video: {
+    url: string;
+    position: Delta;
+    rotate: number;
+    boxSize: BoxSize;
+    transparency?: number;
+    flipVertical?: boolean;
+    flipHorizontal?: boolean;
+    brightness?: number;
+    contrast?: number;
+    saturation?: number;
+  };
+};
 import SubMenu from './SubMenu';
 
 const LayerContextMenu: ForwardRefRenderFunction<HTMLDivElement> = (_, ref) => {
@@ -146,7 +161,7 @@ const LayerContextMenu: ForwardRefRenderFunction<HTMLDivElement> = (_, ref) => {
       // Use virtual page size instead of full canvas size for reasonable dimensions
       const virtualPageSize = { width: 2000, height: 1000 }; // Reasonable frame area
       const ratio = virtualPageSize.width / virtualPageSize.height;
-      const video = (videoLayer.data.props as VideoLayerProps).video;
+      const video = (videoLayer.data.props as unknown as VideoLayerProps).video;
       const videoRatio = video.boxSize.width / video.boxSize.height;
       const background = { ...cloneDeep(video), rotate: 0 };
       if (ratio > videoRatio) {

@@ -10,6 +10,7 @@ import React, { FC, useEffect, useMemo, useState } from 'react';
 import { useEditor } from '../../hooks';
 import { Layer } from '../../types';
 import { deserializeLayerTree } from '../../ultils/layer/deserializeLayerTree';
+import { TextLayerProps } from '../../layers';
 import { isTextLayer } from '../../ultils/layer/layers';
 import { RenderLayer } from './RenderLayer';
 
@@ -39,7 +40,8 @@ export const DraggingLayer: FC<{
     if (layerList) {
       Object.entries(layerList).forEach(([, layer]) => {
         if (isTextLayer(layer)) {
-          fontFamilyList.push(...layer.data.props.fonts);
+          const textProps = layer.data.props as TextLayerProps;
+          fontFamilyList.push(...textProps.fonts);
         }
       });
     }

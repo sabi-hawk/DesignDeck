@@ -29,6 +29,14 @@ export type ImageEditorData = {
     flipVertical?: boolean;
     flipHorizontal?: boolean;
   } | null;
+  video?: {
+    url: string;
+    position: Delta;
+    rotate: number;
+    boxSize: BoxSize;
+    flipVertical?: boolean;
+    flipHorizontal?: boolean;
+  } | null;
 };
 export type SidebarType =
   | 'TEXT_EFFECT'

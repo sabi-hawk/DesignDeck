@@ -12,6 +12,12 @@ import React, {
 } from 'react';
 import { useEditor } from '../../hooks';
 import {
+  RootLayerProps,
+  ShapeLayerProps,
+  SvgLayerProps,
+  TextLayerProps,
+} from '../../layers';
+import {
   isRootLayer,
   isShapeLayer,
   isSvgLayer,
@@ -51,14 +57,22 @@ const ColorSidebar: ForwardRefRenderFunction<
   const documentColors = useMemo(() => {
     return state.pages.reduce((acc, page) => {
       Object.entries(page.layers).forEach(([, layer]) => {
-        if (isRootLayer(layer) && layer.data.props.color) {
-          acc.push(layer.data.props.color);
-        } else if (isShapeLayer(layer) && layer.data.props.color) {
-          acc.push(layer.data.props.color);
+        if (isRootLayer(layer)) {
+          const rootProps = layer.data.props as RootLayerProps;
+          if (rootProps.color) {
+            acc.push(rootProps.color);
+          }
+        } else if (isShapeLayer(layer)) {
+          const shapeProps = layer.data.props as ShapeLayerProps;
+          if (shapeProps.color) {
+            acc.push(shapeProps.color);
+          }
         } else if (isTextLayer(layer)) {
-          acc.push(...layer.data.props.colors);
+          const textProps = layer.data.props as TextLayerProps;
+          acc.push(...textProps.colors);
         } else if (isSvgLayer(layer)) {
-          acc.push(...layer.data.props.colors);
+          const svgProps = layer.data.props as SvgLayerProps;
+          acc.push(...svgProps.colors);
         }
       });
       return uniq(acc);
@@ -69,10 +83,16 @@ const ColorSidebar: ForwardRefRenderFunction<
   const documentGradientColors = useMemo(() => {
     const list = state.pages.reduce((acc, page) => {
       Object.entries(page.layers).forEach(([, layer]) => {
-        if (isRootLayer(layer) && layer.data.props.gradientBackground) {
-          acc.push(layer.data.props.gradientBackground);
-        } else if (isShapeLayer(layer) && layer.data.props.gradientBackground) {
-          acc.push(layer.data.props.gradientBackground);
+        if (isRootLayer(layer)) {
+          const rootProps = layer.data.props as RootLayerProps;
+          if (rootProps.gradientBackground) {
+            acc.push(rootProps.gradientBackground);
+          }
+        } else if (isShapeLayer(layer)) {
+          const shapeProps = layer.data.props as ShapeLayerProps;
+          if (shapeProps.gradientBackground) {
+            acc.push(shapeProps.gradientBackground);
+          }
         }
       });
       return acc;

@@ -318,18 +318,19 @@ const DesignPage: ForwardRefRenderFunction<HTMLDivElement, PageProps> = (
             });
           } else {
             const ratio = newSize.boxSize.width / l.data.props.boxSize.width;
+            const imageProps = l.data.props as ImageLayerProps;
             actions.history
               .merge()
               .setProp<ImageLayerProps>(pageIndex, layerId, {
                 ...newSize,
                 image: {
                   boxSize: {
-                    width: l.data.props.image.boxSize.width * ratio,
-                    height: l.data.props.image.boxSize.height * ratio,
+                    width: imageProps.image.boxSize.width * ratio,
+                    height: imageProps.image.boxSize.height * ratio,
                   },
                   position: {
-                    x: l.data.props.image.position.x * ratio,
-                    y: l.data.props.image.position.y * ratio,
+                    x: imageProps.image.position.x * ratio,
+                    y: imageProps.image.position.y * ratio,
                   },
                   rotate: 0,
                 },

@@ -1,5 +1,6 @@
 import { LayerComponentProps } from '@lidojs/design-core';
 // eslint-disable-next-line @nx/enforce-module-boundaries
+// @ts-ignore - design-editor is external dependency, types available at runtime
 import { useEditor, useSelectedLayers } from '@lidojs/design-editor';
 import React, { FC, useState, useEffect, useCallback } from 'react';
 
@@ -42,14 +43,14 @@ export const SimpleFrameContent: FC<SimpleFrameContentProps> = ({
   // Get scene number for this frame - use stored scene number or fallback to position-based calculation
   const getSceneNumber = (): number => {
     try {
-      const allLayers = query.getLayers(0);
+      const allLayers = query.getLayers(0) as Record<string, any>;
       if (!allLayers) return 1;
 
       const currentLayer = allLayers[layerId];
       if (!currentLayer) return 1;
 
       // First try to get the stored scene number
-      const storedSceneNumber = (currentLayer.data.props as any)?.sceneNumber;
+      const storedSceneNumber = (currentLayer.data?.props as any)?.sceneNumber;
       if (typeof storedSceneNumber === 'number' && storedSceneNumber > 0) {
         console.log(`🎬 Using stored scene number ${storedSceneNumber} for frame ${layerId}`);
         return storedSceneNumber;
@@ -60,9 +61,9 @@ export const SimpleFrameContent: FC<SimpleFrameContentProps> = ({
 
       // Find all SimpleFrames
       Object.entries(allLayers).forEach(([id, layer]) => {
-        if ((layer.data.type as any) === 'SimpleFrame' && id !== 'ROOT') {
-          const frameProps = layer.data.props;
-          if (frameProps.position) {
+        if ((layer?.data?.type as any) === 'SimpleFrame' && id !== 'ROOT') {
+          const frameProps = layer?.data?.props;
+          if (frameProps?.position) {
             simpleFrames.push({
               frameId: id,
               position: frameProps.position
@@ -110,7 +111,7 @@ export const SimpleFrameContent: FC<SimpleFrameContentProps> = ({
   const lockFrameAndContents = useCallback(() => {
     try {
       // Get all layers on the current page
-      const allLayers = query.getLayers(0); // Assuming page 0
+      const allLayers = query.getLayers(0) as Record<string, any>; // Assuming page 0
       if (!allLayers) return;
 
       const frameLayers: string[] = [];
@@ -119,7 +120,8 @@ export const SimpleFrameContent: FC<SimpleFrameContentProps> = ({
       const frameLayer = allLayers[layerId];
       if (!frameLayer) return;
 
-      const framePos = frameLayer.data.props.position;
+      const framePos = frameLayer?.data?.props?.position;
+      if (!framePos) return;
       const frameLeft = framePos.x;
       const frameTop = framePos.y;
       const frameRight = frameLeft + boxSize.width;
@@ -127,10 +129,11 @@ export const SimpleFrameContent: FC<SimpleFrameContentProps> = ({
 
       // Find layers that are inside this frame's boundaries
       Object.entries(allLayers).forEach(([id, layer]) => {
-        if (id === layerId || id === 'ROOT') return; // Skip frame itself and root
+        if (id === layerId || id === 'ROOT') return; // Skip frame itself and root       
 
-        const layerPos = layer.data.props.position;
-        const layerSize = layer.data.props.boxSize;
+        const layerPos = layer?.data?.props?.position;
+        const layerSize = layer?.data?.props?.boxSize;
+        if (!layerPos || !layerSize) return;
 
         // Check if layer is inside the frame boundaries
         const layerLeft = layerPos.x;

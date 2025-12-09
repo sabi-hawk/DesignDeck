@@ -45,6 +45,7 @@ export default defineConfig({
         'react/jsx-runtime',
         '@lidojs/design-utils',
         '@lidojs/design-core',
+        '@lidojs/design-editor',
       ],
     },
   },

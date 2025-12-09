@@ -41,7 +41,7 @@ const LayerBorderBox: ForwardRefRenderFunction<
           : undefined,
       }}
     >
-      {type === 'solid' && layerType !== 'Line' && layerType !== 'SimpleFrame' && (
+      {type === 'solid' && layerType !== 'Line' && (layerType as string) !== 'SimpleFrame' && (
         <div
           css={{
             border: '2px solid #3d8eff',
@@ -52,7 +52,7 @@ const LayerBorderBox: ForwardRefRenderFunction<
           }}
         />
       )}
-      {type === 'dashed' && layerType !== 'Line' && layerType !== 'SimpleFrame' && (
+      {type === 'dashed' && layerType !== 'Line' && (layerType as string) !== 'SimpleFrame' && (
         <div
           css={{
             inset: -1,

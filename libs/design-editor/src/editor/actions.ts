@@ -18,10 +18,18 @@ import {
   SerializedLayerTree,
   SerializedPage,
 } from '@lidojs/design-core';
+
+// Extended type to include additional properties used in the codebase
+type ExtendedSerializedLayerTree = SerializedLayerTree & {
+  _originalId?: string;
+  positionV2?: Delta;
+  position?: Delta;
+};
+
 import { mergeWithoutArray } from '@lidojs/design-utils';
 import { TextEditor } from '@lidojs/text-editor';
 import { cloneDeep, isArray, uniq } from 'lodash';
-import { GroupLayerProps, TextLayerProps } from '../layers';
+import { GroupLayerProps, ImageLayerProps, RootLayerProps, TextLayerProps } from '../layers';
 import {
   CoreEditorQuery,
   DeepPartial,
@@ -61,7 +69,7 @@ const decodeLayer = (serializedLayer: SerializedLayer, parentId: LayerId, _origi
 export const ActionMethods = (state: EditorState, query: CoreEditorQuery) => {
   const addLayerTreeToParent = (
     pageIndex: number,
-    { rootId, layers, _originalId, positionV2 }: SerializedLayerTree,
+    { rootId, layers, _originalId, positionV2 }: ExtendedSerializedLayerTree,
     parentId: LayerId = 'ROOT',
     position?: Delta
   ) => {
@@ -194,27 +202,28 @@ export const ActionMethods = (state: EditorState, query: CoreEditorQuery) => {
       state.pages.forEach((page) => {
         Object.entries(page.layers).forEach(([, layer]) => {
           if (!isRootLayer(layer) && isMainLayer(layer)) {
-            layer.data.props.position.x += changeW / 2;
-            layer.data.props.position.y += changeH / 2;
+            (layer.data.props as any).position.x += changeW / 2;
+            (layer.data.props as any).position.y += changeH / 2;
           }
           if (isRootLayer(layer)) {
             layer.data.props.boxSize = size;
-            if (layer.data.props.image) {
+            const rootProps = layer.data.props as RootLayerProps;
+            if (rootProps.image) {
               const imageRatio =
-                layer.data.props.image.boxSize.width /
-                layer.data.props.image.boxSize.height;
+                rootProps.image.boxSize.width /
+                rootProps.image.boxSize.height;
               if (imageRatio > pageRatio) {
                 //use image height
-                layer.data.props.image.boxSize.height = size.height;
-                layer.data.props.image.boxSize.width = size.height * imageRatio;
+                rootProps.image.boxSize.height = size.height;
+                rootProps.image.boxSize.width = size.height * imageRatio;
               } else {
-                layer.data.props.image.boxSize.width = size.width;
-                layer.data.props.image.boxSize.height = size.width / imageRatio;
+                rootProps.image.boxSize.width = size.width;
+                rootProps.image.boxSize.height = size.width / imageRatio;
               }
-              layer.data.props.image.position.y =
-                (size.height - layer.data.props.image.boxSize.height) / 2;
-              layer.data.props.image.position.x =
-                (size.width - layer.data.props.image.boxSize.width) / 2;
+              rootProps.image.position.y =
+                (size.height - rootProps.image.boxSize.height) / 2;
+              rootProps.image.position.x =
+                (size.width - rootProps.image.boxSize.width) / 2;
             }
           }
         });
@@ -720,14 +729,15 @@ export const ActionMethods = (state: EditorState, query: CoreEditorQuery) => {
           layer.data.props.scale =
             layer.data.props.scale * group.data.props.scale;
         } else if (isImageLayer(layer)) {
-          layer.data.props.image.boxSize.width =
-            layer.data.props.image.boxSize.width * group.data.props.scale;
-          layer.data.props.image.boxSize.height =
-            layer.data.props.image.boxSize.height * group.data.props.scale;
-          layer.data.props.image.position.x =
-            layer.data.props.image.position.x * group.data.props.scale;
-          layer.data.props.image.position.y =
-            layer.data.props.image.position.y * group.data.props.scale;
+          const imageProps = layer.data.props as ImageLayerProps;
+          imageProps.image.boxSize.width =
+            imageProps.image.boxSize.width * group.data.props.scale;
+          imageProps.image.boxSize.height =
+            imageProps.image.boxSize.height * group.data.props.scale;
+          imageProps.image.position.x =
+            imageProps.image.position.x * group.data.props.scale;
+          imageProps.image.position.y =
+            imageProps.image.position.y * group.data.props.scale;
         }
       });
       state.pages[activePage].layers[parentId].data.child.splice(groupIdx, 1);
@@ -1231,7 +1241,7 @@ export const ActionMethods = (state: EditorState, query: CoreEditorQuery) => {
 
       // Calculate the next stable scene number by counting existing SimpleFrames
       const existingFrames = Object.values(state.pages[state.activePage].layers).filter(
-        (layer) => layer.data.type === 'SimpleFrame'
+        (layer) => (layer.data.type as string) === 'SimpleFrame'
       );
       const nextSceneNumber = existingFrames.length + 1;
 
@@ -1249,7 +1259,7 @@ export const ActionMethods = (state: EditorState, query: CoreEditorQuery) => {
             y: props?.position?.y ?? 0,
           },
           boxSize: {
-            width:props?.boxSize?.width ?? frameWidth,
+            width: props?.boxSize?.width ?? frameWidth,
             height: props?.boxSize?.height ?? frameHeight,
           },
           rotate: props?.rotate ?? 0,
@@ -1284,7 +1294,7 @@ export const ActionMethods = (state: EditorState, query: CoreEditorQuery) => {
 
       // Find all SimpleFrames that don't have scene numbers
       Object.entries(layers).forEach(([id, layer]) => {
-        if (layer.data.type === 'SimpleFrame' && id !== 'ROOT') {
+        if ((layer.data.type as string) === 'SimpleFrame' && id !== 'ROOT') {
           const sceneNumber = (layer.data.props as any)?.sceneNumber;
           if (typeof sceneNumber !== 'number') {
             simpleFrames.push({
@@ -1309,10 +1319,7 @@ export const ActionMethods = (state: EditorState, query: CoreEditorQuery) => {
       // Assign scene numbers based on position order
       simpleFrames.forEach(({ id }, index) => {
         const sceneNumber = index + 1;
-        layers[id].data.props = {
-          ...layers[id].data.props,
-          sceneNumber
-        };
+        (layers[id].data.props as any).sceneNumber = sceneNumber;
         console.log(`🎬 Migrated frame ${id} to scene number ${sceneNumber}`);
       });
     },
@@ -1374,7 +1381,7 @@ export const ActionMethods = (state: EditorState, query: CoreEditorQuery) => {
       state.pages[state.activePage].layers[parentId].data.child.push(layerId);
       this.selectLayers(state.activePage, layerId);
     },
-    addTextLayer({ layers, rootId, _originalId, position }: SerializedLayerTree) {
+    addTextLayer({ layers, rootId, _originalId, position }: ExtendedSerializedLayerTree) {
       const layer = addLayerTreeToParent(state.activePage, { layers, rootId, _originalId, positionV2: position });
       this.selectLayers(state.activePage, layer.id);
     },
@@ -1397,7 +1404,7 @@ export const ActionMethods = (state: EditorState, query: CoreEditorQuery) => {
       state.dragNDrop.status = false;
     },
     dropLayer(
-      { layers, rootId }: SerializedLayerTree,
+      { layers, rootId }: ExtendedSerializedLayerTree,
       page: number,
       position: Delta
     ) {
@@ -1410,11 +1417,11 @@ export const ActionMethods = (state: EditorState, query: CoreEditorQuery) => {
       );
       this.selectLayers(page, layer.id);
     },
-    addLayerTree({ layers, rootId }: SerializedLayerTree) {
+    addLayerTree({ layers, rootId }: ExtendedSerializedLayerTree) {
       const layer = addLayerTreeToParent(state.activePage, { layers, rootId });
       this.selectLayers(state.activePage, layer.id);
     },
-    addLayerTrees(data: SerializedLayerTree[]) {
+    addLayerTrees(data: ExtendedSerializedLayerTree[]) {
       const ids: LayerId[] = [];
       const layers = data.map((serializeLayers) => {
         const layer = addLayerTreeToParent(state.activePage, serializeLayers);

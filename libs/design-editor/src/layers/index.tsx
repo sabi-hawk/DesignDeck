@@ -1,8 +1,8 @@
 export * from './FrameLayer';
 export * from './GroupLayer';
-export * from './ImageLayer';
-export * from './RootLayer';
-export * from './ShapeLayer';
-export * from './SimpleFrameLayer';
+export { default as ImageLayer, type ImageLayerProps } from './ImageLayer';
+export { default as RootLayer, type RootLayerProps } from './RootLayer';
+export { default as ShapeLayer, type ShapeLayerProps } from './ShapeLayer';
+export { default as SimpleFrameLayer } from './SimpleFrameLayer';
 export * from './SvgLayer';
-export * from './TextLayer';
+export { default as TextLayer, type TextLayerProps } from './TextLayer';

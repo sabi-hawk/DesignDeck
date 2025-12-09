@@ -15,6 +15,19 @@ export interface RootContentProps
     style: GradientStyle;
   } | null;
   image?: (ImageContentProps['image'] & { transparency: number }) | null;
+  video?: {
+    url: string;
+    position: { x: number; y: number };
+    rotate: number;
+    boxSize: { width: number; height: number };
+    transparency?: number;
+    flipVertical?: boolean;
+    flipHorizontal?: boolean;
+    brightness?: number;
+    contrast?: number;
+    saturation?: number;
+    autoPlay?: boolean;
+  } | null;
 }
 
 export const RootContent: FC<PropsWithChildren<RootContentProps>> = ({
@@ -22,6 +35,7 @@ export const RootContent: FC<PropsWithChildren<RootContentProps>> = ({
   color,
   gradientBackground,
   image,
+  video,
   position,
   rotate,
   layerId,
@@ -64,6 +78,28 @@ export const RootContent: FC<PropsWithChildren<RootContentProps>> = ({
               layerId={layerId}
               position={position}
               rotate={rotate}
+            />
+          )}
+          {video && (
+            <video
+              src={video.url}
+              autoPlay={video.autoPlay}
+              loop
+              muted
+              css={{
+                position: 'absolute',
+                objectFit: 'fill',
+                width: '100%',
+                height: '100%',
+                opacity: video.transparency !== undefined ? 1 - video.transparency / 100 : 1,
+                filter: [
+                  video.flipHorizontal ? 'scaleX(-1)' : '',
+                  video.flipVertical ? 'scaleY(-1)' : '',
+                  video.brightness !== undefined ? `brightness(${video.brightness}%)` : '',
+                  video.contrast !== undefined ? `contrast(${video.contrast}%)` : '',
+                  video.saturation !== undefined ? `saturate(${video.saturation}%)` : '',
+                ].filter(Boolean).join(' '),
+              }}
             />
           )}
         </>

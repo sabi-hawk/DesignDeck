@@ -48,10 +48,10 @@ export class StateSerializer {
 
 // Function map for layer components
 export const LAYER_COMPONENT_MAP: Record<string, Function> = {
-  'TextLayer': () => import('@lidojs/design-editor').then(m => m.TextLayer),
-  'RootLayer': () => import('@lidojs/design-editor').then(m => m.RootLayer),
-  'SimpleFrameLayer': () => import('@lidojs/design-editor').then(m => m.SimpleFrameLayer),
-  'ImageLayer': () => import('@lidojs/design-editor').then(m => m.ImageLayer),
-  'ShapeLayer': () => import('@lidojs/design-editor').then(m => m.ShapeLayer),
+  'TextLayer': () => import('@lidojs/design-editor').then(m => (m as any).TextLayer),
+  'RootLayer': () => import('@lidojs/design-editor').then(m => (m as any).RootLayer),
+  'SimpleFrameLayer': () => import('@lidojs/design-editor').then(m => (m as any).SimpleFrameLayer),
+  'ImageLayer': () => import('@lidojs/design-editor').then(m => (m as any).ImageLayer),
+  'ShapeLayer': () => import('@lidojs/design-editor').then(m => (m as any).ShapeLayer),
   // Add more layer types as needed
 };

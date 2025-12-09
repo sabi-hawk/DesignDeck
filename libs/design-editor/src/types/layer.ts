@@ -50,6 +50,14 @@ export type LayerActions = {
       flipVertical?: boolean;
       flipHorizontal?: boolean;
     };
+    video?: {
+      url: string;
+      position: Delta;
+      rotate: number;
+      boxSize: BoxSize;
+      flipVertical?: boolean;
+      flipHorizontal?: boolean;
+    };
   }) => void;
 };
 
