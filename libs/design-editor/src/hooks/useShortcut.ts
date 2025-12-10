@@ -246,42 +246,80 @@ const useShortcut = (
       const cursorX = e.clientX - frameRect.left;
       const cursorY = e.clientY - frameRect.top;
 
-      // Calculate world coordinates using current scroll position
-      // We need to find the point in canvas space (world coordinates) that's under the cursor
-      const scrollX = frame.scrollLeft + cursorX;
-      const scrollY = frame.scrollTop + cursorY;
+      // Find the page element to get its actual rendered position
+      const pageElement = pageListRef?.current?.[activePage];
+      let worldX = 0;
+      let worldY = 0;
 
-      // Account for page transform and container offset
-      const currentEffectiveScale = scale * (pageTransform?.scale || 1);
-      const pageContainerOffset = 56; // marginLeft from DesignFrame
+      if (pageElement && pageTransform && pageSize) {
+        // Get the page element's bounding rect (this accounts for all CSS transforms)
+        const pageRect = pageElement.getBoundingClientRect();
 
-      // Convert current scroll position to world coordinates (canvas space)
-      // The page element's actual position in scroll space accounts for:
-      // - pageContainerOffset (marginLeft)
-      // - pageTransform.x (page translation)
-      // - The scale affects the size, but we need world coordinates (unscaled)
-      const worldX =
-        (scrollX - pageContainerOffset - (pageTransform?.x || 0)) /
-        currentEffectiveScale;
-      const worldY =
-        (scrollY - (pageTransform?.y || 0)) / currentEffectiveScale;
+        // Calculate position relative to page element's top-left corner in viewport
+        const relativeX = e.clientX - pageRect.left;
+        const relativeY = e.clientY - pageRect.top;
+
+        // The page element has an inner div with transform: scale(scale * transform.scale)
+        // So the effective scale applied to the content is:
+        const currentEffectiveScale = scale * (pageTransform.scale || 1);
+
+        // Convert viewport-relative position to world coordinates (canvas space)
+        // The page element's bounding rect already accounts for the outer transform,
+        // so we just need to divide by the effective scale to get world coordinates
+        worldX = relativeX / currentEffectiveScale;
+        worldY = relativeY / currentEffectiveScale;
+      } else {
+        // Fallback: use scroll-based calculation
+        const scrollX = frame.scrollLeft + cursorX;
+        const scrollY = frame.scrollTop + cursorY;
+        const pageContainerOffset = 56;
+        const currentEffectiveScale = scale * (pageTransform?.scale || 1);
+        worldX =
+          (scrollX - pageContainerOffset - (pageTransform?.x || 0)) /
+          currentEffectiveScale;
+        worldY = (scrollY - (pageTransform?.y || 0)) / currentEffectiveScale;
+      }
 
       // Calculate new effective scale after zoom
       const newEffectiveScale = newScale * (pageTransform?.scale || 1);
 
-      // Convert world coordinates back to scroll space with NEW scale
-      // This tells us where the world point will be after the scale change
-      const newScrollX =
-        worldX * newEffectiveScale +
-        pageContainerOffset +
-        (pageTransform?.x || 0);
-      const newScrollY = worldY * newEffectiveScale + (pageTransform?.y || 0);
+      // Now calculate where the world point will be after zoom
+      // We need to find where this world point will appear in viewport coordinates
+      let nextScrollLeft = 0;
+      let nextScrollTop = 0;
 
-      // Calculate scroll position to keep cursor at same world position
-      // After zoom, the world point should still be under the cursor
-      // So: newScrollLeft + cursorX = newScrollX
-      const nextScrollLeft = newScrollX - cursorX;
-      const nextScrollTop = newScrollY - cursorY;
+      if (pageElement && pageTransform && pageSize) {
+        // Get page element position in viewport (will change after scale update)
+        // But we can calculate where it should be
+        const pageRect = pageElement.getBoundingClientRect();
+        const frameRect = frame.getBoundingClientRect();
+
+        // Calculate page position in scroll coordinates
+        const pageScrollX = pageRect.left - frameRect.left + frame.scrollLeft;
+        const pageScrollY = pageRect.top - frameRect.top + frame.scrollTop;
+
+        // World point in new scale space (relative to page element's top-left)
+        const newPageX = worldX * newEffectiveScale;
+        const newPageY = worldY * newEffectiveScale;
+
+        // Calculate scroll to keep cursor at same world position
+        // After zoom: scrollLeft + cursorX = pageScrollX + newPageX
+        // But pageScrollX will change after scale, so we need to account for that
+        // Actually, we want: cursorX = (pageScrollX + newPageX) - scrollLeft
+        // So: scrollLeft = pageScrollX + newPageX - cursorX
+        nextScrollLeft = pageScrollX + newPageX - cursorX;
+        nextScrollTop = pageScrollY + newPageY - cursorY;
+      } else {
+        // Fallback calculation
+        const pageContainerOffset = 56;
+        const newScrollX =
+          worldX * newEffectiveScale +
+          pageContainerOffset +
+          (pageTransform?.x || 0);
+        const newScrollY = worldY * newEffectiveScale + (pageTransform?.y || 0);
+        nextScrollLeft = newScrollX - cursorX;
+        nextScrollTop = newScrollY - cursorY;
+      }
 
       // Clamp scroll to valid bounds
       const contentWidth = (pageSize?.width || 10000) * newScale;
@@ -313,10 +351,42 @@ const useShortcut = (
           actions.setScale(newScale);
         });
 
-        // Now set scroll position immediately after scale is applied
-        // The page should have re-rendered with new dimensions
-        frame.scrollLeft = clampedScrollLeft;
-        frame.scrollTop = clampedScrollTop;
+        // After scale is applied, recalculate page position if we have page element
+        // because the page element's size has changed
+        if (pageElement && pageTransform && pageSize) {
+          const frameRect = frame.getBoundingClientRect();
+          const pageRect = pageElement.getBoundingClientRect();
+
+          // Recalculate page position in scroll coordinates after scale change
+          const pageScrollX = pageRect.left - frameRect.left + frame.scrollLeft;
+          const pageScrollY = pageRect.top - frameRect.top + frame.scrollTop;
+
+          // Recalculate scroll position with updated page position
+          const newPageX = worldX * newEffectiveScale;
+          const newPageY = worldY * newEffectiveScale;
+
+          const correctedScrollLeft = pageScrollX + newPageX - cursorX;
+          const correctedScrollTop = pageScrollY + newPageY - cursorY;
+
+          // Clamp to bounds
+          const contentWidth = pageSize.width * newScale;
+          const contentHeight = pageSize.height * newScale;
+          const maxScrollLeft = Math.max(0, contentWidth - frame.clientWidth);
+          const maxScrollTop = Math.max(0, contentHeight - frame.clientHeight);
+
+          frame.scrollLeft = Math.max(
+            0,
+            Math.min(maxScrollLeft, correctedScrollLeft)
+          );
+          frame.scrollTop = Math.max(
+            0,
+            Math.min(maxScrollTop, correctedScrollTop)
+          );
+        } else {
+          // Fallback: use pre-calculated values
+          frame.scrollLeft = clampedScrollLeft;
+          frame.scrollTop = clampedScrollTop;
+        }
       });
     };
 
