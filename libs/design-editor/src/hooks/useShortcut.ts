@@ -1,5 +1,6 @@
 import { modifiers, normalizeKeyName } from '@lidojs/design-utils';
-import { RefObject, useCallback, useEffect } from 'react';
+import { RefObject, useCallback, useEffect, useRef } from 'react';
+import { flushSync } from 'react-dom';
 import { keyName } from 'w3c-keyname';
 import { copy } from '../ultils/menu-actions/copy';
 import { duplicate } from '../ultils/menu-actions/duplicate';
@@ -7,17 +8,23 @@ import { paste } from '../ultils/menu-actions/paste';
 import { useEditor } from './useEditor';
 import { useSelectedLayers } from './useSelectedLayers';
 
-const useShortcut = (frameEle: RefObject<HTMLElement | null>) => {
-  const { actions, state, activePage, rootLayer, scale } = useEditor(
-    (state) => ({
+const useShortcut = (
+  frameEle: RefObject<HTMLElement | null>,
+  pageListRef?: RefObject<HTMLDivElement[]>,
+  pageTransform?: { x: number; y: number; scale: number }
+) => {
+  const { actions, state, activePage, rootLayer, scale, pageSize } = useEditor(
+    (state, query) => ({
       rootLayer:
         state.pages[state.activePage] &&
         state.pages[state.activePage].layers.ROOT,
       activePage: state.activePage,
       scale: state.scale,
+      pageSize: query.getPageSize(),
     })
   );
   const { selectedLayerIds } = useSelectedLayers();
+  const zoomRaf = useRef<number | null>(null);
 
   // Helper function for consistent zoom parameters
   const getZoomParams = () => {
@@ -213,26 +220,200 @@ const useShortcut = (frameEle: RefObject<HTMLElement | null>) => {
 
   useEffect(() => {
     const handleZoomDesktop = (e: WheelEvent) => {
-      if (e.ctrlKey) {
-        const s = Math.exp(-e.deltaY / 600);
-        const { minScale, maxScale } = getZoomParams();
+      const frame = frameEle.current;
+      if (!frame || !e.ctrlKey) {
+        return;
+      }
 
-        // Apply zoom with new limits
-        const newScale = Math.min(Math.max(scale * s, minScale), maxScale);
-        actions.setScale(newScale);
-        e.preventDefault();
-        e.stopPropagation();
+      e.preventDefault();
+      e.stopPropagation();
+
+      // Smooth exponential zoom like Figma
+      const zoomFactor = Math.exp(-e.deltaY / 600);
+      const { minScale, maxScale } = getZoomParams();
+      const newScale = Math.min(
+        Math.max(scale * zoomFactor, minScale),
+        maxScale
+      );
+
+      // Skip if scale didn't change
+      if (Math.abs(newScale - scale) < 0.0001) {
+        return;
+      }
+
+      // Get cursor position relative to frame viewport
+      const frameRect = frame.getBoundingClientRect();
+      const cursorX = e.clientX - frameRect.left;
+      const cursorY = e.clientY - frameRect.top;
+
+      // Find the page element to get its actual rendered position
+      const pageElement = pageListRef?.current?.[activePage];
+      let worldX = 0;
+      let worldY = 0;
+
+      if (pageElement && pageTransform && pageSize) {
+        // Get the page element's bounding rect (this accounts for all CSS transforms)
+        const pageRect = pageElement.getBoundingClientRect();
+
+        // Calculate position relative to page element's top-left corner in viewport
+        const relativeX = e.clientX - pageRect.left;
+        const relativeY = e.clientY - pageRect.top;
+
+        // The page element has an inner div with transform: scale(scale * transform.scale)
+        // So the effective scale applied to the content is:
+        const currentEffectiveScale = scale * (pageTransform.scale || 1);
+
+        // Convert viewport-relative position to world coordinates (canvas space)
+        // The page element's bounding rect already accounts for the outer transform,
+        // so we just need to divide by the effective scale to get world coordinates
+        worldX = relativeX / currentEffectiveScale;
+        worldY = relativeY / currentEffectiveScale;
+      } else {
+        // Fallback: use scroll-based calculation
+        const scrollX = frame.scrollLeft + cursorX;
+        const scrollY = frame.scrollTop + cursorY;
+        const pageContainerOffset = 56;
+        const currentEffectiveScale = scale * (pageTransform?.scale || 1);
+        worldX =
+          (scrollX - pageContainerOffset - (pageTransform?.x || 0)) /
+          currentEffectiveScale;
+        worldY = (scrollY - (pageTransform?.y || 0)) / currentEffectiveScale;
+      }
+
+      // Calculate new effective scale after zoom
+      const newEffectiveScale = newScale * (pageTransform?.scale || 1);
+
+      // Now calculate where the world point will be after zoom
+      // We need to find where this world point will appear in viewport coordinates
+      let nextScrollLeft = 0;
+      let nextScrollTop = 0;
+
+      if (pageElement && pageTransform && pageSize) {
+        // Get page element position in viewport (will change after scale update)
+        // But we can calculate where it should be
+        const pageRect = pageElement.getBoundingClientRect();
+        const frameRect = frame.getBoundingClientRect();
+
+        // Calculate page position in scroll coordinates
+        const pageScrollX = pageRect.left - frameRect.left + frame.scrollLeft;
+        const pageScrollY = pageRect.top - frameRect.top + frame.scrollTop;
+
+        // World point in new scale space (relative to page element's top-left)
+        const newPageX = worldX * newEffectiveScale;
+        const newPageY = worldY * newEffectiveScale;
+
+        // Calculate scroll to keep cursor at same world position
+        // After zoom: scrollLeft + cursorX = pageScrollX + newPageX
+        // But pageScrollX will change after scale, so we need to account for that
+        // Actually, we want: cursorX = (pageScrollX + newPageX) - scrollLeft
+        // So: scrollLeft = pageScrollX + newPageX - cursorX
+        nextScrollLeft = pageScrollX + newPageX - cursorX;
+        nextScrollTop = pageScrollY + newPageY - cursorY;
+      } else {
+        // Fallback calculation
+        const pageContainerOffset = 56;
+        const newScrollX =
+          worldX * newEffectiveScale +
+          pageContainerOffset +
+          (pageTransform?.x || 0);
+        const newScrollY = worldY * newEffectiveScale + (pageTransform?.y || 0);
+        nextScrollLeft = newScrollX - cursorX;
+        nextScrollTop = newScrollY - cursorY;
+      }
+
+      // Clamp scroll to valid bounds
+      const contentWidth = (pageSize?.width || 10000) * newScale;
+      const contentHeight = (pageSize?.height || 10000) * newScale;
+      const maxScrollLeft = Math.max(0, contentWidth - frame.clientWidth);
+      const maxScrollTop = Math.max(0, contentHeight - frame.clientHeight);
+
+      const clampedScrollLeft = Math.max(
+        0,
+        Math.min(maxScrollLeft, nextScrollLeft)
+      );
+      const clampedScrollTop = Math.max(
+        0,
+        Math.min(maxScrollTop, nextScrollTop)
+      );
+
+      // Cancel any pending zoom operation to prevent accumulation
+      if (zoomRaf.current) {
+        cancelAnimationFrame(zoomRaf.current);
+      }
+
+      // Apply updates in a single frame to prevent flickering
+      // Use flushSync to ensure scale is applied synchronously before setting scroll
+      zoomRaf.current = requestAnimationFrame(() => {
+        zoomRaf.current = null;
+
+        // Flush the scale update synchronously so the DOM is updated before we set scroll
+        flushSync(() => {
+          actions.setScale(newScale);
+        });
+
+        // After scale is applied, recalculate page position if we have page element
+        // because the page element's size has changed
+        if (pageElement && pageTransform && pageSize) {
+          const frameRect = frame.getBoundingClientRect();
+          const pageRect = pageElement.getBoundingClientRect();
+
+          // Recalculate page position in scroll coordinates after scale change
+          const pageScrollX = pageRect.left - frameRect.left + frame.scrollLeft;
+          const pageScrollY = pageRect.top - frameRect.top + frame.scrollTop;
+
+          // Recalculate scroll position with updated page position
+          const newPageX = worldX * newEffectiveScale;
+          const newPageY = worldY * newEffectiveScale;
+
+          const correctedScrollLeft = pageScrollX + newPageX - cursorX;
+          const correctedScrollTop = pageScrollY + newPageY - cursorY;
+
+          // Clamp to bounds
+          const contentWidth = pageSize.width * newScale;
+          const contentHeight = pageSize.height * newScale;
+          const maxScrollLeft = Math.max(0, contentWidth - frame.clientWidth);
+          const maxScrollTop = Math.max(0, contentHeight - frame.clientHeight);
+
+          frame.scrollLeft = Math.max(
+            0,
+            Math.min(maxScrollLeft, correctedScrollLeft)
+          );
+          frame.scrollTop = Math.max(
+            0,
+            Math.min(maxScrollTop, correctedScrollTop)
+          );
+        } else {
+          // Fallback: use pre-calculated values
+          frame.scrollLeft = clampedScrollLeft;
+          frame.scrollTop = clampedScrollTop;
+        }
+      });
+    };
+
+    const frame = frameEle.current;
+    if (frame) {
+      frame.addEventListener('wheel', handleZoomDesktop, {
+        passive: false,
+      });
+    }
+
+    return () => {
+      if (zoomRaf.current) {
+        cancelAnimationFrame(zoomRaf.current);
+      }
+      if (frame) {
+        frame.removeEventListener('wheel', handleZoomDesktop);
       }
     };
-
-    frameEle.current?.addEventListener('wheel', handleZoomDesktop, {
-      passive: false,
-    });
-    return () => {
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-      frameEle.current?.removeEventListener('wheel', handleZoomDesktop);
-    };
-  }, [actions, frameEle, scale]);
+  }, [
+    actions,
+    frameEle,
+    scale,
+    activePage,
+    pageListRef,
+    pageTransform,
+    pageSize,
+  ]);
 
   useEffect(() => {
     frameEle.current.addEventListener('keydown', handleKeydown);

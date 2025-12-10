@@ -62,7 +62,6 @@ const DesignFrame: FC<DesignFrameProps> = ({
   } = useContext(EditorContext);
   // PageSettings state removed since it's no longer needed for single canvas approach
   // const [showPageSettings, setShowPageSettings] = useState(false);
-  useShortcut(frameRef);
   const {
     actions,
     scale,
@@ -110,6 +109,7 @@ const DesignFrame: FC<DesignFrameProps> = ({
     onMovePage,
     onMovePageEnd,
   } = useZoomPage(frameRef, pageRef, pageContainerRef);
+  useShortcut(frameRef, pageRef, pageTransform);
   useEffect(() => {
     actions.setData(data);
   }, [data, actions]);

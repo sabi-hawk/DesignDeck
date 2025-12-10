@@ -83,11 +83,13 @@ export const useZoomPage = (
   }, []);
 
   const pageZoomMove = useCallback(
-    (change: number) => {
+    (change: number, pinchCenter?: CursorPosition) => {
       if (
         frameRef.current &&
         transformRef.current.isZoom &&
-        pageListRef.current
+        pageListRef.current &&
+        pageListRef.current[activePage] &&
+        pinchCenter
       ) {
         const headerHeight = 70;
         const footerHeight = 72;
@@ -95,35 +97,58 @@ export const useZoomPage = (
         const containerWidth = window.innerWidth - offset * 2;
         const containerHeight =
           window.innerHeight - headerHeight - footerHeight - offset * 2;
-        const { x, y } = pageTransform;
-        const oldPageW = pageSize.width * scale;
-        const oldPageH = pageSize.height * scale;
-        const perfectX = (containerWidth - oldPageW) / 2;
-        const perfectY = (containerHeight - oldPageH) / 2;
-        const changeX = perfectX === x ? 0 : x - perfectX;
-        const changeY = perfectY === y ? 0 : y - perfectY;
+        const containerCenterX = containerWidth / 2;
+        const containerCenterY = containerHeight / 2;
+
+        const oldScale = scale * pageTransform.scale;
+        const newScale = change;
+        const newTotalScale = scale * newScale;
+
+        // Convert pointer from screen to container coordinates
+        const pointerContainerX = pinchCenter.clientX - offset;
+        const pointerContainerY = pinchCenter.clientY - headerHeight - offset;
+
+        // Current page center position in container coordinates
+        // pageTransform.x/y are relative to container center
+        const currentPageCenterX = containerCenterX + pageTransform.x;
+        const currentPageCenterY = containerCenterY + pageTransform.y;
+
+        // Calculate the canvas point (unscaled page coordinates) that's under the pointer
+        // Vector from page center to pointer
+        const deltaX = pointerContainerX - currentPageCenterX;
+        const deltaY = pointerContainerY - currentPageCenterY;
+
+        // Convert to canvas coordinates
+        const canvasPointX = deltaX / oldScale;
+        const canvasPointY = deltaY / oldScale;
+
+        // After zoom, this canvas point should still be under the pointer
+        // Calculate the new delta (scaled by new scale)
+        const newDeltaX = canvasPointX * newTotalScale;
+        const newDeltaY = canvasPointY * newTotalScale;
+
+        // New page center position (pointer minus new delta)
+        const newPageCenterX = pointerContainerX - newDeltaX;
+        const newPageCenterY = pointerContainerY - newDeltaY;
+
+        // Convert to pageTransform coordinates (relative to container center)
+        const newX = newPageCenterX - containerCenterX;
+        const newY = newPageCenterY - containerCenterY;
+
         pageListRef.current[activePage].style.transform = getTransformStyle({
           position: {
-            x: x + changeX * (change - 1),
-            y: y + changeY * (change - 1),
+            x: newX,
+            y: newY,
           },
-          scale: change,
+          scale: newScale,
         });
       }
     },
-    [
-      activePage,
-      frameRef,
-      pageListRef,
-      pageSize.height,
-      pageSize.width,
-      pageTransform,
-      scale,
-    ]
+    [activePage, frameRef, pageListRef, pageTransform, scale]
   );
 
   const pageZoomEnd = useCallback(
-    (change: number) => {
+    (change: number, pinchCenter?: CursorPosition) => {
       if (
         frameRef.current &&
         transformRef.current.isZoom &&
@@ -131,38 +156,92 @@ export const useZoomPage = (
       ) {
         transformRef.current.isZoom = false;
         let zoom = change;
-        const { x, y } = pageTransform;
         const headerHeight = 70;
         const footerHeight = 72;
         const offset = 16;
         const containerWidth = window.innerWidth - offset * 2;
         const containerHeight =
           window.innerHeight - headerHeight - footerHeight - offset * 2;
-        let pageW = pageSize.width * scale * zoom;
-        if (pageW < containerWidth) {
-          zoom = containerWidth / scale / pageSize.width;
-          pageW = containerWidth;
-        }
-        const oldPageW = pageSize.width * scale;
-        const pageH = pageSize.height * scale * zoom;
-        const oldPageH = pageSize.height * scale;
-        const perfectX = (containerWidth - oldPageW) / 2;
-        const perfectY = (containerHeight - oldPageH) / 2;
-        const changeX =
-          (pageW - oldPageW) / 2 -
-          (perfectX === x ? 0 : x - perfectX) * (zoom - 1);
-        const changeY =
-          (pageH - oldPageH) / 2 -
-          (perfectY === y ? 0 : y - perfectY) * (zoom - 1);
 
-        const newX = Math.max(
-          -(pageW - containerWidth),
-          Math.min(x - changeX, 0)
-        );
-        const newY = Math.max(
-          -(pageH - containerHeight / 2),
-          Math.min(y - changeY, containerHeight / 2)
-        );
+        // Calculate final position based on pinch center if available
+        let newX = pageTransform.x;
+        let newY = pageTransform.y;
+
+        if (pinchCenter && pageListRef.current[activePage]) {
+          const containerCenterX = containerWidth / 2;
+          const containerCenterY = containerHeight / 2;
+          const oldScale = scale * pageTransform.scale;
+
+          // Convert pointer from screen to container coordinates
+          const pointerContainerX = pinchCenter.clientX - offset;
+          const pointerContainerY = pinchCenter.clientY - headerHeight - offset;
+
+          // Current page center position in container coordinates
+          const currentPageCenterX = containerCenterX + pageTransform.x;
+          const currentPageCenterY = containerCenterY + pageTransform.y;
+
+          // Calculate the canvas point (unscaled page coordinates) that's under the pointer
+          const deltaX = pointerContainerX - currentPageCenterX;
+          const deltaY = pointerContainerY - currentPageCenterY;
+          const canvasPointX = deltaX / oldScale;
+          const canvasPointY = deltaY / oldScale;
+
+          // Calculate new scale with limits
+          let pageW = pageSize.width * scale * zoom;
+          if (pageW < containerWidth) {
+            zoom = containerWidth / scale / pageSize.width;
+            pageW = containerWidth;
+          }
+
+          const newTotalScale = scale * zoom;
+
+          // After zoom, this canvas point should still be under the pointer
+          const newDeltaX = canvasPointX * newTotalScale;
+          const newDeltaY = canvasPointY * newTotalScale;
+          const newPageCenterX = pointerContainerX - newDeltaX;
+          const newPageCenterY = pointerContainerY - newDeltaY;
+
+          // Convert to pageTransform coordinates (relative to container center)
+          newX = newPageCenterX - containerCenterX;
+          newY = newPageCenterY - containerCenterY;
+
+          // Clamp to bounds
+          const pageH = pageSize.height * scale * zoom;
+          newX = Math.max(-(pageW - containerWidth), Math.min(newX, 0));
+          newY = Math.max(
+            -(pageH - containerHeight / 2),
+            Math.min(newY, containerHeight / 2)
+          );
+        } else {
+          // Fallback to old behavior if no pinch center
+          let pageW = pageSize.width * scale * zoom;
+          if (pageW < containerWidth) {
+            zoom = containerWidth / scale / pageSize.width;
+            pageW = containerWidth;
+          }
+          const oldPageW = pageSize.width * scale;
+          const pageH = pageSize.height * scale * zoom;
+          const oldPageH = pageSize.height * scale;
+          const perfectX = (containerWidth - oldPageW) / 2;
+          const perfectY = (containerHeight - oldPageH) / 2;
+          const changeX =
+            (pageW - oldPageW) / 2 -
+            (perfectX === pageTransform.x ? 0 : pageTransform.x - perfectX) *
+              (zoom - 1);
+          const changeY =
+            (pageH - oldPageH) / 2 -
+            (perfectY === pageTransform.y ? 0 : pageTransform.y - perfectY) *
+              (zoom - 1);
+
+          newX = Math.max(
+            -(pageW - containerWidth),
+            Math.min(pageTransform.x - changeX, 0)
+          );
+          newY = Math.max(
+            -(pageH - containerHeight / 2),
+            Math.min(pageTransform.y - changeY, containerHeight / 2)
+          );
+        }
 
         if (zoom > change) {
           //state change doesn't rerender
@@ -227,8 +306,15 @@ export const useZoomPage = (
         );
         const current = distanceBetweenPoints(touches[0], touches[1]);
         const scale = current / start;
+
+        // Calculate the center point of the pinch gesture
+        const pinchCenter: CursorPosition = {
+          clientX: (touches[0].clientX + touches[1].clientX) / 2,
+          clientY: (touches[0].clientY + touches[1].clientY) / 2,
+        };
+
         transformRef.current.lastTouch = [touches[0], touches[1]];
-        pageZoomMove(scale);
+        pageZoomMove(scale, pinchCenter);
       }, 16),
     [pageZoomMove]
   );
@@ -245,8 +331,21 @@ export const useZoomPage = (
           transformRef.current.lastTouch[1]
         );
         const scale = current / start;
+
+        // Calculate the center point of the pinch gesture
+        const pinchCenter: CursorPosition = {
+          clientX:
+            (transformRef.current.lastTouch[0].clientX +
+              transformRef.current.lastTouch[1].clientX) /
+            2,
+          clientY:
+            (transformRef.current.lastTouch[0].clientY +
+              transformRef.current.lastTouch[1].clientY) /
+            2,
+        };
+
         transformRef.current.lastTouch = [touches[0], touches[1]];
-        pageZoomEnd(scale);
+        pageZoomEnd(scale, pinchCenter);
       }
     },
     [pageZoomEnd]
@@ -484,10 +583,12 @@ export const useZoomPage = (
       document.addEventListener('gestureend', handleGestureEnd, { once: true });
     };
     const handleGestureChange = throttle((e: Event) => {
+      // For gesture events, we don't have touch positions, so zoom around center
       pageZoomMove((e as GestureEvent).scale);
       e.preventDefault();
     }, 16);
     const handleGestureEnd = (e: Event) => {
+      // For gesture events, we don't have touch positions, so zoom around center
       pageZoomEnd((e as GestureEvent).scale);
       e.preventDefault();
       document.removeEventListener('gesturechange', handleGestureChange);
