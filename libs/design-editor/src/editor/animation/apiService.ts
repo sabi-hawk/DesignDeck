@@ -2,10 +2,11 @@ import { AnimationFrame, AnimationSettings, ElementCoordinates } from './types';
 import { dataURLToFile } from './utils';
 
 // Mock mode flag - set to true to bypass actual API calls for testing
-const MOCK_MODE = true;
+const MOCK_MODE = false;
 
 // Mock video URL for testing
-const MOCK_VIDEO_URL = 'https://speedpaint.co/sketchly/test@example.com/outputs/65f9c6e3d91612a4c934f1d4a7713604.webm';
+const MOCK_VIDEO_URL =
+  'https://speedpaint.co/sketchly/test@example.com/outputs/65f9c6e3d91612a4c934f1d4a7713604.webm';
 
 /**
  * Submit a frame to the API for processing
@@ -19,22 +20,29 @@ export const submitFrameToAPI = async (
   try {
     // Mock mode: return fake file ID immediately
     if (MOCK_MODE) {
-      console.log(`🧪 Mock mode: Simulating API submission for frame ${frame.id}`);
-      
+      console.log(
+        `🧪 Mock mode: Simulating API submission for frame ${frame.id}`
+      );
+
       // Simulate a small delay to mimic real API behavior
-      await new Promise(resolve => setTimeout(resolve, 100));
-      
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
       // Return a mock file ID
-      const mockFileId = `mock_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      const mockFileId = `mock_${Date.now()}_${Math.random()
+        .toString(36)
+        .substr(2, 9)}`;
       console.log(`🧪 Mock mode: Generated file ID: ${mockFileId}`);
-      
+
       return mockFileId;
     }
 
     console.log(`🚀 Submitting frame ${frame.id} to API for processing...`);
 
     // Convert image data URL to file
-    const imageFile = await dataURLToFile(frame.imageDataUrl, `element-${elementId}.png`);
+    const imageFile = await dataURLToFile(
+      frame.imageDataUrl,
+      `element-${elementId}.png`
+    );
 
     // Create form data
     const formData = new FormData();
@@ -70,7 +78,6 @@ export const submitFrameToAPI = async (
     }
 
     return null;
-
   } catch (error) {
     console.error(`❌ Error submitting frame to API:`, error);
     return null;
@@ -88,75 +95,84 @@ export const pollForResult = (
 ): void => {
   // Mock mode: return mock video URL immediately
   if (MOCK_MODE) {
-    console.log(`🧪 Mock mode: Simulating immediate success for file ${fileId}`);
-    
+    console.log(
+      `🧪 Mock mode: Simulating immediate success for file ${fileId}`
+    );
+
     // Simulate progress updates quickly
     setTimeout(() => onProgress(25), 100);
     setTimeout(() => onProgress(50), 200);
     setTimeout(() => onProgress(75), 300);
     setTimeout(() => onProgress(100), 400);
-    
+
     // Return success after a brief delay
     setTimeout(() => {
       console.log(`🧪 Mock mode: Returning mock video URL: ${MOCK_VIDEO_URL}`);
       onSuccess(MOCK_VIDEO_URL);
     }, 500);
-    
+
     return;
   }
 
   const maxAttempts = 60; // 10 minutes max (60 * 10 seconds)
   let attempts = 0;
-  
+
   const pollInterval = setInterval(async () => {
     try {
       attempts++;
-      console.log(`🔄 Polling for result (attempt ${attempts}/${maxAttempts}) for file ${fileId}`);
-      
-      const response = await fetch(`https://speedpaint.co/api/result?file_id=${fileId}`);
-      
+      console.log(
+        `🔄 Polling for result (attempt ${attempts}/${maxAttempts}) for file ${fileId}`
+      );
+
+      const response = await fetch(
+        `https://speedpaint.co/api/result?file_id=${fileId}`
+      );
+
       if (!response.ok) {
-        throw new Error(`Result API request failed with status ${response.status}`);
+        throw new Error(
+          `Result API request failed with status ${response.status}`
+        );
       }
-      
+
       const result = await response.json();
       console.log(`📊 Poll result for ${fileId}:`, result);
-      
+
       if (result.status === 'success' && result.result_url) {
         console.log(`🎉 Video ready for ${fileId}: ${result.result_url}`);
-        
+
         // Stop polling
         clearInterval(pollInterval);
-        
+
         // Call success callback
         onSuccess(result.result_url);
-        
       } else if (result.status === 'pending') {
-        console.log(`⏳ Still processing ${fileId}: ${result.progress}% - ${result.message}`);
-        
+        console.log(
+          `⏳ Still processing ${fileId}: ${result.progress}% - ${result.message}`
+        );
+
         // Update progress if available
         if (result.progress !== undefined) {
           onProgress(result.progress);
         }
-        
       } else {
         console.warn(`⚠️ Unexpected status for ${fileId}:`, result);
       }
-      
+
       // Stop polling if max attempts reached
       if (attempts >= maxAttempts) {
         console.warn(`⏰ Max polling attempts reached for ${fileId}`);
         clearInterval(pollInterval);
         onFailure();
       }
-      
     } catch (error) {
       console.error(`❌ Error polling for result ${fileId}:`, error);
       attempts++;
-      
+
       // Stop polling if too many errors
       if (attempts >= maxAttempts) {
-        console.warn(`⏰ Max polling attempts reached due to errors for ${fileId}`);
+        console.warn(
+          `⏰ Max polling attempts reached due to errors for ${fileId}`
+        );
         clearInterval(pollInterval);
         onFailure();
       }

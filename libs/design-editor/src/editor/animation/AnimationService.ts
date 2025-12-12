@@ -1,20 +1,27 @@
 import { toPng } from 'html-to-image';
 import { submitFrameToAPI, pollForResult } from './apiService';
-import { addAnimationNumberToElement, removeAnimationNumberFromElement, updateAnimationNumberForElement } from './elementAnimationNumber';
-import { addLockIconToElement, removeLockIconFromElement } from './elementLockIcon';
+import {
+  addAnimationNumberToElement,
+  removeAnimationNumberFromElement,
+  updateAnimationNumberForElement,
+} from './elementAnimationNumber';
+import {
+  addLockIconToElement,
+  removeLockIconFromElement,
+} from './elementLockIcon';
 import FrameVideoReplacer from './FrameVideoReplacer';
-import { 
-  AnimationSettings, 
-  AnimationFrame, 
-  AnimatedElement, 
-  ElementCoordinates 
+import {
+  AnimationSettings,
+  AnimationFrame,
+  AnimatedElement,
+  ElementCoordinates,
 } from './types';
-import { 
-  findElementByLayerId, 
-  getElementType, 
+import {
+  findElementByLayerId,
+  getElementType,
   findParentSimpleFrame,
   getChildElementIds,
-  generateFrameColor
+  generateFrameColor,
 } from './utils';
 
 class AnimationService {
@@ -24,7 +31,10 @@ class AnimationService {
   private isCapturing = false;
   private pages: any[] = [];
   private onFrameCaptured?: (frame: AnimationFrame) => void;
-  private onElementAnimationStarted?: (elementId: string, frameIndex: number) => void;
+  private onElementAnimationStarted?: (
+    elementId: string,
+    frameIndex: number
+  ) => void;
   private onElementAnimationStopped?: (elementId: string) => void;
   private nextFrameIndex = 0;
   private frameVideoReplacer: FrameVideoReplacer; // Instance of FrameVideoReplacer
@@ -66,7 +76,9 @@ class AnimationService {
   /**
    * Set callback for when element animation starts
    */
-  setOnElementAnimationStarted(callback: (elementId: string, frameIndex: number) => void): void {
+  setOnElementAnimationStarted(
+    callback: (elementId: string, frameIndex: number) => void
+  ): void {
     this.onElementAnimationStarted = callback;
   }
 
@@ -90,7 +102,9 @@ class AnimationService {
     // Check if this is a SimpleFrame - if so, animate its children instead
     const elementType = getElementType(this.pages, elementId);
     if (elementType === 'SimpleFrame') {
-      console.log(`🎬 SimpleFrame detected for ${elementId}, animating child elements instead`);
+      console.log(
+        `🎬 SimpleFrame detected for ${elementId}, animating child elements instead`
+      );
       return this.startAnimationForSimpleFrame(elementId, settings);
     }
 
@@ -108,27 +122,35 @@ class AnimationService {
   /**
    * Start animation for a SimpleFrame by animating its child elements
    */
-  private startAnimationForSimpleFrame(frameId: string, settings: AnimationSettings): boolean {
+  private startAnimationForSimpleFrame(
+    frameId: string,
+    settings: AnimationSettings
+  ): boolean {
     const childElementIds = getChildElementIds(this.pages, frameId);
-    
+
     if (childElementIds.length === 0) {
       console.warn(`SimpleFrame ${frameId} has no child elements to animate`);
       return false;
     }
 
-    console.log(`🎬 Starting animation for SimpleFrame ${frameId} with ${childElementIds.length} child elements:`, childElementIds);
-    
+    console.log(
+      `🎬 Starting animation for SimpleFrame ${frameId} with ${childElementIds.length} child elements:`,
+      childElementIds
+    );
+
     // Dispatch animationStart event for the frame itself
-    console.log(`🔒 Dispatching animationStart event for SimpleFrame ${frameId}`);
+    console.log(
+      `🔒 Dispatching animationStart event for SimpleFrame ${frameId}`
+    );
     const animationStartEvent = new CustomEvent('animationStart', {
       detail: {
         frameId: frameId,
         elementId: frameId, // Frame is animating itself
-        frameIndex: this.nextFrameIndex
-      }
+        frameIndex: this.nextFrameIndex,
+      },
     });
     document.dispatchEvent(animationStartEvent);
-    
+
     // Start animation for each child element
     let successCount = 0;
     for (const childId of childElementIds) {
@@ -143,12 +165,17 @@ class AnimationService {
   /**
    * Start animation for a single element
    */
-  private startAnimationForElement(elementId: string, settings: AnimationSettings): boolean {
+  private startAnimationForElement(
+    elementId: string,
+    settings: AnimationSettings
+  ): boolean {
     try {
       const frameIndex = this.nextFrameIndex++;
-      
-      console.log(`🎬 Starting animation for element ${elementId} at frame ${frameIndex}, isCapturing: ${this.isCapturing}`);
-      
+
+      console.log(
+        `🎬 Starting animation for element ${elementId} at frame ${frameIndex}, isCapturing: ${this.isCapturing}`
+      );
+
       // Create animated element entry
       const animatedElement: AnimatedElement = {
         id: elementId,
@@ -156,21 +183,25 @@ class AnimationService {
         startTime: Date.now(),
         lastCaptureTime: Date.now(),
         settings,
-        parentFrameId: findParentSimpleFrame(this.pages, elementId)
+        parentFrameId: findParentSimpleFrame(this.pages, elementId),
       };
 
       this.animatedElements.set(elementId, animatedElement);
-      
+
       // Start capturing frames
       this.startCapturing(elementId, frameIndex, settings);
-      
+
       // Add lock icon to the element immediately when animation starts
       addLockIconToElement(elementId);
-      
+
       // Add animation number to the element (scene-relative index + 1 for display)
       const sceneRelativeIndex = this.getSceneRelativeIndex(elementId);
-      addAnimationNumberToElement(elementId, sceneRelativeIndex + 1, this.pages);
-      
+      addAnimationNumberToElement(
+        elementId,
+        sceneRelativeIndex + 1,
+        this.pages
+      );
+
       // Refresh all animation numbers to ensure correct scene-relative numbering
       this.refreshAllAnimationNumbers();
 
@@ -181,22 +212,31 @@ class AnimationService {
 
       // Dispatch custom event to notify SimpleFrameContent to lock only this specific element with the frame
       if (animatedElement.parentFrameId) {
-        console.log(`🔒 Dispatching elementAnimationStart event for frame ${animatedElement.parentFrameId} due to element ${elementId} animation`);
-        const elementAnimationStartEvent = new CustomEvent('elementAnimationStart', {
-          detail: {
-            frameId: animatedElement.parentFrameId,
-            elementId: elementId,
-            frameIndex: frameIndex
+        console.log(
+          `🔒 Dispatching elementAnimationStart event for frame ${animatedElement.parentFrameId} due to element ${elementId} animation`
+        );
+        const elementAnimationStartEvent = new CustomEvent(
+          'elementAnimationStart',
+          {
+            detail: {
+              frameId: animatedElement.parentFrameId,
+              elementId: elementId,
+              frameIndex: frameIndex,
+            },
           }
-        });
+        );
         document.dispatchEvent(elementAnimationStartEvent);
       }
 
-      console.log(`✅ Animation started for element ${elementId} at frame ${frameIndex}`);
+      console.log(
+        `✅ Animation started for element ${elementId} at frame ${frameIndex}`
+      );
       return true;
-
     } catch (error) {
-      console.error(`❌ Failed to start animation for element ${elementId}:`, error);
+      console.error(
+        `❌ Failed to start animation for element ${elementId}:`,
+        error
+      );
       return false;
     }
   }
@@ -209,46 +249,54 @@ class AnimationService {
       if (this.animatedElements.has(elementId)) {
         const animatedElement = this.animatedElements.get(elementId);
         const parentFrameId = animatedElement?.parentFrameId;
-        
+
         this.animatedElements.delete(elementId);
-        
+
         // Remove all frames for this element
         for (const [frameId, frame] of this.animationFrames.entries()) {
           if (frame.elementId === elementId) {
             this.animationFrames.delete(frameId);
           }
         }
-        
+
         // Remove lock icon from the element
         removeLockIconFromElement(elementId);
-        
+
         // Remove animation number from the element
         removeAnimationNumberFromElement(elementId);
-        
+
         // Notify callback
         if (this.onElementAnimationStopped) {
           this.onElementAnimationStopped(elementId);
         }
-        
+
         // Dispatch custom event to notify SimpleFrameContent to unlock only this specific element from the frame
         if (parentFrameId) {
-          console.log(`🔓 Dispatching elementAnimationStop event for frame ${parentFrameId} due to element ${elementId} animation stopping`);
-          const elementAnimationStopEvent = new CustomEvent('elementAnimationStop', {
-            detail: {
-              frameId: parentFrameId,
-              elementId: elementId
+          console.log(
+            `🔓 Dispatching elementAnimationStop event for frame ${parentFrameId} due to element ${elementId} animation stopping`
+          );
+          const elementAnimationStopEvent = new CustomEvent(
+            'elementAnimationStop',
+            {
+              detail: {
+                frameId: parentFrameId,
+                elementId: elementId,
+              },
             }
-          });
+          );
           document.dispatchEvent(elementAnimationStopEvent);
         }
-        
+
         console.log(`🛑 Animation stopped for element ${elementId}`);
         return true;
       }
-      
+
       return false;
     } catch (error) {
-      console.error(`❌ Error stopping animation for element ${elementId}:`, error);
+      console.error(
+        `❌ Error stopping animation for element ${elementId}:`,
+        error
+      );
       return false;
     }
   }
@@ -259,39 +307,44 @@ class AnimationService {
   removeAnimation(elementId: string): boolean {
     try {
       console.log(`🗑️ Removing animation for element ${elementId}`);
-      
+
       // First stop the animation (this removes the element from both maps)
       const animationStopped = this.stopAnimation(elementId);
-      
+
       // Remove video container
       this.frameVideoReplacer.removeVideoContainerByElementId(elementId);
-      
+
       // Remove play button and related elements synchronously
       this.removePlayButtonSynchronously(elementId);
-      
+
       // Renumber remaining animated elements AFTER removal
       this.renumberAnimatedElements();
-      
+
       // Reset nextFrameIndex to ensure proper sequential numbering
-      this.nextFrameIndex = this.nextFrameIndex -1;
-      
+      this.nextFrameIndex = this.nextFrameIndex - 1;
+
       // Remove from timeline by dispatching a custom event
-      const removeFromTimelineEvent = new CustomEvent('removeAnimationFromTimeline', {
-        detail: { elementId }
-      });
+      const removeFromTimelineEvent = new CustomEvent(
+        'removeAnimationFromTimeline',
+        {
+          detail: { elementId },
+        }
+      );
       document.dispatchEvent(removeFromTimelineEvent);
-      
+
       // Notify timeline that data has been renumbered
       const renumberTimelineEvent = new CustomEvent('renumberTimeline', {
-        detail: { elementId }
+        detail: { elementId },
       });
       document.dispatchEvent(renumberTimelineEvent);
-      
+
       console.log(`✅ Animation completely removed for element ${elementId}`);
       return animationStopped;
-      
     } catch (error) {
-      console.error(`❌ Error removing animation for element ${elementId}:`, error);
+      console.error(
+        `❌ Error removing animation for element ${elementId}:`,
+        error
+      );
       return false;
     }
   }
@@ -301,60 +354,102 @@ class AnimationService {
    */
   private removePlayButtonSynchronously(elementId: string): void {
     try {
-      console.log(`🗑️ Removing play buttons synchronously for element ${elementId}`);
-      
+      console.log(
+        `🗑️ Removing play buttons synchronously for element ${elementId}`
+      );
+
       // Debug: Check what play buttons exist in the DOM
       const allPlayButtons = document.querySelectorAll('.element-play-button');
-      console.log(`🔍 Found ${allPlayButtons.length} total play buttons in DOM`);
+      console.log(
+        `🔍 Found ${allPlayButtons.length} total play buttons in DOM`
+      );
       allPlayButtons.forEach((button, index) => {
         const buttonElementId = button.getAttribute('data-element-id');
-        console.log(`🔍 Play button ${index}: data-element-id="${buttonElementId}"`);
+        console.log(
+          `🔍 Play button ${index}: data-element-id="${buttonElementId}"`
+        );
       });
-      
+
       // Method 1: Remove play buttons by data-element-id attribute
-      const playButtons = document.querySelectorAll(`[data-element-id="${elementId}"].element-play-button`);
-      console.log(`🔍 Found ${playButtons.length} play buttons with data-element-id="${elementId}"`);
+      const playButtons = document.querySelectorAll(
+        `[data-element-id="${elementId}"].element-play-button`
+      );
+      console.log(
+        `🔍 Found ${playButtons.length} play buttons with data-element-id="${elementId}"`
+      );
       playButtons.forEach((button, index) => {
-        console.log(`🗑️ Removing play button ${index} for element ${elementId}`);
+        console.log(
+          `🗑️ Removing play button ${index} for element ${elementId}`
+        );
         button.remove();
         console.log(`✅ Removed play button ${index} for element ${elementId}`);
       });
 
       // Method 2: Remove pause buttons by data-element-id attribute
-      const pauseButtons = document.querySelectorAll(`[data-element-id="${elementId}"].element-pause-button`);
-      console.log(`🔍 Found ${pauseButtons.length} pause buttons with data-element-id="${elementId}"`);
+      const pauseButtons = document.querySelectorAll(
+        `[data-element-id="${elementId}"].element-pause-button`
+      );
+      console.log(
+        `🔍 Found ${pauseButtons.length} pause buttons with data-element-id="${elementId}"`
+      );
       pauseButtons.forEach((button, index) => {
-        console.log(`🗑️ Removing pause button ${index} for element ${elementId}`);
+        console.log(
+          `🗑️ Removing pause button ${index} for element ${elementId}`
+        );
         button.remove();
-        console.log(`✅ Removed pause button ${index} for element ${elementId}`);
+        console.log(
+          `✅ Removed pause button ${index} for element ${elementId}`
+        );
       });
 
       // Method 3: Remove pause button containers
-      const pauseButtonContainers = document.querySelectorAll('.pause-button-container');
-      console.log(`🔍 Found ${pauseButtonContainers.length} pause button containers`);
+      const pauseButtonContainers = document.querySelectorAll(
+        '.pause-button-container'
+      );
+      console.log(
+        `🔍 Found ${pauseButtonContainers.length} pause button containers`
+      );
       pauseButtonContainers.forEach((container, index) => {
-        const pauseButton = container.querySelector(`[data-element-id="${elementId}"]`);
+        const pauseButton = container.querySelector(
+          `[data-element-id="${elementId}"]`
+        );
         if (pauseButton) {
-          console.log(`🗑️ Removing pause button container ${index} for element ${elementId}`);
+          console.log(
+            `🗑️ Removing pause button container ${index} for element ${elementId}`
+          );
           container.remove();
-          console.log(`✅ Removed pause button container ${index} for element ${elementId}`);
+          console.log(
+            `✅ Removed pause button container ${index} for element ${elementId}`
+          );
         }
       });
 
       // Method 4: Fallback - search for any buttons with this element ID anywhere
-      const allButtonsWithElementId = document.querySelectorAll(`[data-element-id="${elementId}"]`);
-      console.log(`🔍 Found ${allButtonsWithElementId.length} total elements with data-element-id="${elementId}"`);
+      const allButtonsWithElementId = document.querySelectorAll(
+        `[data-element-id="${elementId}"]`
+      );
+      console.log(
+        `🔍 Found ${allButtonsWithElementId.length} total elements with data-element-id="${elementId}"`
+      );
       allButtonsWithElementId.forEach((element, index) => {
         console.log(`🔍 Element ${index}:`, element.className, element.tagName);
-        if (element.classList.contains('element-play-button') || element.classList.contains('element-pause-button')) {
-          console.log(`🗑️ Removing button element ${index} for element ${elementId}`);
+        if (
+          element.classList.contains('element-play-button') ||
+          element.classList.contains('element-pause-button')
+        ) {
+          console.log(
+            `🗑️ Removing button element ${index} for element ${elementId}`
+          );
           element.remove();
         }
       });
 
       console.log(`✅ Play button removal completed for element ${elementId}`);
     } catch (error) {
-      console.error(`❌ Error removing play button for element ${elementId}:`, error);
+      console.error(
+        `❌ Error removing play button for element ${elementId}:`,
+        error
+      );
     }
   }
 
@@ -364,37 +459,37 @@ class AnimationService {
   private renumberAnimatedElements(): void {
     try {
       const animatedElementsArray = Array.from(this.animatedElements.values());
-      
+
       // Sort by current frameIndex to maintain order
       animatedElementsArray.sort((a, b) => a.frameIndex - b.frameIndex);
-      
+
       // Renumber animated elements starting from 0
       animatedElementsArray.forEach((element, index) => {
         element.frameIndex = index;
         this.animatedElements.set(element.id, element);
       });
-      
+
       // Update animation numbers using scene-relative indices
       this.refreshAllAnimationNumbers();
-      
+
       // Renumber animation frames to match the new frameIndex values
       const framesArray = Array.from(this.animationFrames.values());
-      
+
       // Group frames by elementId and sort by their current frameIndex
       const framesByElement = new Map<string, AnimationFrame[]>();
-      framesArray.forEach(frame => {
+      framesArray.forEach((frame) => {
         if (!framesByElement.has(frame.elementId)) {
           framesByElement.set(frame.elementId, []);
         }
         framesByElement.get(frame.elementId)!.push(frame);
       });
-      
+
       // For each element, update the frameIndex of its frames
       for (const [elementId, frames] of framesByElement.entries()) {
         const animatedElement = this.animatedElements.get(elementId);
         if (animatedElement) {
           // Update all frames for this element to use the new frameIndex
-          frames.forEach(frame => {
+          frames.forEach((frame) => {
             frame.frameIndex = animatedElement.frameIndex;
             this.animationFrames.set(frame.id, frame);
           });
@@ -413,7 +508,11 @@ class AnimationService {
       console.log('🔄 Refreshing all animation numbers...');
       for (const element of this.animatedElements.values()) {
         const sceneRelativeIndex = this.getSceneRelativeIndex(element.id);
-        console.log(`🔄 Updating element ${element.id} to number ${sceneRelativeIndex + 1}`);
+        console.log(
+          `🔄 Updating element ${element.id} to number ${
+            sceneRelativeIndex + 1
+          }`
+        );
         updateAnimationNumberForElement(element.id, sceneRelativeIndex + 1);
       }
       console.log('✅ All animation numbers refreshed');
@@ -439,15 +538,20 @@ class AnimationService {
 
       // Get all animated elements in the same parent frame
       const elementsInSameFrame = Array.from(this.animatedElements.values())
-        .filter(element => element.parentFrameId === parentFrameId)
+        .filter((element) => element.parentFrameId === parentFrameId)
         .sort((a, b) => a.frameIndex - b.frameIndex);
 
       // Find the index of the current element within its parent frame
-      const sceneRelativeIndex = elementsInSameFrame.findIndex(element => element.id === elementId);
-      
+      const sceneRelativeIndex = elementsInSameFrame.findIndex(
+        (element) => element.id === elementId
+      );
+
       return sceneRelativeIndex >= 0 ? sceneRelativeIndex : 0;
     } catch (error) {
-      console.error(`❌ Error calculating scene-relative index for element ${elementId}:`, error);
+      console.error(
+        `❌ Error calculating scene-relative index for element ${elementId}:`,
+        error
+      );
       return 0;
     }
   }
@@ -457,7 +561,7 @@ class AnimationService {
    */
   getFramesByIndex(): Map<number, AnimationFrame[]> {
     const framesByIndex = new Map<number, AnimationFrame[]>();
-    
+
     for (const frame of this.animationFrames.values()) {
       const frameIndex = frame.frameIndex;
       if (!framesByIndex.has(frameIndex)) {
@@ -465,7 +569,7 @@ class AnimationService {
       }
       framesByIndex.get(frameIndex)!.push(frame);
     }
-    
+
     return framesByIndex;
   }
 
@@ -479,25 +583,33 @@ class AnimationService {
   /**
    * Reorder frames within a scene
    */
-  reorderFramesInScene(sceneId: string, fromIndex: number, toIndex: number): boolean {
+  reorderFramesInScene(
+    sceneId: string,
+    fromIndex: number,
+    toIndex: number
+  ): boolean {
     try {
       // Get all frames for this scene
       const sceneFrames = Array.from(this.animationFrames.values())
-        .filter(frame => frame.parentFrameId === sceneId)
+        .filter((frame) => frame.parentFrameId === sceneId)
         .sort((a, b) => a.frameIndex - b.frameIndex);
 
-      if (fromIndex < 0 || fromIndex >= sceneFrames.length || 
-          toIndex < 0 || toIndex >= sceneFrames.length) {
+      if (
+        fromIndex < 0 ||
+        fromIndex >= sceneFrames.length ||
+        toIndex < 0 ||
+        toIndex >= sceneFrames.length
+      ) {
         console.warn('Invalid indices for reordering frames');
         return false;
       }
 
       // Create a copy of the frames array
       const reorderedFrames = [...sceneFrames];
-      
+
       // Remove the frame from the original position
       const [movedFrame] = reorderedFrames.splice(fromIndex, 1);
-      
+
       // Insert it at the new position
       reorderedFrames.splice(toIndex, 0, movedFrame);
 
@@ -505,16 +617,16 @@ class AnimationService {
       reorderedFrames.forEach((frame, index) => {
         const updatedFrame = {
           ...frame,
-          frameIndex: index
+          frameIndex: index,
         };
         this.animationFrames.set(frame.id, updatedFrame);
-        
+
         // Also update the animatedElements map with the new frameIndex
         const animatedElement = this.animatedElements.get(frame.elementId);
         if (animatedElement) {
           const updatedAnimatedElement = {
             ...animatedElement,
-            frameIndex: index
+            frameIndex: index,
           };
           this.animatedElements.set(frame.elementId, updatedAnimatedElement);
         }
@@ -525,11 +637,13 @@ class AnimationService {
 
       // Trigger renumber event to update UI
       const renumberEvent = new CustomEvent('renumberTimeline', {
-        detail: { sceneId }
+        detail: { sceneId },
       });
       document.dispatchEvent(renumberEvent);
 
-      console.log(`Reordered frames in scene ${sceneId}: ${fromIndex} -> ${toIndex}`);
+      console.log(
+        `Reordered frames in scene ${sceneId}: ${fromIndex} -> ${toIndex}`
+      );
       return true;
     } catch (error) {
       console.error('Error reordering frames:', error);
@@ -565,7 +679,7 @@ class AnimationService {
    */
   debugSimpleFrameColors(): void {
     console.log('🎨 Debugging SimpleFrame colors:');
-    
+
     for (const [elementId] of this.animatedElements.entries()) {
       const elementType = getElementType(this.pages, elementId);
       if (elementType === 'SimpleFrame') {
@@ -579,15 +693,17 @@ class AnimationService {
    * Start capturing animation frames for an element
    */
   startCapturing(
-    elementId: string, 
-    frameIndex: number, 
+    elementId: string,
+    frameIndex: number,
     settings: AnimationSettings
   ): void {
-    console.log(`🎬 Starting animation capture for element ${elementId} at frame ${frameIndex}`);
+    console.log(
+      `🎬 Starting animation capture for element ${elementId} at frame ${frameIndex}`
+    );
 
     // Find parent SimpleFrame if this element is inside one
     const parentFrameId = findParentSimpleFrame(this.pages, elementId);
-    
+
     // Create animated element entry
     const animatedElement: AnimatedElement = {
       id: elementId,
@@ -595,11 +711,11 @@ class AnimationService {
       startTime: Date.now(),
       lastCaptureTime: Date.now(),
       settings,
-      parentFrameId
+      parentFrameId,
     };
 
     this.animatedElements.set(elementId, animatedElement);
-    
+
     // Set capturing flag for this specific element
     this.isCapturing = true;
 
@@ -608,17 +724,21 @@ class AnimationService {
     this.captureFrame(elementId).finally(() => {
       // Reset capturing flag after frame capture is complete
       this.isCapturing = false;
-      console.log(`✅ Frame capture completed for element ${elementId}, reset capturing flag`);
+      console.log(
+        `✅ Frame capture completed for element ${elementId}, reset capturing flag`
+      );
     });
-    
+
     // Note: The old implementation had the interval commented out:
     // // Start capturing frames every 10 minutes
     // // const interval = setInterval(async () => {
     // //   await this.captureFrame(elementId);
     // // }, 600000); // 600,000 ms = 10 minutes
     // // this.animationIntervals.set(elementId, interval);
-    
-    console.log(`✅ Animation capture started for element ${elementId} - single frame captured`);
+
+    console.log(
+      `✅ Animation capture started for element ${elementId} - single frame captured`
+    );
   }
 
   /**
@@ -643,12 +763,19 @@ class AnimationService {
   checkAndCaptureAdditionalFrames(): void {
     const now = Date.now();
     const captureIntervalMs = 600000; // 10 minutes, matching old implementation
-    
-    for (const [elementId, animatedElement] of this.animatedElements.entries()) {
+
+    for (const [
+      elementId,
+      animatedElement,
+    ] of this.animatedElements.entries()) {
       const timeSinceLastCapture = now - animatedElement.lastCaptureTime;
-      
+
       if (timeSinceLastCapture >= captureIntervalMs) {
-        console.log(`⏰ Time to capture additional frame for ${elementId} (${Math.round(timeSinceLastCapture / 1000)}s since last capture)`);
+        console.log(
+          `⏰ Time to capture additional frame for ${elementId} (${Math.round(
+            timeSinceLastCapture / 1000
+          )}s since last capture)`
+        );
         this.captureFrame(elementId);
       }
     }
@@ -657,7 +784,10 @@ class AnimationService {
   /**
    * Notify that processing is complete
    */
-  private notifyProcessingComplete(elementId: string, frame: AnimationFrame): void {
+  private notifyProcessingComplete(
+    elementId: string,
+    frame: AnimationFrame
+  ): void {
     // Update the frame in animationFrames map with the resultUrl
     this.animationFrames.set(frame.id, frame);
     console.log(`💾 Saved resultUrl for frame ${frame.id}: ${frame.resultUrl}`);
@@ -667,8 +797,8 @@ class AnimationService {
       detail: {
         elementId: elementId,
         frameId: frame.id,
-        resultUrl: frame.resultUrl
-      }
+        resultUrl: frame.resultUrl,
+      },
     });
     document.dispatchEvent(processingCompleteEvent);
     console.log(`📢 Dispatched processing complete event for ${elementId}`);
@@ -688,8 +818,8 @@ class AnimationService {
       detail: {
         elementId: elementId,
         frameId: frame.id,
-        progress: frame.progress
-      }
+        progress: frame.progress,
+      },
     });
     document.dispatchEvent(progressUpdateEvent);
   }
@@ -697,16 +827,28 @@ class AnimationService {
   /**
    * Notify that processing failed
    */
-  private notifyProcessingFailed(elementId: string, frame: AnimationFrame): void {
+  private notifyProcessingFailed(
+    elementId: string,
+    frame: AnimationFrame
+  ): void {
     // Dispatch custom event to notify failure
     const processingFailedEvent = new CustomEvent('processingFailed', {
       detail: {
         elementId: elementId,
-        frameId: frame.id
-      }
+        frameId: frame.id,
+      },
     });
     document.dispatchEvent(processingFailedEvent);
     console.log(`📢 Dispatched processing failed event for ${elementId}`);
+  }
+
+  /**
+   * Check if element is a text layer by checking element type from pages data
+   */
+  private isTextElement(elementId: string): boolean {
+    const elementType = getElementType(this.pages, elementId);
+    console.log(`🔍 Element ${elementId} type from pages data: ${elementType}`);
+    return elementType === 'Text' || elementType === 'TextLayer';
   }
 
   /**
@@ -726,36 +868,221 @@ class AnimationService {
         return;
       }
 
-      // Find the first child element to capture (excluding lock icon)
-      // This ensures we don't capture the lock icon that was added to the parent
+      // Check if this is a text element FIRST (more reliable than DOM inspection)
+      const isText = this.isTextElement(elementId);
+      console.log(`📸 Element ${elementId} is text: ${isText}`);
+
+      // Find the element to capture
       let elementToCapture = element as HTMLElement;
-      const firstChild = element.firstElementChild;
-      
-      if (firstChild && !firstChild.classList.contains('element-lock-icon')) {
-        // Use first child if it exists and is not the lock icon
-        elementToCapture = firstChild as HTMLElement;
-        console.log(`📸 Capturing first child of element ${elementId} to avoid lock icon`);
-      } else if (element.children.length > 1) {
-        // If first child is lock icon, find the first non-lock-icon child
+      let parentScaleX = 1;
+      let parentScaleY = 1;
+
+      if (isText) {
+        // For text elements, we need to find the ACTUAL text content child
+        // Avoid capturing lock icons, animation numbers, or other UI elements
+        // TextLayer structure: <div with transform> <TextContent> <div>actual text</div> </TextContent> </div>
+        // findElementByLayerId returns the TextContent, but we need to find the child with actual text
+
+        console.log(`📸 TextContent element classes: ${element.className}`);
+        console.log(
+          `📸 TextContent element children: ${element.children.length}`
+        );
+
+        // Find the child element that contains the actual text content
+        // This should be the child that is NOT a lock icon or animation number
+        let textContentChild: HTMLElement | null = null;
+
         for (let i = 0; i < element.children.length; i++) {
-          const child = element.children[i];
-          if (!child.classList.contains('element-lock-icon')) {
-            elementToCapture = child as HTMLElement;
-            console.log(`📸 Capturing child ${i} of element ${elementId} to avoid lock icon`);
-            break;
+          const child = element.children[i] as HTMLElement;
+          const childClasses = child.className || '';
+
+          console.log(
+            `📸 Child ${i} classes: "${childClasses}", tag: ${child.tagName}`
+          );
+
+          // Skip lock icons, animation numbers, and other UI elements
+          if (
+            !childClasses.includes('element-lock-icon') &&
+            !childClasses.includes('element-animation-number') &&
+            !childClasses.includes('element-play-button') &&
+            !childClasses.includes('element-pause-button')
+          ) {
+            // Check if this child has actual text content
+            const hasTextContent =
+              child.textContent && child.textContent.trim().length > 0;
+            if (hasTextContent) {
+              textContentChild = child;
+              console.log(
+                `📸 Found text content child at index ${i} with text: "${child.textContent?.substring(
+                  0,
+                  30
+                )}..."`
+              );
+              break;
+            }
+          }
+        }
+
+        // If no suitable child found, look for a div with dangerouslySetInnerHTML or just use the element itself
+        if (!textContentChild && element.children.length > 0) {
+          // Try to find the first div child that's not a UI element
+          for (let i = 0; i < element.children.length; i++) {
+            const child = element.children[i] as HTMLElement;
+            if (
+              child.tagName === 'DIV' &&
+              !child.className.includes('element-')
+            ) {
+              textContentChild = child;
+              console.log(`📸 Found DIV child at index ${i}`);
+              break;
+            }
+          }
+        }
+
+        // Use the text content child if found, otherwise use the element itself
+        if (textContentChild) {
+          elementToCapture = textContentChild;
+          console.log(`📸 Using text content child for capture`);
+        } else {
+          elementToCapture = element as HTMLElement;
+          console.log(`📸 No text content child found, using element itself`);
+        }
+
+        // Get scale from the parent's transform
+        const parentElement = element.parentElement;
+        if (parentElement) {
+          const parentStyle = window.getComputedStyle(parentElement);
+          console.log(
+            `📸 Parent of TextContent transform: ${parentStyle.transform}`
+          );
+          console.log(
+            `📸 Parent of TextContent classes: ${parentElement.className}`
+          );
+
+          // Extract scale from parent's transform (this is the scale we need to apply)
+          const transform = parentStyle.transform;
+          if (transform && transform !== 'none') {
+            const matrixMatch = transform.match(
+              /matrix\(([^,]+),\s*([^,]+),\s*([^,]+),\s*([^,]+),\s*([^,]+),\s*([^)]+)\)/
+            );
+            if (matrixMatch) {
+              parentScaleX = parseFloat(matrixMatch[1]);
+              parentScaleY = parseFloat(matrixMatch[4]);
+              console.log(
+                `📸 Extracted scale from PARENT transform: scaleX=${parentScaleX}, scaleY=${parentScaleY}`
+              );
+            }
+          } else {
+            console.log(`📸 Parent has no transform (scale=1)`);
+          }
+        }
+
+        console.log(
+          `📸 Will capture text content child and apply parent scale`
+        );
+      } else {
+        // For non-text elements, find the first child (excluding lock icon)
+        const firstChild = element.firstElementChild;
+
+        console.log(`📸 Parent element classes: ${element.className}`);
+        console.log(
+          `📸 Parent element children count: ${element.children.length}`
+        );
+
+        if (firstChild && !firstChild.classList.contains('element-lock-icon')) {
+          elementToCapture = firstChild as HTMLElement;
+          const childStyle = window.getComputedStyle(firstChild);
+          console.log(
+            `📸 Capturing first child of element ${elementId}, child classes: ${firstChild.className}, child transform: ${childStyle.transform}`
+          );
+        } else if (element.children.length > 1) {
+          for (let i = 0; i < element.children.length; i++) {
+            const child = element.children[i];
+            if (!child.classList.contains('element-lock-icon')) {
+              elementToCapture = child as HTMLElement;
+              const childStyle = window.getComputedStyle(child);
+              console.log(
+                `📸 Capturing child ${i} of element ${elementId}, child classes: ${child.className}, child transform: ${childStyle.transform}`
+              );
+              break;
+            }
           }
         }
       }
 
-      // Capture the element as an image
-      const imageDataUrl = await toPng(elementToCapture, {
-        style: {
-          transform: 'none',
-        },
-        // quality: 0.8,
-        // width: 800,
-        // height: 600,
-      });
+      // Get the actual rendered dimensions (including any scale transforms)
+      const rect = elementToCapture.getBoundingClientRect();
+      const renderedWidth = Math.round(rect.width);
+      const renderedHeight = Math.round(rect.height);
+
+      console.log(
+        `📸 Element ${elementId} rendered dimensions: ${renderedWidth}x${renderedHeight}`
+      );
+
+      // Get the transform to verify it's present
+      const computedStyle = window.getComputedStyle(elementToCapture);
+      console.log(`📸 Element computed transform: ${computedStyle.transform}`);
+      console.log(`📸 Element computed width: ${computedStyle.width}`);
+      console.log(`📸 Element computed height: ${computedStyle.height}`);
+
+      // Build capture options and handle text vs non-text differently
+      let imageDataUrl: string;
+
+      if (isText) {
+        // For text elements, html-to-image doesn't capture CSS transforms properly
+        // We need to temporarily modify the element to render at the scaled size
+        // Use the scale we extracted from the PARENT element
+        const scaleX = parentScaleX;
+        const scaleY = parentScaleY;
+
+        console.log(
+          `📸 Using parent scale for text capture: scaleX=${scaleX}, scaleY=${scaleY}`
+        );
+
+        // Get the unscaled dimensions of the text element
+        const unscaledWidth = parseFloat(computedStyle.width);
+        const unscaledHeight = parseFloat(computedStyle.height);
+
+        console.log(
+          `📸 Text element dimensions - unscaled: ${unscaledWidth}x${unscaledHeight}`
+        );
+
+        // Use pixelRatio to scale up the capture without modifying the element
+        // This avoids clipping issues
+        const captureOptions: any = {
+          cacheBust: true,
+          width: unscaledWidth,
+          height: unscaledHeight,
+          pixelRatio: Math.max(scaleX, scaleY), // Use scale as pixel ratio for higher resolution
+        };
+
+        console.log(
+          `📸 Capturing text element ${elementId} at ${unscaledWidth}x${unscaledHeight} with pixelRatio: ${
+            captureOptions.pixelRatio
+          } (will produce ${Math.round(
+            unscaledWidth * captureOptions.pixelRatio
+          )}x${Math.round(unscaledHeight * captureOptions.pixelRatio)} image)`
+        );
+
+        // Capture the element without any style modifications
+        imageDataUrl = await toPng(elementToCapture, captureOptions);
+
+        console.log(`📸 Text element captured successfully`);
+      } else {
+        // For non-text elements, remove transform (original behavior)
+        const captureOptions: any = {
+          cacheBust: true,
+          style: {
+            transform: 'none',
+          },
+        };
+        console.log(
+          `📸 Capturing non-text element ${elementId} with transform removed`
+        );
+
+        // Capture the element as an image
+        imageDataUrl = await toPng(elementToCapture, captureOptions);
+      }
 
       if (!imageDataUrl || imageDataUrl.length < 100) {
         console.warn(`⚠️ Invalid image data captured for element ${elementId}`);
@@ -772,8 +1099,9 @@ class AnimationService {
         settings: animatedElement.settings,
         isInsideFrame: !!animatedElement.parentFrameId,
         parentFrameId: animatedElement.parentFrameId,
-        parentFrameBorderColor: animatedElement.parentFrameId ? 
-          generateFrameColor(animatedElement.parentFrameId) : undefined
+        parentFrameBorderColor: animatedElement.parentFrameId
+          ? generateFrameColor(animatedElement.parentFrameId)
+          : undefined,
       };
 
       this.animationFrames.set(frame.id, frame);
@@ -787,12 +1115,20 @@ class AnimationService {
       }
 
       // Submit to API for processing
-      const elementData = this.getElementCoordinates(elementId, animatedElement.parentFrameId);
+      const elementData = this.getElementCoordinates(
+        elementId,
+        animatedElement.parentFrameId
+      );
       if (elementData) {
-        const fileId = await submitFrameToAPI(frame, elementId, elementData, animatedElement.settings);
+        const fileId = await submitFrameToAPI(
+          frame,
+          elementId,
+          elementData,
+          animatedElement.settings
+        );
         if (fileId) {
           frame.fileId = fileId;
-          
+
           // Start polling for result
           pollForResult(
             fileId,
@@ -814,7 +1150,6 @@ class AnimationService {
           );
         }
       }
-
     } catch (error) {
       console.error(`❌ Error capturing frame for ${elementId}:`, error);
     } finally {
@@ -825,7 +1160,10 @@ class AnimationService {
   /**
    * Get element coordinates for API submission
    */
-  private getElementCoordinates(elementId: string, parentFrameId?: string): ElementCoordinates | null {
+  private getElementCoordinates(
+    elementId: string,
+    parentFrameId?: string
+  ): ElementCoordinates | null {
     try {
       const element = findElementByLayerId(elementId);
       if (!element) {
@@ -839,7 +1177,9 @@ class AnimationService {
 
       if (parentFrameId) {
         // Get the parent frame element using its ID
-        const parentFrame = document.querySelector(`.${CSS.escape(parentFrameId)}`);
+        const parentFrame = document.querySelector(
+          `.${CSS.escape(parentFrameId)}`
+        );
         if (parentFrame) {
           const parentRect = parentFrame.getBoundingClientRect();
 
@@ -848,25 +1188,63 @@ class AnimationService {
           const elementCenterY = rect.top + rect.height / 2;
 
           // Convert to coordinates relative to the parent frame
-          centerX = ((elementCenterX - parentRect.left) / parentRect.width) * 1920;
-          centerY = ((elementCenterY - parentRect.top) / parentRect.height) * 1080;
+          centerX =
+            ((elementCenterX - parentRect.left) / parentRect.width) * 1920;
+          centerY =
+            ((elementCenterY - parentRect.top) / parentRect.height) * 1080;
         } else {
           // Fallback to window-based calculation if parent frame not found
-          centerX = (rect.left + rect.width / 2) / window.innerWidth * 1920;
-          centerY = (rect.top + rect.height / 2) / window.innerHeight * 1080;
+          centerX = ((rect.left + rect.width / 2) / window.innerWidth) * 1920;
+          centerY = ((rect.top + rect.height / 2) / window.innerHeight) * 1080;
         }
       } else {
         // No parent frame, use window-based calculation
-        centerX = (rect.left + rect.width / 2) / window.innerWidth * 1920;
-        centerY = (rect.top + rect.height / 2) / window.innerHeight * 1080;
+        centerX = ((rect.left + rect.width / 2) / window.innerWidth) * 1920;
+        centerY = ((rect.top + rect.height / 2) / window.innerHeight) * 1080;
       }
 
-      // Get unscaled dimensions from computed styles
+      // Get dimensions from computed styles
       const computedStyle = window.getComputedStyle(element);
-      const width = parseFloat(computedStyle.width);
-      const height = parseFloat(computedStyle.height);
+      let width = parseFloat(computedStyle.width);
+      let height = parseFloat(computedStyle.height);
 
-      console.log(`📍 Element coordinates: center(${Math.round(centerX)}, ${Math.round(centerY)}), size(${Math.round(width)}x${Math.round(height)})`);
+      // For text elements, we need to account for the scale transform on the parent
+      const isText = this.isTextElement(elementId);
+      if (isText) {
+        const parentElement = element.parentElement;
+        if (parentElement) {
+          const parentStyle = window.getComputedStyle(parentElement);
+          const transform = parentStyle.transform;
+
+          if (transform && transform !== 'none') {
+            const matrixMatch = transform.match(
+              /matrix\(([^,]+),\s*([^,]+),\s*([^,]+),\s*([^,]+),\s*([^,]+),\s*([^)]+)\)/
+            );
+            if (matrixMatch) {
+              const scaleX = parseFloat(matrixMatch[1]);
+              const scaleY = parseFloat(matrixMatch[4]);
+
+              // Apply the scale to the dimensions
+              width = width * scaleX;
+              height = height * scaleY;
+
+              console.log(
+                `📍 Text element scaled dimensions: ${Math.round(
+                  width
+                )}x${Math.round(height)} (scale: ${scaleX.toFixed(
+                  2
+                )}x${scaleY.toFixed(2)})`
+              );
+            }
+          }
+        }
+      }
+
+      console.log(
+        `📍 Element coordinates: center(${Math.round(centerX)}, ${Math.round(
+          centerY
+        )}), size(${Math.round(width)}x${Math.round(height)})`
+      );
 
       // IMPORTANT: Round all values to integers as the API expects them
       // This matches the old implementation behavior exactly
@@ -888,14 +1266,12 @@ class AnimationService {
     }
   }
 
-
-
   /**
    * Get all animation frames for an element
    */
   getFramesForElement(elementId: string): AnimationFrame[] {
     return Array.from(this.animationFrames.values())
-      .filter(frame => frame.elementId === elementId)
+      .filter((frame) => frame.elementId === elementId)
       .sort((a, b) => a.timestamp - b.timestamp);
   }
 
@@ -903,8 +1279,9 @@ class AnimationService {
    * Get all animation frames
    */
   getAllFrames(): AnimationFrame[] {
-    return Array.from(this.animationFrames.values())
-      .sort((a, b) => a.timestamp - b.timestamp);
+    return Array.from(this.animationFrames.values()).sort(
+      (a, b) => a.timestamp - b.timestamp
+    );
   }
 
   /**
@@ -936,14 +1313,14 @@ class AnimationService {
    */
   removeElementData(elementId: string): void {
     this.animatedElements.delete(elementId);
-    
+
     // Remove all frames for this element
     for (const [frameId, frame] of this.animationFrames.entries()) {
       if (frame.elementId === elementId) {
         this.animationFrames.delete(frameId);
       }
     }
-    
+
     console.log(`🗑️ Animation data removed for element ${elementId}`);
   }
 
@@ -953,17 +1330,21 @@ class AnimationService {
   exportAnimationState(): any {
     try {
       console.log('📤 Exporting animation state...');
-      
-      const animatedElementsArray = Array.from(this.animatedElements.entries()).map(([id, element]) => ({
+
+      const animatedElementsArray = Array.from(
+        this.animatedElements.entries()
+      ).map(([id, element]) => ({
         id,
         frameIndex: element.frameIndex,
         startTime: element.startTime,
         lastCaptureTime: element.lastCaptureTime,
         settings: element.settings,
-        parentFrameId: element.parentFrameId
+        parentFrameId: element.parentFrameId,
       }));
 
-      const animationFramesArray = Array.from(this.animationFrames.entries()).map(([id, frame]) => ({
+      const animationFramesArray = Array.from(
+        this.animationFrames.entries()
+      ).map(([id, frame]) => ({
         id,
         timestamp: frame.timestamp,
         imageDataUrl: frame.imageDataUrl,
@@ -975,17 +1356,19 @@ class AnimationService {
         parentFrameBorderColor: frame.parentFrameBorderColor,
         fileId: frame.fileId,
         resultUrl: frame.resultUrl,
-        progress: frame.progress
+        progress: frame.progress,
       }));
 
       const animationState = {
         animatedElements: animatedElementsArray,
         animationFrames: animationFramesArray,
         nextFrameIndex: this.nextFrameIndex,
-        isCapturing: this.isCapturing
+        isCapturing: this.isCapturing,
       };
 
-      console.log(`✅ Exported animation state: ${animatedElementsArray.length} elements, ${animationFramesArray.length} frames`);
+      console.log(
+        `✅ Exported animation state: ${animatedElementsArray.length} elements, ${animationFramesArray.length} frames`
+      );
       return animationState;
     } catch (error) {
       console.error('❌ Error exporting animation state:', error);
@@ -999,7 +1382,7 @@ class AnimationService {
   importAnimationState(animationState: any): boolean {
     try {
       console.log('📥 Importing animation state...');
-      
+
       if (!animationState) {
         console.log('ℹ️ No animation state to import');
         return false;
@@ -1010,7 +1393,10 @@ class AnimationService {
       this.animationFrames.clear();
 
       // Restore animated elements
-      if (animationState.animatedElements && Array.isArray(animationState.animatedElements)) {
+      if (
+        animationState.animatedElements &&
+        Array.isArray(animationState.animatedElements)
+      ) {
         animationState.animatedElements.forEach((element: any) => {
           this.animatedElements.set(element.id, {
             id: element.id,
@@ -1018,13 +1404,16 @@ class AnimationService {
             startTime: element.startTime,
             lastCaptureTime: element.lastCaptureTime,
             settings: element.settings,
-            parentFrameId: element.parentFrameId
+            parentFrameId: element.parentFrameId,
           });
         });
       }
 
       // Restore animation frames
-      if (animationState.animationFrames && Array.isArray(animationState.animationFrames)) {
+      if (
+        animationState.animationFrames &&
+        Array.isArray(animationState.animationFrames)
+      ) {
         animationState.animationFrames.forEach((frame: any) => {
           this.animationFrames.set(frame.id, {
             id: frame.id,
@@ -1038,7 +1427,7 @@ class AnimationService {
             parentFrameBorderColor: frame.parentFrameBorderColor,
             fileId: frame.fileId,
             resultUrl: frame.resultUrl,
-            progress: frame.progress
+            progress: frame.progress,
           });
         });
       }
@@ -1052,7 +1441,9 @@ class AnimationService {
         this.isCapturing = animationState.isCapturing;
       }
 
-      console.log(`✅ Imported animation state: ${this.animatedElements.size} elements, ${this.animationFrames.size} frames`);
+      console.log(
+        `✅ Imported animation state: ${this.animatedElements.size} elements, ${this.animationFrames.size} frames`
+      );
       return true;
     } catch (error) {
       console.error('❌ Error importing animation state:', error);
@@ -1067,66 +1458,95 @@ class AnimationService {
   restoreVisualIndicators(): void {
     try {
       console.log('🎨 Restoring visual indicators for animated elements...');
-      
+
       // Restore visual indicators for each animated element
-      for (const [elementId, animatedElement] of this.animatedElements.entries()) {
+      for (const [
+        elementId,
+        animatedElement,
+      ] of this.animatedElements.entries()) {
         console.log(`🔄 Restoring indicators for element ${elementId}`);
-        
+
         // Add lock icon to the element
         addLockIconToElement(elementId);
         console.log(`🔒 Added lock icon to element ${elementId}`);
-        
+
         // Add animation number to the element (scene-relative index + 1 for display)
         const sceneRelativeIndex = this.getSceneRelativeIndex(elementId);
-        addAnimationNumberToElement(elementId, sceneRelativeIndex + 1, this.pages);
-        console.log(`🔢 Added animation number ${sceneRelativeIndex + 1} to element ${elementId}`);
-        
+        addAnimationNumberToElement(
+          elementId,
+          sceneRelativeIndex + 1,
+          this.pages
+        );
+        console.log(
+          `🔢 Added animation number ${
+            sceneRelativeIndex + 1
+          } to element ${elementId}`
+        );
+
         // Dispatch elementAnimationStart event for frame locking
         if (animatedElement.parentFrameId) {
-          console.log(`🔒 Dispatching elementAnimationStart event for frame ${animatedElement.parentFrameId}`);
-          const elementAnimationStartEvent = new CustomEvent('elementAnimationStart', {
-            detail: {
-              frameId: animatedElement.parentFrameId,
-              elementId: elementId,
-              frameIndex: animatedElement.frameIndex
+          console.log(
+            `🔒 Dispatching elementAnimationStart event for frame ${animatedElement.parentFrameId}`
+          );
+          const elementAnimationStartEvent = new CustomEvent(
+            'elementAnimationStart',
+            {
+              detail: {
+                frameId: animatedElement.parentFrameId,
+                elementId: elementId,
+                frameIndex: animatedElement.frameIndex,
+              },
             }
-          });
+          );
           document.dispatchEvent(elementAnimationStartEvent);
         }
-        
+
         // Check if this element has completed frames with resultUrl
-        const framesForElement = Array.from(this.animationFrames.values())
-          .filter(frame => frame.elementId === elementId && frame.resultUrl);
-        
+        const framesForElement = Array.from(
+          this.animationFrames.values()
+        ).filter((frame) => frame.elementId === elementId && frame.resultUrl);
+
         if (framesForElement.length > 0) {
           // Use the first frame with a resultUrl (usually there's only one per element)
           const completedFrame = framesForElement[0];
-          console.log(`✅ Element ${elementId} has completed animation with resultUrl: ${completedFrame.resultUrl}`);
-          
+          console.log(
+            `✅ Element ${elementId} has completed animation with resultUrl: ${completedFrame.resultUrl}`
+          );
+
           // Dispatch processingComplete event to notify timeline and other components
-          const processingCompleteEvent = new CustomEvent('processingComplete', {
-            detail: {
-              elementId: elementId,
-              frameId: completedFrame.id,
-              resultUrl: completedFrame.resultUrl
+          const processingCompleteEvent = new CustomEvent(
+            'processingComplete',
+            {
+              detail: {
+                elementId: elementId,
+                frameId: completedFrame.id,
+                resultUrl: completedFrame.resultUrl,
+              },
             }
-          });
+          );
           document.dispatchEvent(processingCompleteEvent);
-          console.log(`📢 Dispatched processing complete event for ${elementId}`);
-          
+          console.log(
+            `📢 Dispatched processing complete event for ${elementId}`
+          );
+
           // Replace the frame with video on the canvas
           if (completedFrame.resultUrl) {
-            this.frameVideoReplacer.replaceFrameWithVideo(elementId, completedFrame.resultUrl);
-            console.log(`🎥 Replaced element ${elementId} with video from ${completedFrame.resultUrl}`);
+            this.frameVideoReplacer.replaceFrameWithVideo(
+              elementId,
+              completedFrame.resultUrl
+            );
+            console.log(
+              `🎥 Replaced element ${elementId} with video from ${completedFrame.resultUrl}`
+            );
           }
         } else {
           console.log(`ℹ️ Element ${elementId} has no completed frames yet`);
         }
       }
-      
+
       // Refresh all animation numbers to ensure correct scene-relative numbering
       this.refreshAllAnimationNumbers();
-      
+
       console.log('✅ Visual indicators restored for all animated elements');
     } catch (error) {
       console.error('❌ Error restoring visual indicators:', error);
@@ -1135,4 +1555,9 @@ class AnimationService {
 }
 
 export default AnimationService;
-export type { AnimationSettings, AnimationFrame, AnimatedElement, ElementCoordinates };
+export type {
+  AnimationSettings,
+  AnimationFrame,
+  AnimatedElement,
+  ElementCoordinates,
+};

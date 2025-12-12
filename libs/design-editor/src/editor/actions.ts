@@ -29,7 +29,12 @@ type ExtendedSerializedLayerTree = SerializedLayerTree & {
 import { mergeWithoutArray } from '@lidojs/design-utils';
 import { TextEditor } from '@lidojs/text-editor';
 import { cloneDeep, isArray, uniq } from 'lodash';
-import { GroupLayerProps, ImageLayerProps, RootLayerProps, TextLayerProps } from '../layers';
+import {
+  GroupLayerProps,
+  ImageLayerProps,
+  RootLayerProps,
+  TextLayerProps,
+} from '../layers';
 import {
   CoreEditorQuery,
   DeepPartial,
@@ -55,7 +60,11 @@ import {
   serializeLayers,
 } from '../ultils/layer/layers';
 
-const decodeLayer = (serializedLayer: SerializedLayer, parentId: LayerId, _originalId?: string) => {
+const decodeLayer = (
+  serializedLayer: SerializedLayer,
+  parentId: LayerId,
+  _originalId?: string
+) => {
   const newId = _originalId ?? getRandomId();
   return {
     id: newId,
@@ -210,8 +219,7 @@ export const ActionMethods = (state: EditorState, query: CoreEditorQuery) => {
             const rootProps = layer.data.props as RootLayerProps;
             if (rootProps.image) {
               const imageRatio =
-                rootProps.image.boxSize.width /
-                rootProps.image.boxSize.height;
+                rootProps.image.boxSize.width / rootProps.image.boxSize.height;
               if (imageRatio > pageRatio) {
                 //use image height
                 rootProps.image.boxSize.height = size.height;
@@ -358,9 +366,11 @@ export const ActionMethods = (state: EditorState, query: CoreEditorQuery) => {
           );
         }
       };
-      const layers = state.selectedLayers[state.activePage].map((layerId) => {
-        return state.pages[state.activePage].layers[layerId];
-      });
+      const layers = (state.selectedLayers[state.activePage] || []).map(
+        (layerId) => {
+          return state.pages[state.activePage].layers[layerId];
+        }
+      );
       if (layers.length === 1) {
         if (['left', 'right', 'center'].includes(alignment)) {
           const newX = getChangeX(
@@ -524,9 +534,9 @@ export const ActionMethods = (state: EditorState, query: CoreEditorQuery) => {
       } else {
         ids.push(layerId);
       }
-      state.selectedLayers[pageIndex] = state.selectedLayers[pageIndex].filter(
-        (id) => !ids.includes(id)
-      );
+      state.selectedLayers[pageIndex] = (
+        state.selectedLayers[pageIndex] || []
+      ).filter((id) => !ids.includes(id));
       ids.forEach((id) => {
         const parentId = state.pages[pageIndex].layers[id].data.parent;
         delete state.pages[pageIndex].layers[id];
@@ -656,9 +666,11 @@ export const ActionMethods = (state: EditorState, query: CoreEditorQuery) => {
       if (typeof pageIndex !== 'undefined') {
         state.pages.splice(pageIndex + 1, 0, page);
         state.activePage = pageIndex + 1;
+        state.selectedLayers[pageIndex + 1] = [];
       } else {
         state.pages.push(page);
         state.activePage = state.activePage + 1;
+        state.selectedLayers[state.activePage] = [];
       }
     },
     movePageUp: (pageIndex: number) => {
@@ -1069,7 +1081,7 @@ export const ActionMethods = (state: EditorState, query: CoreEditorQuery) => {
       },
       boxSize: BoxSize,
       parentId: LayerId = 'ROOT',
-      loadingExistent = false,
+      loadingExistent = false
     ) {
       const layerId = _originalId ?? getRandomId();
       // Use virtual page size instead of full canvas size for reasonable image dimensions
@@ -1077,20 +1089,15 @@ export const ActionMethods = (state: EditorState, query: CoreEditorQuery) => {
       const ratio = virtualPageSize.width / virtualPageSize.height;
       const imgRatio = boxSize.width / boxSize.height;
       const w = loadingExistent
-        ? (boxSize.width ?? (
-          ratio < imgRatio
+        ? boxSize.width ??
+          (ratio < imgRatio
             ? virtualPageSize.width * 0.8
-            : virtualPageSize.height * imgRatio * 0.8
-        ))
-        : (
-          ratio < imgRatio
-            ? virtualPageSize.width * 0.8
-            : virtualPageSize.height * imgRatio * 0.8
-        );
+            : virtualPageSize.height * imgRatio * 0.8)
+        : ratio < imgRatio
+        ? virtualPageSize.width * 0.8
+        : virtualPageSize.height * imgRatio * 0.8;
 
-      const h = loadingExistent
-        ? (boxSize.height ?? (w / imgRatio))
-        : (w / imgRatio);
+      const h = loadingExistent ? boxSize.height ?? w / imgRatio : w / imgRatio;
       const dl = deserializeLayer({
         type: {
           resolvedName: 'ImageLayer',
@@ -1128,9 +1135,14 @@ export const ActionMethods = (state: EditorState, query: CoreEditorQuery) => {
         id: layerId,
         data: mergeWithoutArray(dl, {
           props: {
-            position: position ? getAddedPosition(position, 1) : getAddedPosition(
-              getPositionWhenLayerCenter(query.getPageSize(), dl.props.boxSize)
-            ),
+            position: position
+              ? getAddedPosition(position, 1)
+              : getAddedPosition(
+                  getPositionWhenLayerCenter(
+                    query.getPageSize(),
+                    dl.props.boxSize
+                  )
+                ),
           },
         }),
       };
@@ -1236,13 +1248,17 @@ export const ActionMethods = (state: EditorState, query: CoreEditorQuery) => {
       state.pages[state.activePage].layers[parentId].data.child.push(layerId);
       this.selectLayers(state.activePage, layerId);
     },
-    addSimpleFrameLayer(parentId: LayerId = 'ROOT', _originalId?: string, props?: LayerComponentProps) {
+    addSimpleFrameLayer(
+      parentId: LayerId = 'ROOT',
+      _originalId?: string,
+      props?: LayerComponentProps
+    ) {
       const layerId = _originalId ?? getRandomId();
 
       // Calculate the next stable scene number by counting existing SimpleFrames
-      const existingFrames = Object.values(state.pages[state.activePage].layers).filter(
-        (layer) => (layer.data.type as string) === 'SimpleFrame'
-      );
+      const existingFrames = Object.values(
+        state.pages[state.activePage].layers
+      ).filter((layer) => (layer.data.type as string) === 'SimpleFrame');
       const nextSceneNumber = existingFrames.length + 1;
 
       // Create a simple frame with exact 16:9 aspect ratio (1920x1080)
@@ -1278,9 +1294,14 @@ export const ActionMethods = (state: EditorState, query: CoreEditorQuery) => {
         id: layerId,
         data: mergeWithoutArray(dl, {
           props: {
-            position: props?.position ?? getAddedPosition(
-              getPositionWhenLayerCenter(query.getPageSize(), dl.props.boxSize)
-            ),
+            position:
+              props?.position ??
+              getAddedPosition(
+                getPositionWhenLayerCenter(
+                  query.getPageSize(),
+                  dl.props.boxSize
+                )
+              ),
           },
         }),
       };
@@ -1290,7 +1311,11 @@ export const ActionMethods = (state: EditorState, query: CoreEditorQuery) => {
     // Migrate existing SimpleFrames to have stable scene numbers
     migrateSimpleFrameSceneNumbers() {
       const layers = state.pages[state.activePage].layers;
-      const simpleFrames: { id: string; layer: any; position: { x: number; y: number } }[] = [];
+      const simpleFrames: {
+        id: string;
+        layer: any;
+        position: { x: number; y: number };
+      }[] = [];
 
       // Find all SimpleFrames that don't have scene numbers
       Object.entries(layers).forEach(([id, layer]) => {
@@ -1300,7 +1325,7 @@ export const ActionMethods = (state: EditorState, query: CoreEditorQuery) => {
             simpleFrames.push({
               id,
               layer,
-              position: layer.data.props.position
+              position: layer.data.props.position,
             });
           }
         }
@@ -1381,8 +1406,18 @@ export const ActionMethods = (state: EditorState, query: CoreEditorQuery) => {
       state.pages[state.activePage].layers[parentId].data.child.push(layerId);
       this.selectLayers(state.activePage, layerId);
     },
-    addTextLayer({ layers, rootId, _originalId, position }: ExtendedSerializedLayerTree) {
-      const layer = addLayerTreeToParent(state.activePage, { layers, rootId, _originalId, positionV2: position });
+    addTextLayer({
+      layers,
+      rootId,
+      _originalId,
+      position,
+    }: ExtendedSerializedLayerTree) {
+      const layer = addLayerTreeToParent(state.activePage, {
+        layers,
+        rootId,
+        _originalId,
+        positionV2: position,
+      });
       this.selectLayers(state.activePage, layer.id);
     },
     startDragNDrop(
